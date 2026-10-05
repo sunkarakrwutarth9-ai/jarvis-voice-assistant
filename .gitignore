@@ -1,0 +1,20 @@
+# --- secrets: API keys live here, never commit
+.env
+
+# --- personal data (each user creates their own)
+memory.json
+state.json
+browser_profile/
+assets/avatar/
+assets/avatar_photo/
+assets/voice_ref*.wav
+assets/embeddings/
+
+# --- logs, caches, environments
+*.log
+__pycache__/
+*.pyc
+.venv/
+
+# --- large model downloaded by setup (too big for GitHub)
+openvoice/checkpoints/checkpoint.pth

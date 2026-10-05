@@ -1,0 +1,8 @@
+* text=auto
+# Windows scripts must keep CRLF line endings (also inside the GitHub ZIP download)
+*.bat text eol=crlf
+*.vbs text eol=crlf
+# third-party bundles and models: store byte-for-byte
+web/vendor/** -text
+*.task binary
+*.wasm binary

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Command Center</title>
+<style>
+:root{
+  --bg:#07030a; --panel:rgba(26,8,12,.72); --panel-2:rgba(40,10,16,.55);
+  --red:#d11f2a; --red-deep:#5c0a12; --gold:#f4ba42; --gold-dim:#9a6c26; --arc:#86e8ff;
+  --text:#f6f1ea; --sub:#bfa68c; --ok:#5fe3a1; --err:#ff5a4f;
+  --lvl:0; --speech:0; --spin:30s;
+  --font:"Bahnschrift","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;color:var(--text);font-family:var(--font);overflow:hidden}
+body{background:transparent}
+html{
+  background:
+    radial-gradient(1200px 700px at 50% 42%, rgba(209,31,42,.18), transparent 60%),
+    radial-gradient(900px 500px at 50% 110%, rgba(244,186,66,.08), transparent 60%),
+    var(--bg);
+}
+/* hex grid + scanlines */
+/* both effect layers sit BEHIND the content (z-index:-1) so animations never repaint them */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;z-index:-1;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 0L56 16v32L28 64 0 48V16zM28 64v33' fill='none' stroke='%23f4ba42' stroke-width='1'/%3E%3C/svg%3E");}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:repeating-linear-gradient(0deg, rgba(255,180,120,.025) 0 1px, transparent 1px 3px),
+             radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.85) 100%)}
+
+.app{position:relative;height:100%;display:grid;
+  grid-template-rows:64px 1fr 92px;grid-template-columns:330px 1fr 400px;gap:14px;padding:14px 18px}
+header{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 6px;border-bottom:1px solid rgba(244,186,66,.18)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo .mark{width:34px;height:34px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 18%,var(--arc) 30%,rgba(134,232,255,.15) 62%,transparent 70%);
+  box-shadow:0 0 18px var(--arc),inset 0 0 0 2px var(--gold);}
+.logo h1{font-size:20px;letter-spacing:7px;font-weight:600;color:var(--gold)}
+.logo small{display:block;font-size:10px;letter-spacing:4px;color:var(--sub);margin-top:2px}
+.pills{display:flex;gap:10px;margin-left:24px}
+.pill{font-size:11px;letter-spacing:2px;padding:6px 12px;border:1px solid rgba(244,186,66,.35);border-radius:20px;color:var(--sub);background:var(--panel-2)}
+.pill b{color:var(--gold);font-weight:600}
+.pill .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:7px;box-shadow:0 0 8px var(--ok)}
+.clock{margin-left:auto;text-align:right}
+.clock .t{font-size:26px;letter-spacing:3px;font-variant-numeric:tabular-nums;color:var(--text)}
+.clock .d{font-size:11px;letter-spacing:3px;color:var(--sub)}
+
+.panel{background:linear-gradient(180deg,var(--panel),rgba(10,4,6,.78));border:1px solid rgba(244,186,66,.22);
+  border-radius:14px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(209,31,42,.12),0 20px 50px rgba(0,0,0,.5)}
+.panel::before,.panel::after{content:"";position:absolute;width:16px;height:16px;border:2px solid var(--gold);opacity:.75}
+.panel::before{top:8px;left:8px;border-right:0;border-bottom:0}
+.panel::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.ph{font-size:11px;letter-spacing:4px;color:var(--gold);padding:16px 20px 8px;display:flex;align-items:center;gap:10px}
+.ph::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(244,186,66,.4),transparent)}
+
+/* ---------- left: vitals */
+.vitals{display:flex;flex-direction:column}
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:6px 4px;padding:6px 16px}
+.gauge{position:relative;display:flex;flex-direction:column;align-items:center}
+.gauge svg{width:118px;height:118px}
+.gauge .v{position:absolute;top:38px;font-size:24px;font-variant-numeric:tabular-nums}
+.gauge .v small{font-size:12px;color:var(--sub)}
+.gauge .l{font-size:10px;letter-spacing:3px;color:var(--sub);margin-top:-6px}
+.gauge .s{font-size:10px;color:var(--gold-dim);letter-spacing:1px}
+.net{padding:4px 20px}
+.net canvas{width:100%;height:58px;display:block}
+.netrow{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);letter-spacing:1px;margin-top:4px}
+.netrow b{color:var(--text);font-weight:500}
+.procs{padding:4px 20px 16px;font-size:12px;flex:1;overflow:hidden}
+.proc{display:flex;align-items:center;gap:10px;margin:7px 0}
+.proc span{flex:0 0 120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--sub)}
+.proc i{flex:1;height:5px;border-radius:3px;background:rgba(244,186,66,.12);position:relative;overflow:hidden}
+.proc i::after{content:"";position:absolute;inset:0;width:var(--w);background:linear-gradient(90deg,var(--red),var(--gold))}
+.proc em{font-style:normal;width:52px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- center: reactor */
+.core{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.reactor{position:relative;width:min(46vh,430px);aspect-ratio:1}
+.reactor{--spin:40s}
+.reactor svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* each ring is its own GPU layer: spinning costs no repaints */
+.ring{position:absolute;inset:0;will-change:transform;animation:spin calc(var(--spin) * var(--k,1)) linear infinite}
+.ring.rev{animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.app[data-state="followup"] .reactor{--spin:22s}.app[data-state="listening"] .reactor{--spin:14s}
+.app[data-state="thinking"] .reactor{--spin:3.5s}.app[data-state="action"] .reactor{--spin:5s}
+.app[data-state="speaking"] .reactor{--spin:10s}.app[data-state="choice"] .reactor{--spin:18s}
+.reactor .glow{position:absolute;inset:16%;border-radius:50%;will-change:transform;
+  background:radial-gradient(circle,rgba(255,255,255,.95) 0 9%,var(--arc) 22%,rgba(134,232,255,.22) 44%,transparent 66%)}
+.app[data-state="thinking"] .reactor .glow,.app[data-state="action"] .reactor .glow{
+  background:radial-gradient(circle,#fff 0 10%,#ffc45a 24%,rgba(255,196,90,.3) 46%,transparent 68%)}
+.app[data-state="error"] .reactor .glow{background:radial-gradient(circle,#fff 0 8%,var(--err) 24%,rgba(255,90,79,.3) 46%,transparent 68%)}
+.reactor .face{position:absolute;inset:33%;border-radius:50%;background-size:cover;background-position:center;
+  box-shadow:0 0 0 3px var(--gold),0 0 30px rgba(244,186,66,.6);opacity:0;transform:scale(.6);transition:all .5s cubic-bezier(.2,1.4,.4,1)}
+.app[data-me="1"] .reactor .face{opacity:1;transform:scale(1)}
+.status{margin-top:18px;text-align:center}
+.status .st{font-size:13px;letter-spacing:9px;color:var(--gold)}
+.status .tt{font-size:30px;margin-top:8px;min-height:40px;letter-spacing:1px}
+.dialog{width:min(760px,92%);margin-top:10px;text-align:center;min-height:86px}
+.dialog .you{font-size:15px;color:var(--sub);font-style:italic;min-height:22px}
+.dialog .say{font-size:20px;line-height:1.45;margin-top:8px;color:var(--text);text-shadow:0 0 18px rgba(244,186,66,.25)}
+.wave{width:min(620px,90%);height:56px;margin-top:6px}
+
+/* ---------- right: conversation log */
+.log{display:flex;flex-direction:column}
+.feed{flex:1;overflow-y:auto;padding:4px 16px 16px;scroll-behavior:smooth}
+.feed::-webkit-scrollbar{width:6px}.feed::-webkit-scrollbar-thumb{background:rgba(244,186,66,.3);border-radius:3px}
+.msg{margin:10px 0;padding:11px 14px;border-radius:12px;font-size:14px;line-height:1.45;animation:pop .35s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.97)}}
+.msg.u{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-left:34px}
+.msg.j{background:linear-gradient(135deg,rgba(209,31,42,.22),rgba(244,186,66,.08));border:1px solid rgba(244,186,66,.3);margin-right:24px}
+.msg .meta{font-size:10px;letter-spacing:2px;color:var(--sub);margin-bottom:5px;display:flex;gap:8px;align-items:center}
+.lang{font-size:9px;letter-spacing:1px;padding:1px 6px;border-radius:6px;border:1px solid var(--gold-dim);color:var(--gold)}
+.tool{display:inline-flex;align-items:center;gap:7px;margin:6px 0 0 0;padding:5px 10px;border-radius:8px;font-size:12px;
+  background:rgba(0,0,0,.35);border:1px solid rgba(244,186,66,.25);color:var(--sub)}
+.tool.ok::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.tool.bad::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--err);box-shadow:0 0 6px var(--err)}
+.tool.run::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);animation:blink .6s infinite alternate}
+@keyframes blink{to{opacity:.2}}
+.empty{color:var(--sub);font-size:13px;text-align:center;margin-top:40px;letter-spacing:1px;line-height:1.8}
+
+/* ---------- footer: command bar */
+footer{grid-column:1/-1;display:flex;gap:14px;align-items:center}
+.cmd{flex:1;display:flex;align-items:center;gap:12px;height:62px;padding:0 10px 0 20px;border-radius:31px;
+  background:var(--panel);border:1px solid rgba(244,186,66,.35);box-shadow:0 0 30px rgba(209,31,42,.15)}
+.cmd input{flex:1;background:none;border:0;outline:0;color:var(--text);font:16px var(--font);letter-spacing:.5px}
+.cmd input::placeholder{color:rgba(191,166,140,.6)}
+.btn{height:46px;padding:0 20px;border-radius:23px;border:1px solid rgba(244,186,66,.45);background:rgba(0,0,0,.35);
+  color:var(--gold);font:600 12px var(--font);letter-spacing:3px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .2s}
+.btn:hover{background:rgba(209,31,42,.35);border-color:var(--gold);box-shadow:0 0 18px rgba(244,186,66,.3)}
+.btn.on{background:linear-gradient(135deg,var(--red),#8d1219);color:#fff;border-color:var(--gold)}
+.btn.talk{height:62px;width:62px;padding:0;justify-content:center;border-radius:50%;
+  background:radial-gradient(circle,var(--red) 0 55%,var(--red-deep));color:#fff;font-size:20px;box-shadow:0 0 24px rgba(209,31,42,.6)}
+.btn img{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--gold)}
+.models{display:flex;flex-direction:column;gap:4px;padding:0 6px;min-width:220px}
+.models .m{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:1px;color:var(--sub)}
+.models .m i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.models .m i::after{content:"";position:absolute;inset:0;width:var(--w);background:linear-gradient(90deg,var(--ok),var(--gold))}
+.models .m.bad i::after{background:var(--err)}
+.offline{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:5;
+  background:rgba(5,2,4,.8);font-size:14px;letter-spacing:5px;color:var(--gold)}
+.offline.show{display:flex}
+@media (max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:64px auto auto auto 92px;overflow:auto}.vitals,.log{min-height:300px}}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-state="idle" data-me="0">
+  <header>
+    <div class="logo"><div class="mark"></div><div><h1>J.A.R.V.I.S.</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div></div>
+    <div class="pills">
+      <div class="pill"><span class="dot" id="linkDot"></span>LINK <b id="link">ONLINE</b></div>
+      <div class="pill">CORE <b id="model">—</b></div>
+      <div class="pill">VOICE <b id="voice">JARVIS</b></div>
+      <div class="pill">WAKE <b>"OK JARVIS"</b></div>
+    </div>
+    <div class="clock"><div class="t" id="time">--:--</div><div class="d" id="date"></div></div>
+  </header>
+
+  <section class="panel vitals">
+    <div class="ph">SYSTEM VITALS</div>
+    <div class="gauges">
+      <div class="gauge" data-k="cpu"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="7"/><circle class="arc" cx="60" cy="60" r="48" fill="none" stroke="url(#gg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 302" transform="rotate(-90 60 60)"/></svg><div class="v"><span>0</span><small>%</small></div><div class="l">CPU</div><div class="s">&nbsp;</div></div>
+      <div class="gauge" data-k="ram"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="7"/><circle class="arc" cx="60" cy="60" r="48" fill="none" stroke="url(#gg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 302" transform="rotate(-90 60 60)"/></svg><div class="v"><span>0</span><small>%</small></div><div class="l">MEMORY</div><div class="s" id="ramS">&nbsp;</div></div>
+      <div class="gauge" data-k="battery"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="7"/><circle class="arc" cx="60" cy="60" r="48" fill="none" stroke="url(#gg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 302" transform="rotate(-90 60 60)"/></svg><div class="v"><span>0</span><small>%</small></div><div class="l">POWER</div><div class="s" id="batS">&nbsp;</div></div>
+      <div class="gauge" data-k="disk"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="7"/><circle class="arc" cx="60" cy="60" r="48" fill="none" stroke="url(#gg)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 302" transform="rotate(-90 60 60)"/></svg><div class="v"><span>0</span><small>%</small></div><div class="l">STORAGE</div><div class="s" id="diskS">&nbsp;</div></div>
+    </div>
+    <div class="ph">NETWORK</div>
+    <div class="net"><canvas id="net"></canvas><div class="netrow"><span>▼ <b id="down">0</b></span><span>▲ <b id="up">0</b></span><span>UP <b id="uptime">0h</b></span></div></div>
+    <div class="ph">ACTIVE PROCESSES</div>
+    <div class="procs" id="procs"></div>
+  </section>
+
+  <section class="core">
+    <div class="reactor" id="reactor">
+      <svg viewBox="0 0 400 400">
+        <defs>
+          <linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#d11f2a"/><stop offset="1" stop-color="#f4ba42"/></linearGradient>
+          <radialGradient id="rg"><stop offset=".55" stop-color="rgba(209,31,42,0)"/><stop offset="1" stop-color="rgba(209,31,42,.35)"/></radialGradient>
+        </defs>
+        <circle cx="200" cy="200" r="196" fill="url(#rg)"/>
+        <circle cx="200" cy="200" r="104" fill="none" stroke="rgba(134,232,255,.35)" stroke-width="1"/>
+      </svg>
+      <div class="ring" style="--k:1.5"><svg viewBox="0 0 400 400"><circle cx="200" cy="200" r="190" fill="none" stroke="rgba(244,186,66,.35)" stroke-width="1" stroke-dasharray="2 6"/></svg></div>
+      <div class="ring rev" style="--k:1.4"><svg viewBox="0 0 400 400" id="ticks"></svg></div>
+      <div class="ring" style="--k:.7"><svg viewBox="0 0 400 400"><circle cx="200" cy="200" r="150" fill="none" stroke="#d11f2a" stroke-width="9" stroke-dasharray="180 134" opacity=".9"/></svg></div>
+      <div class="ring rev" style="--k:.5"><svg viewBox="0 0 400 400"><circle cx="200" cy="200" r="128" fill="none" stroke="#f4ba42" stroke-width="2" stroke-dasharray="60 20 10 20"/></svg></div>
+      <div class="ring" style="--k:.35"><svg viewBox="0 0 400 400"><polygon points="200,118 271,241 129,241" fill="rgba(134,232,255,.08)" stroke="rgba(134,232,255,.85)" stroke-width="2"/></svg></div>
+      <div class="glow" id="glow"></div>
+      <div class="face" id="face"></div>
+    </div>
+    <div class="status"><div class="st" id="st">STANDING BY</div><div class="tt" id="tt">Say “OK Jarvis”</div></div>
+    <div class="dialog"><div class="you" id="you"></div><div class="say" id="say"></div></div>
+    <canvas class="wave" id="wave"></canvas>
+  </section>
+
+  <section class="panel log">
+    <div class="ph">COMMUNICATION LOG</div>
+    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Jarvis” or type below.</div></div>
+  </section>
+
+  <footer>
+    <button class="btn talk" id="talk" title="Talk (Space)">●</button>
+    <div class="cmd"><input id="cmd" placeholder="Type a command — or just say “OK Jarvis” …" autocomplete="off">
+      <button class="btn" id="send">EXECUTE</button></div>
+    <button class="btn" id="me"><img src="/avatar.jpg" onerror="this.remove()">MY VOICE</button>
+    <button class="btn" id="mute">MUTE</button>
+    <button class="btn" id="newc">RESET</button>
+    <div class="models" id="models"></div>
+  </footer>
+</div>
+<div class="offline" id="offline">RE-ESTABLISHING LINK WITH J.A.R.V.I.S …</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const app = $("app"), root = document.documentElement.style;
+const STATES = {idle:"STANDING BY", followup:"AWAITING REPLY", listening:"AUDIO INPUT", thinking:"PROCESSING",
+                action:"EXECUTING PROTOCOL", speaking:"RESPONDING", error:"SYSTEM ALERT", choice:"AWAITING SELECTION"};
+
+// reactor tick ring
+(() => { const g = $("ticks"); let s = "";
+  for (let i = 0; i < 72; i++) { const a = i * 5 * Math.PI / 180, r0 = 168, r1 = i % 6 ? 176 : 184;
+    s += `<line x1="${200 + Math.cos(a) * r0}" y1="${200 + Math.sin(a) * r0}" x2="${200 + Math.cos(a) * r1}" y2="${200 + Math.sin(a) * r1}" stroke="#f4ba42" stroke-width="${i % 6 ? 1.2 : 2.4}" opacity="${i % 6 ? .55 : .95}"/>`; }
+  g.innerHTML = s; })();
+$("face").style.backgroundImage = "url(/avatar.jpg)";
+
+// clock
+function tick() { const d = new Date();
+  $("time").textContent = d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+  $("date").textContent = d.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long", year: "numeric"}).toUpperCase(); }
+setInterval(tick, 1000); tick();
+
+// ---------- state
+let lastState = "idle";
+function setState(s, title, body) {
+  lastState = s; if (app.dataset.state !== s) app.dataset.state = s;
+  $("st").textContent = STATES[s] || s.toUpperCase();
+  const t = {idle: "Say “OK Jarvis”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…",
+             choice: title || "Choose an option"}[s];
+  if (s === "speaking") { $("say").textContent = body; $("tt").textContent = ""; }
+  else { $("tt").textContent = t !== undefined ? t : (title || ""); if (s === "action") $("tt").textContent = title; }
+  if (s === "thinking" && body) $("you").textContent = body;
+  if (s === "error") $("say").textContent = body || "";
+}
+
+// ---------- conversation feed
+const LANGS = [["TE", /[ఀ-౿]/], ["HI", /[ऀ-ॿ]/], ["TA", /[஀-௿]/]];
+const langOf = t => (LANGS.find(([, r]) => r.test(t)) || ["EN"])[0];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+let current = null;
+function addMsg(kind, text, meta) {
+  $("empty")?.remove();
+  const el = document.createElement("div"); el.className = "msg " + kind;
+  const time = new Date(meta.ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+  el.innerHTML = `<div class="meta">${kind === "u" ? "YOU" : "J.A.R.V.I.S"} · ${time} <span class="lang">${langOf(text)}</span>${meta.model ? ` · ${esc(meta.model)}` : ""}</div><div class="tx">${esc(text)}</div>`;
+  $("feed").appendChild(el); $("feed").scrollTop = 1e9; return el;
+}
+function onEvent(e) {
+  switch (e.type) {
+    case "state": setState(e.state, e.title, e.body); break;
+    case "user": $("you").textContent = "“" + e.text + "”"; $("say").textContent = "";
+      current = null; addMsg("u", e.text, e); break;
+    case "tool": {
+      if (!current) current = addMsg("j", "", e);
+      let chip = current.querySelector(`[data-id="${e.id}"]`);
+      if (!chip) { chip = document.createElement("div"); chip.dataset.id = e.id; current.appendChild(chip); }
+      const failed = e.result != null && e.result.startsWith("FAILED");
+      chip.className = "tool " + (e.result == null ? "run" : (failed ? "bad" : "ok"));
+      chip.textContent = e.label + (failed ? " — failed" : "");
+      $("feed").scrollTop = 1e9; break; }
+    case "reply":
+      if (!current) current = addMsg("j", e.text, e);
+      else { current.querySelector(".tx").textContent = e.text; if (e.model) current.querySelector(".meta").insertAdjacentText("beforeend", " · " + e.model); }
+      current.querySelector(".lang").textContent = langOf(e.text); current = null; break;
+    case "lv": target = lastState === "listening" ? e.mic : e.speech; break;
+    case "vitals": vitals(e); break;
+    case "me": app.dataset.me = e.on ? "1" : "0"; $("me").classList.toggle("on", e.on); $("voice").textContent = e.on ? "YOURS" : "JARVIS"; break;
+    case "muted": $("mute").classList.toggle("on", e.on); $("mute").textContent = e.on ? "UNMUTE" : "MUTE"; break;
+    case "ranking": models(e.models); break;
+    case "progress": $("tt").textContent = e.text; break;
+    case "canvas": e = {file: e.file, code: e.content};   // Iron Man theme: creations show as code cards
+    // falls through
+    case "code": {
+      $("empty")?.remove();
+      const card = document.createElement("div"); card.className = "msg j";
+      card.innerHTML = `<div class="meta">CODE · ${esc(e.file.split(/[\\/]/).pop())}</div><pre style="max-height:300px;overflow:auto;font:12px/1.5 Consolas,monospace;white-space:pre;color:#f6f1ea">${esc(e.code)}</pre>`;
+      $("feed").appendChild(card); $("feed").scrollTop = 1e9; break; }
+    case "theme": if (e.theme !== "ironman") location.reload(); break;
+  }
+}
+
+// ---------- vitals
+const C = 2 * Math.PI * 48;
+function gauge(k, v) { const g = document.querySelector(`.gauge[data-k="${k}"]`); if (!g) return;
+  g.querySelector(".arc").setAttribute("stroke-dasharray", `${(v ?? 0) / 100 * C} ${C}`);
+  g.querySelector(".v span").textContent = v == null ? "—" : Math.round(v); }
+const fmt = b => b > 1e6 ? (b / 1e6).toFixed(1) + " MB/s" : (b / 1e3).toFixed(0) + " KB/s";
+const net = [];
+function vitals(v) {
+  gauge("cpu", v.cpu); gauge("ram", v.ram); gauge("battery", v.battery); gauge("disk", v.disk);
+  $("ramS").textContent = `${v.ram_used} / ${v.ram_total} GB`; $("diskS").textContent = `${v.disk_free} GB FREE`;
+  $("batS").textContent = v.battery == null ? "AC" : (v.plugged ? "CHARGING" : "ON BATTERY");
+  $("down").textContent = fmt(v.down); $("up").textContent = fmt(v.up);
+  $("uptime").textContent = Math.floor(v.uptime / 3600) + "h " + Math.floor(v.uptime % 3600 / 60) + "m";
+  const max = Math.max(...v.procs.map(p => p.gb), 0.1);
+  $("procs").innerHTML = v.procs.map(p => `<div class="proc"><span>${esc(p.name)}</span><i style="--w:${p.gb / max * 100}%"></i><em>${p.gb} GB</em></div>`).join("");
+  net.push(v.down); if (net.length > 60) net.shift(); drawNet();
+}
+function drawNet() { const c = $("net"), x = c.getContext("2d");
+  if (c.width !== c.clientWidth * devicePixelRatio) { c.width = c.clientWidth * devicePixelRatio; c.height = c.clientHeight * devicePixelRatio; }
+  const w = c.width, h = c.height;
+  const m = Math.max(...net, 1e4); x.clearRect(0, 0, w, h);
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "rgba(244,186,66,.45)"); g.addColorStop(1, "rgba(209,31,42,0)");
+  x.beginPath(); net.forEach((v, i) => { const px = i / 59 * w, py = h - v / m * h * .9 - 2; i ? x.lineTo(px, py) : x.moveTo(px, py); });
+  x.strokeStyle = "#f4ba42"; x.lineWidth = 1.5 * devicePixelRatio; x.stroke(); x.lineTo(w, h); x.lineTo(0, h); x.fillStyle = g; x.fill(); }
+function models(list) { $("models").innerHTML = (list || []).slice(0, 4).map(m =>
+  `<div class="m ${m.fails > 2 ? "bad" : ""}"><span style="width:118px">${esc(m.name.replace("gemini-", ""))}</span><i style="--w:${Math.max(6, 100 - m.lat * 12)}%"></i><span>${m.lat.toFixed(1)}s</span></div>`).join("");
+  if (list && list[0]) $("model").textContent = list[0].name.replace("gemini-", "").toUpperCase(); }
+
+// ---------- waveform + reactor pulse: one animation loop, ~30 fps, only redraws while there's sound
+const wave = new Array(90).fill(0), wc = $("wave"), wx = wc.getContext("2d"), glow = $("glow");
+let target = 0, level = 0, lastDraw = 0, quietFrames = 0, W = 0, H = 0;
+function sizeWave() { W = wc.width = wc.clientWidth * devicePixelRatio; H = wc.height = wc.clientHeight * devicePixelRatio; }
+addEventListener("resize", sizeWave); sizeWave();
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (t - lastDraw < 33) return;                    // cap at ~30 fps
+  lastDraw = t;
+  level += (target - level) * .35;
+  quietFrames = level < .01 ? quietFrames + 1 : 0;
+  if (quietFrames > 95) return;                     // silent and already flat: skip all work
+  glow.style.transform = `scale(${(1 + level * .35).toFixed(3)})`;
+  wave.push(level); wave.shift();
+  wx.clearRect(0, 0, W, H); const n = wave.length, bw = W / n;
+  for (let i = 0; i < n; i++) { const v = Math.max(.03, wave[i]) * H * .9, fade = Math.sin(Math.PI * i / n);
+    wx.fillStyle = `rgba(${200 + 44 * wave[i] | 0},${60 + 126 * wave[i] | 0},50,${(.25 + .75 * fade).toFixed(2)})`;
+    wx.fillRect(i * bw + bw * .2, (H - v) / 2, bw * .6, v); }
+}
+requestAnimationFrame(frame);
+
+// ---------- actions
+const post = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(body)});
+function send() { const t = $("cmd").value.trim(); if (!t) return; $("cmd").value = ""; post("/api/command", {text: t}); }
+$("send").onclick = send;
+$("cmd").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+$("talk").onclick = () => post("/api/action", {action: "talk"});
+$("me").onclick = () => post("/api/action", {action: "me"});
+$("mute").onclick = () => post("/api/action", {action: "mute"});
+$("newc").onclick = () => { post("/api/action", {action: "new_chat"}); $("feed").innerHTML = '<div class="empty" id="empty">Conversation reset.</div>'; };
+document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement !== $("cmd")) { e.preventDefault(); $("talk").click(); } });
+
+// ---------- live link
+fetch("/api/state").then(r => r.json()).then(s => {
+  onEvent({type: "me", on: s.me}); onEvent({type: "muted", on: s.muted}); models(s.ranking);
+  (s.history || []).forEach(onEvent); setState(s.state, s.title, s.body); });
+// Tell Jarvis when this window is on screen: the floating island hides while it is, and returns when minimised.
+const VIEW = Math.random().toString(36).slice(2, 12);
+const reportView = () => post("/api/visibility", {id: VIEW, visible: document.visibilityState === "visible"});
+document.addEventListener("visibilitychange", reportView);
+function connect() {
+  const es = new EventSource("/events?id=" + VIEW);
+  es.onopen = () => { $("offline").classList.remove("show"); $("link").textContent = "ONLINE"; reportView(); };
+  es.onmessage = m => onEvent(JSON.parse(m.data));
+  es.onerror = () => { $("offline").classList.add("show"); $("link").textContent = "LOST"; };
+}
+connect();
+</script>
+</body>
+</html>

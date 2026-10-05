@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Guide</title>
+<style>
+:root{--bg:#05060c;--panel:#0d1120;--panel2:#121831;--text:#eef3ff;--sub:#93a0bf;--line:rgba(140,200,255,.14);
+  --arc:#7fe6ff;--gold:#f4ba42;--red:#e0262f;--grad:linear-gradient(135deg,#e0262f,#f08a24 55%,#f4ba42);
+  --font:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;--hud:"Bahnschrift","Segoe UI",sans-serif}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f4f0;--panel:#fff;--panel2:#f1eee8;--text:#1b1d24;
+  --sub:#5f6577;--line:rgba(30,40,70,.12);--arc:#0b7fa3}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:16px/1.6 var(--font)}
+a{color:var(--arc)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.hero{padding:72px 0 56px;text-align:center;position:relative;overflow:hidden}
+.orb{width:180px;height:180px;margin:0 auto 26px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 50% 50%,#fff 0 6%,var(--arc) 18%,rgba(127,230,255,.25) 42%,transparent 66%);
+  box-shadow:0 0 90px rgba(127,230,255,.35)}
+.orb::before,.orb::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:2px dashed rgba(244,186,66,.55);animation:spin 14s linear infinite}
+.orb::after{inset:-38px;border:1px solid rgba(224,38,47,.45);border-left-color:transparent;animation-duration:9s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.orb::before,.orb::after{animation:none}}
+h1{font:700 clamp(30px,6vw,52px)/1.1 var(--hud);letter-spacing:.18em}
+.tag{color:var(--sub);font-size:18px;max-width:640px;margin:14px auto 0}
+.cta{display:inline-flex;gap:10px;margin-top:28px;flex-wrap:wrap;justify-content:center}
+.btn{padding:12px 22px;border-radius:24px;font-weight:600;text-decoration:none;border:1px solid var(--line);color:var(--text)}
+.btn.main{background:var(--grad);color:#fff;border:0}
+section{padding:42px 0;border-top:1px solid var(--line)}
+h2{font:600 13px var(--hud);letter-spacing:.35em;color:var(--arc);margin-bottom:8px}
+h3{font-size:26px;margin-bottom:18px;letter-spacing:-.01em}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}
+.num{width:34px;height:34px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:10px}
+.card h4{font-size:17px;margin-bottom:6px}.card p{color:var(--sub);font-size:15px}
+code,kbd{font:14px Consolas,"Cascadia Code",monospace;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.cmds{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.cmd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.cmd b{display:block;color:var(--gold);font-weight:600;margin-bottom:4px}
+.cmd span{color:var(--sub);font-size:14px}
+.gest{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;text-align:center}
+.gest .card{padding:18px 10px}.gest .e{font-size:38px;line-height:1.2}.gest b{display:block;margin-top:4px}
+.gest span{color:var(--sub);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:13px;letter-spacing:.05em}
+.note{background:var(--panel2);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;color:var(--sub);margin-top:14px}
+footer{padding:36px 0 60px;color:var(--sub);font-size:14px;text-align:center;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <div class="orb" aria-hidden="true"></div>
+  <h1>J.A.R.V.I.S.</h1>
+  <p class="tag">A voice-controlled AI assistant for Windows. Say “OK Jarvis” — it acts, builds, researches and talks back in English, Telugu or Hindi.</p>
+  <div class="cta"><a class="btn main" href="#install">Install in 3 steps</a><a class="btn" href="#say">What can I say?</a><a class="btn" href="#center">Command center</a></div>
+</div></div>
+
+<section id="install"><div class="wrap">
+  <h2>GET STARTED</h2><h3>Install in three steps</h3>
+  <div class="steps">
+    <div class="card"><div class="num">1</div><h4>Download &amp; extract</h4><p>On GitHub click <b>Code → Download ZIP</b>. Right-click the ZIP → <b>Extract All</b>.</p></div>
+    <div class="card"><div class="num">2</div><h4>Double-click <code>run.bat</code></h4><p>First time only, it installs everything automatically (Python if missing, a private environment, AI models). Takes 5–15 minutes.</p></div>
+    <div class="card"><div class="num">3</div><h4>Paste a free key</h4><p>Jarvis asks for a Google Gemini key. Get one free at <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a>. Then say <b>“OK Jarvis”</b>.</p></div>
+  </div>
+  <p class="note">Next time just double-click <code>run.bat</code> — or <code>Start Jarvis.vbs</code> to start silently with no window. Look for the thin glowing line at the top of your screen: that's the Dynamic Island.</p>
+</div></section>
+
+<section id="say"><div class="wrap">
+  <h2>VOICE</h2><h3>Things you can say</h3>
+  <div class="cmds">
+    <div class="cmd"><b>“OK Jarvis, play Believer”</b><span>Plays it on YouTube. “Pause”, “next”, “skip the ad”, “like it”.</span></div>
+    <div class="cmd"><b>“Open Chrome and open Gmail”</b><span>Shows your Chrome accounts — pick one by voice or click.</span></div>
+    <div class="cmd"><b>“Write a Python program that…”</b><span>Written live on the canvas. “Run it” shows the output.</span></div>
+    <div class="cmd"><b>“Build a snake game” · “make a website for my shop”</b><span>Playable / clickable right inside the command center.</span></div>
+    <div class="cmd"><b>“Make the button blue” · “make it shorter”</b><span>Edits whatever is on the canvas, as a new version.</span></div>
+    <div class="cmd"><b>“Research electric cars in India”</b><span>Reads the web and writes a report with sources.</span></div>
+    <div class="cmd"><b>“Summarise my resume PDF”</b><span>Reads PDF, Word, text and code files.</span></div>
+    <div class="cmd"><b>“Open WhatsApp and search for Mom”</b><span>Autopilot: looks at the screen and clicks / types step by step.</span></div>
+    <div class="cmd"><b>“Good morning Jarvis”</b><span>Time, weather, battery, top headlines and your reminders.</span></div>
+    <div class="cmd"><b>“Remember my exam is on Monday”</b><span>Long-term memory. “Forget my exam” removes it.</span></div>
+    <div class="cmd"><b>“Set volume to 30” · “lock the PC”</b><span>Volume, brightness, windows, screenshots, timers, sleep.</span></div>
+    <div class="cmd"><b>“ఈరోజు వాతావరణం ఎలా ఉంది?”</b><span>Speak Telugu or Hindi — Jarvis replies in your language.</span></div>
+  </div>
+  <p class="note"><b>Conversation mode:</b> after “OK Jarvis” it keeps listening — just keep talking. Say <b>“deactivate”</b> to make it stop listening. Nothing Jarvis creates is saved unless you say “save it”.</p>
+</div></section>
+
+<section id="center"><div class="wrap">
+  <h2>COMMAND CENTER</h2><h3>The cinematic dashboard</h3>
+  <p style="color:var(--sub)">Say <b>“open command center”</b> (or visit <code>http://localhost:7777</code>). A living 3D orb reacts to your voice; around it are your system vitals, the conversation, and the <b>canvas</b> where creations appear with <i>Preview · Code · Run · Save · Full screen</i>. Themes: <b>Cinematic</b>, <b>iOS</b> (light/dark) and <b>Iron Man</b> — just ask.</p>
+  <h3 style="margin-top:28px">Gesture control</h3>
+  <div class="gest">
+    <div class="card"><div class="e">✋</div><b>Open palm</b><span>Talk</span></div>
+    <div class="card"><div class="e">✊</div><b>Fist</b><span>Stop</span></div>
+    <div class="card"><div class="e">👍</div><b>Thumbs up</b><span>Yes / save</span></div>
+    <div class="card"><div class="e">✌️</div><b>Victory</b><span>Full screen</span></div>
+    <div class="card"><div class="e">☝️🤏</div><b>Point + pinch</b><span>Move cursor &amp; click</span></div>
+    <div class="card"><div class="e">👋</div><b>Swipe</b><span>Next / previous</span></div>
+  </div>
+  <p class="note">Turn on with the ✋ button around the orb or say “turn on gestures”. Hand tracking runs entirely on your PC.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>PERSONAL</h2><h3>Your own voice and face</h3>
+  <p style="color:var(--sub)">Record a 10–20 second selfie video of yourself talking, then run<br><code>.venv\Scripts\python.exe build_avatar.py "C:\path\to\video.mp4"</code><br>Click the round avatar next to the island (or say “talk in my voice”). Say “learn my voice” for an even better match. Everything stays on your PC.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>HELP</h2><h3>Troubleshooting</h3>
+  <table>
+    <tr><th>Problem</th><th>Fix</th></tr>
+    <tr><td>Doesn't hear “OK Jarvis”</td><td>Raise the microphone level (Settings → System → Sound → Input, 80–90%). Or click the island / press <kbd>Space</kbd> in the command center.</td></tr>
+    <tr><td>“Application Control policy has blocked this file”</td><td>Windows Smart App Control blocked a library. Jarvis works around it automatically; English speech may be ~1 s slower.</td></tr>
+    <tr><td>Slow or “rate limited”</td><td>Free Gemini keys have daily limits; Jarvis switches models by itself. You can add an extra provider key in <code>.env</code>.</td></tr>
+    <tr><td>Anything else</td><td>Run <code>run.bat console</code> to watch the live log, or open <code>jarvis.log</code>.</td></tr>
+  </table>
+</div></section>
+
+<footer><div class="wrap">J.A.R.V.I.S. · built with Gemini, OpenVoice, Kokoro, openWakeWord, MediaPipe and three.js</div></footer>
+</body>
+</html>

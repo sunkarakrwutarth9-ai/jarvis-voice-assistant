@@ -1,0 +1,43 @@
+# J.A.R.V.I.S. - Python 3.10-3.12 on Windows 10/11.
+# setup.bat installs these into a private .venv (and the right PyTorch for your GPU first).
+
+# AI + speech
+openai
+httpx
+python-dotenv
+SpeechRecognition
+PyAudio
+PyAudioWPatch
+openwakeword
+onnxruntime
+edge-tts
+pyttsx3
+sounddevice
+soundfile
+librosa
+numpy
+kokoro
+
+# voice clone (OpenVoice converter) + PDF/Word reading
+torch
+wavmark
+pypdf
+python-docx
+
+# UI + system control
+PySide6
+pygame
+pycaw
+comtypes
+psutil
+pillow
+PyAutoGUI
+pygetwindow
+pyperclip
+playwright
+tzdata
+
+# avatar builder (your face from a selfie video)
+mediapipe
+opencv-python
+imageio-ffmpeg
