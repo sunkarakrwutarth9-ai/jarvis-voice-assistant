@@ -19,6 +19,8 @@ with **hand gestures**.
    <https://aistudio.google.com/apikey> and paste it in. Done — say **"OK Jarvis"**.
 
 From then on, just double-click `run.bat` (or `Start Jarvis.vbs` for no console window).
+To have Jarvis start by itself every time you sign in to Windows, double-click **`autostart.bat`**
+(`autostart.bat off` turns that off again).
 
 ### Requirements
 - Windows 10 or 11, a microphone and speakers, an internet connection
