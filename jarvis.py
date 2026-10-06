@@ -741,7 +741,25 @@ def run_gui(args):
     # ---- Local dashboard: http://localhost:7777
     import server
     hub = server.Hub()
-    hub.on_visibility = bridge.dashboard.emit      # island hides while the command center is on screen
+    # The island hides only while the command center is really in front. (Chrome reports a page as "visible"
+    # even when other windows cover it, so ask Windows which window is in the foreground.)
+    def _front_title():
+        u32 = ctypes.windll.user32
+        hwnd = u32.GetForegroundWindow()
+        buf = ctypes.create_unicode_buffer(256)
+        u32.GetWindowTextW(hwnd, buf, 256)
+        return buf.value
+
+    dash_shown = {"v": False}
+
+    def _check_dashboard():
+        shown = hub.any_visible() and _front_title().startswith("A.T.O.M.O. Command Center")
+        if shown != dash_shown["v"]:
+            dash_shown["v"] = shown
+            island.set_dashboard_visible(shown)
+
+    dash_timer = QTimer(interval=600, timeout=_check_dashboard)
+    dash_timer.start()
     assistant.hub = hub
     live["hub"] = hub
     hub.publish({"type": "ranking", "models": brain.health.table()})

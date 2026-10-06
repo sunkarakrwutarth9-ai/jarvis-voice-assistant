@@ -96,6 +96,8 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "focus":
+            self.snapshot["focus"] = {"minutes": event.get("minutes", 0), "start": event.get("start", 0)}
         elif kind == "weather":
             self.snapshot["weather"] = {k: event.get(k, "") for k in ("text", "cond", "place")}
         elif kind == "gestures":
@@ -209,12 +211,19 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_error(400)
             return
         if self.path == "/api/command" and isinstance(data.get("text"), str) and data["text"].strip():
-            self.on_command(data["text"].strip()[:500])
+            self.on_command(data["text"].strip()[:4000])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
                                                                    "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
+        elif self.path == "/api/clipboard":
+            try:
+                import pyperclip
+                text = pyperclip.paste() or ""
+            except Exception:
+                text = ""
+            self._send(200, json.dumps({"text": text[:4000]}, ensure_ascii=False).encode())
         elif self.path == "/api/visibility" and isinstance(data.get("id"), str):
             self.hub.set_view(data["id"][:40], bool(data.get("visible")))
             self._send(200, b'{"ok":true}')

@@ -95,6 +95,58 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .hchips{display:flex;gap:8px}
 .hchip{padding:7px 13px;border-radius:16px;background:rgba(9,12,22,.82);border:1px solid var(--stroke);font:600 12px var(--font);white-space:nowrap}
 .hchip small{color:var(--sub);font-weight:500;margin-left:4px}
+/* ---------- command palette (Ctrl+K) */
+.pal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;
+  background:rgba(2,4,10,.55)}
+.pal.show{display:flex}
+.palbox{width:min(640px,92vw);border-radius:18px;background:rgba(10,14,26,.96);border:1px solid rgba(127,230,255,.35);
+  box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 40px rgba(127,230,255,.12);overflow:hidden;animation:pop .2s}
+.palbox input{width:100%;background:none;border:0;border-bottom:1px solid var(--stroke);color:var(--text);
+  font:500 17px var(--font);padding:16px 20px;outline:none}
+.pallist{max-height:52vh;overflow-y:auto;padding:6px}
+.pali{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+.pali .ic{width:24px;text-align:center}.pali small{margin-left:auto;color:var(--sub);font-size:11px}
+.pali.on{background:rgba(127,230,255,.12)}
+.palhint{padding:8px 16px;font-size:11px;color:var(--sub);border-top:1px solid var(--stroke)}
+.kbd{font:600 10px var(--hud);border:1px solid var(--stroke);border-radius:5px;padding:1px 5px;color:var(--sub)}
+/* ---------- mission log */
+.feed[hidden],.mlog[hidden]{display:none!important}
+.mtabs{display:flex;gap:14px}.mtab{cursor:pointer;opacity:.45}.mtab.on{opacity:1}
+.mlog{flex:1;overflow-y:auto;padding:4px 16px 14px;font-size:12.5px}
+.ml{position:relative;padding:4px 0 10px 18px;border-left:1px solid rgba(127,230,255,.25)}
+.ml::before{content:"";position:absolute;left:-5px;top:8px;width:9px;height:9px;border-radius:50%;background:var(--arc);box-shadow:0 0 8px var(--arc)}
+.ml.tool::before{background:var(--violet);box-shadow:0 0 8px var(--violet)}.ml.reply::before{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.ml.err::before{background:var(--err)}
+.ml b{display:block;font-weight:600}.ml small{color:var(--sub)}
+.ml .dur{float:right;font:600 11px var(--hud);color:var(--arc)}
+/* ---------- process satellites */
+#sats{position:fixed;inset:0;pointer-events:none;z-index:3}
+.sat{position:absolute;left:0;top:0;margin:10px 0 0 10px;font:600 10px var(--hud);letter-spacing:1px;color:#c9b8ff;
+  text-shadow:0 0 8px rgba(155,123,255,.8);white-space:nowrap;display:none}
+/* ---------- clipboard AI */
+.clip{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:30;display:none;max-width:min(680px,60vw);
+  padding:10px 12px 10px 16px;border-radius:16px;background:rgba(10,14,26,.92);border:1px solid rgba(244,186,66,.4);
+  align-items:center;gap:10px;font-size:12.5px;animation:pop .25s}
+.clip.show{display:flex}
+.clip .ct{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sub)}
+.clip button{border:1px solid var(--stroke);background:var(--glass);color:var(--text);font:600 11px var(--font);padding:5px 10px;border-radius:9px;cursor:pointer}
+.clip button.hot{background:var(--accent-grad);color:#fff;border:0}
+/* ---------- focus ring */
+.focus{position:fixed;left:50%;top:calc(50% + 10px);width:min(58vh,540px);height:min(58vh,540px);transform:translate(-50%,-50%);
+  pointer-events:none;z-index:2;display:none}
+.focus.show{display:block}
+.focus svg{width:100%;height:100%}
+.focus .lbl{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);font:600 13px var(--hud);letter-spacing:4px;color:var(--gold);
+  text-shadow:0 0 12px rgba(244,186,66,.6);pointer-events:auto;cursor:pointer}
+.app[data-canvas="1"] ~ .focus{opacity:.25}
+/* ---------- ambient mode */
+.ambient{position:fixed;left:0;right:0;bottom:7vh;z-index:4;text-align:center;pointer-events:none;opacity:0;transition:opacity 1.2s}
+.ambient .ac{font:300 min(16vh,150px) var(--hud);letter-spacing:6px;color:#fff;text-shadow:0 0 40px rgba(127,230,255,.35)}
+.ambient .ad{font:500 18px var(--hud);letter-spacing:8px;color:var(--sub);margin-top:4px}
+.ambient .ai{font:500 15px var(--font);color:var(--text);margin-top:14px;opacity:.85}
+body.amb .ambient{opacity:1}
+body.amb .app>header,body.amb .app>section.glass,body.amb .app .dock,body.amb .radial,body.amb .stage,body.amb #sats{opacity:0;transition:opacity 1.2s;pointer-events:none}
+.app>header,.app>section.glass,.app .dock,.radial,.stage{transition:opacity .6s}
 /* a creation's card in the feed (the creation itself opens on the Atomo Screen) */
 .ccard{align-self:flex-start;max-width:92%;padding:10px 14px;border-radius:16px;background:rgba(127,230,255,.07);
   border:1px solid rgba(127,230,255,.35);font-size:13px;animation:pop .3s}
@@ -290,7 +342,8 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
   </section>
 
   <section class="glass msgs">
-    <div class="ph">TRANSMISSIONS</div>
+    <div class="ph mtabs"><span class="mtab on" data-m="feed">TRANSMISSIONS</span><span class="mtab" data-m="log">MISSION LOG</span><span class="kbd" title="Command palette" style="margin-left:auto;cursor:pointer" id="palBtn">CTRL K</span></div>
+    <div class="mlog" id="mlog" hidden></div>
     <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Atomo”, type below,<br>or turn on gestures ✋</div></div>
   </section>
 
@@ -310,6 +363,17 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
   <button id="newc" style="--a:180deg;--r:min(26vh,250px)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>RESET</button>
 </div>
 
+<div id="sats"></div>
+<div class="focus" id="focus"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="2"/>
+  <circle id="focusArc" cx="100" cy="100" r="94" fill="none" stroke="#f4ba42" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="590.6" stroke-dashoffset="0" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 4px #f4ba42)"/></svg>
+  <div class="lbl" id="focusLbl" title="Click to stop">FOCUS 25:00</div></div>
+<div class="ambient" id="ambient"><div class="ac" id="aClock"></div><div class="ad" id="aDate"></div><div class="ai" id="aInfo"></div></div>
+<div class="clip" id="clip"><span>📋</span><span class="ct" id="clipT"></span>
+  <button class="hot" data-c="Explain this simply">Explain</button><button data-c="Summarize this in a few bullet points">Summarize</button>
+  <button data-c="Translate this into Telugu and Hindi">Translate</button><button data-c="Fix any mistakes in this and show the corrected version">Fix</button>
+  <button data-c="Reply to this message politely and briefly">Reply</button><button id="clipX">✕</button></div>
+<div class="pal" id="pal"><div class="palbox"><input id="palIn" placeholder="Search Atomo…  (commands, features, anything)" autocomplete="off">
+  <div class="pallist" id="palList"></div><div class="palhint"><span class="kbd">↑↓</span> choose · <span class="kbd">ENTER</span> run · <span class="kbd">ESC</span> close · type anything else and press Enter to ask Atomo</div></div></div>
 <div class="gcam" id="gcam"><canvas id="gdraw"></canvas><div class="lbl" id="glbl">GESTURES ON</div></div>
 <div class="gcursor" id="gcursor"></div>
 <div class="gtoast" id="gtoast"></div>
@@ -398,6 +462,7 @@ function onEvent(e) {
     case "home_result": DAY.homeResult = e.text.replace(/^(OK|FAILED): /, ""); if (dTab === "home") renderDaily(); break;
     case "everyday_focus": dTab = e.tab; curList = e.list || curList; renderDaily(); break;
     case "weather": showWeather(e); break;
+    case "focus": setFocus(e); break;
     case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
     case "snapshot": { $("empty")?.remove(); const im = document.createElement("img"); im.className = "bub j";
       im.src = "data:image/jpeg;base64," + e.image; im.style.cssText = "padding:0;max-width:70%;border-radius:16px";
@@ -411,6 +476,7 @@ function ring(k, v) { const g = document.querySelector(`.rg[data-k="${k}"]`); if
   g.querySelector(".a").setAttribute("stroke-dasharray", `${(v ?? 0) / 100 * 251} 252`);
   g.querySelector(".v span").textContent = v == null ? "—" : Math.round(v); }
 function vitals(v) {
+  window.ORB.procs = v.procs || [];
   ring("cpu", v.cpu); ring("battery", v.battery ?? 100);
   $("batL").textContent = v.battery == null ? "AC POWER" : (v.plugged ? "CHARGING" : "BATTERY");
   $("ramT").textContent = `${v.ram_used} / ${v.ram_total} GB`; $("ramB").style.setProperty("--w", v.ram + "%");
@@ -592,14 +658,143 @@ fetch("/api/state").then(r => r.json()).then(s => {
   onEvent({type: "me", on: s.me}); onEvent({type: "muted", on: s.muted}); models(s.ranking);
   if (s.gestures) setGestures(true);
   if (s.weather) showWeather(s.weather);
-  (s.history || []).forEach(onEvent); setState(s.state, s.title, s.body); });
+  if (s.focus && s.focus.minutes && (s.focus.start + s.focus.minutes * 60) * 1000 > Date.now()) setFocus(s.focus);
+  (s.history || []).forEach(e => { onEvent(e); try { logEvent(e); } catch (_) {} }); setState(s.state, s.title, s.body); });
 const VIEW = Math.random().toString(36).slice(2, 12);
 const reportView = () => post("/api/visibility", {id: VIEW, visible: document.visibilityState === "visible"});
 document.addEventListener("visibilitychange", reportView);
 const es = new EventSource("/events?id=" + VIEW);
 es.onopen = () => { $("offline").classList.remove("show"); reportView(); };
-es.onmessage = m => onEvent(JSON.parse(m.data));
+es.onmessage = m => { const e = JSON.parse(m.data); onEvent(e); try { logEvent(e); } catch (_) {} };
 es.onerror = () => $("offline").classList.add("show");
+
+// =================== MISSION LOG: what Atomo is doing, step by step ===================
+const LOG = {t0: 0, tools: {}};
+function mlog(cls, title, sub, dur) {
+  const el = document.createElement("div"); el.className = "ml " + cls;
+  el.innerHTML = (dur != null ? `<span class="dur">${dur}</span>` : "") + `<b>${esc(title)}</b>` + (sub ? `<small>${esc(sub)}</small>` : "");
+  $("mlog").appendChild(el); while ($("mlog").children.length > 120) $("mlog").firstChild.remove(); $("mlog").scrollTop = 1e9; return el;
+}
+function logEvent(e) {
+  const tm = new Date((e.ts || Date.now() / 1000) * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+  if (e.type === "user") { LOG.t0 = performance.now(); mlog("", "🎙 " + (e.text || "").slice(0, 90), "heard at " + tm); }
+  else if (e.type === "tool" && e.result == null) { LOG.tools[e.id] = {t: performance.now(), el: mlog("tool", "⚙ " + (e.label || e.name), e.name + " · running…")}; }
+  else if (e.type === "tool") { const t = LOG.tools[e.id]; const d = t ? ((performance.now() - t.t) / 1000).toFixed(1) + "s" : "";
+    const bad = String(e.result).startsWith("FAILED");
+    if (t) { t.el.classList.toggle("err", bad); t.el.innerHTML = `<span class="dur">${d}</span><b>${bad ? "✖" : "✔"} ${esc(e.label || e.name)}</b><small>${esc(String(e.result).slice(0, 140))}</small>`; } }
+  else if (e.type === "reply" && e.text) mlog("reply", "💬 " + e.text.slice(0, 110), (e.model ? "model " + e.model : "") + (e.secs ? " · total " + e.secs + "s" : ""));
+  else if (e.type === "canvas") mlog("reply", "🧩 Created: " + (e.title || e.kind), (e.content || "").split("\n").length + " lines → Atomo Screen");
+}
+document.querySelectorAll(".mtab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".mtab").forEach(x => x.classList.toggle("on", x === t));
+  $("mlog").hidden = t.dataset.m !== "log"; $("feed").hidden = t.dataset.m !== "feed"; });
+
+// =================== COMMAND PALETTE (Ctrl+K) ===================
+const ask = t => post("/api/command", {text: t});
+const fill = t => { closePal(); $("cmd").value = t; $("cmd").focus(); };
+const PAL = [
+  ["🧠", "Deep Think…", "expert panel of AI models", () => fill("Think deeply: ")],
+  ["🧮", "Calculate…", "exact maths", () => fill("Calculate ")],
+  ["🌐", "Research a topic…", "web report with sources", () => fill("Research ")],
+  ["🪐", "Build something in 3D…", "globe, solar system, atom", () => fill("Build a 3D ")],
+  ["🎮", "Make a game…", "", () => fill("Make a game: ")],
+  ["🌍", "Build a web page…", "", () => fill("Build a web page for ")],
+  ["📝", "Write a document…", "", () => fill("Write ")],
+  ["🖥", "Open Atomo Screen", "creations window", () => post("/api/action", {action: "open_screen"})],
+  ["☀️", "Good morning briefing", "weather, news, reminders", () => ask("good morning, give me my briefing")],
+  ["⏰", "Set a reminder…", "", () => fill("Remind me to ")],
+  ["🛒", "Shopping list", "show / add", () => { dTab = "lists"; renderDaily(); closePal(); }],
+  ["🏠", "Smart home", "Google Home devices", () => { dTab = "home"; renderDaily(); closePal(); }],
+  ["🎯", "Focus 25 min", "pomodoro ring", () => ask("start focus mode for 25 minutes")],
+  ["🎯", "Focus 50 min", "deep work", () => ask("start focus mode for 50 minutes")],
+  ["🌙", "Ambient mode", "smart-display clock", () => { closePal(); setTimeout(() => ambient(true), 200); }],
+  ["✋", "Gestures on / off", "hand control", () => requestGestures(!gesturesOn)],
+  ["🤖", "Make the robot dance", "", () => ask("make the robot dance")],
+  ["🎵", "Play music…", "YouTube", () => fill("Play ")],
+  ["📋", "Use my clipboard", "explain / translate / fix", () => { closePal(); showClip(true); }],
+  ["🔍", "What's on my screen?", "vision", () => ask("what's on my screen?")],
+  ["📊", "System status", "", () => ask("system status")],
+  ["🗂", "Mission log", "what Atomo did", () => { document.querySelector('.mtab[data-m="log"]').click(); closePal(); }],
+  ["🎨", "Switch theme", "cinema / iOS / Iron Man", () => ask("switch to the iOS theme")],
+  ["🗣", "Talk in my voice / Atomo voice", "", () => post("/api/action", {action: "me"})],
+  ["🔇", "Mute / unmute", "", () => post("/api/action", {action: "mute"})],
+  ["♻️", "New conversation", "", () => $("newc").click()],
+  ["📸", "Screenshot", "", () => ask("take a screenshot")],
+  ["🔒", "Lock the PC", "", () => ask("lock the PC")],
+];
+let palSel = 0, palItems = PAL;
+function fuzzy(q, t) { q = q.toLowerCase(); t = t.toLowerCase(); let i = 0; for (const ch of t) if (ch === q[i]) i++; return i === q.length; }
+function renderPal() {
+  const q = $("palIn").value.trim(); palItems = q ? PAL.filter(p => fuzzy(q, p[1] + " " + p[2])) : PAL;
+  palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
+  $("palList").innerHTML = palItems.map((p, i) => `<div class="pali ${i === palSel ? "on" : ""}" data-i="${i}"><span class="ic">${p[0]}</span>${esc(p[1])}<small>${esc(p[2])}</small></div>`).join("")
+    || `<div class="pali on"><span class="ic">↵</span>Ask Atomo: “${esc(q)}”</div>`;
+  $("palList").querySelectorAll(".pali[data-i]").forEach(el => el.onclick = () => runPal(+el.dataset.i));
+}
+function runPal(i) { const p = palItems[i]; if (p) { p[3](); if (!["Deep Think…"].includes(p[1]) && !p[1].endsWith("…")) closePal(); }
+  else { const q = $("palIn").value.trim(); if (q) ask(q); closePal(); } }
+function openPal() { $("pal").classList.add("show"); $("palIn").value = ""; palSel = 0; renderPal(); setTimeout(() => $("palIn").focus(), 30); }
+function closePal() { $("pal").classList.remove("show"); }
+$("palIn").oninput = () => { palSel = 0; renderPal(); };
+$("palIn").onkeydown = e => {
+  if (e.key === "ArrowDown") { palSel = Math.min(palSel + 1, palItems.length - 1); renderPal(); e.preventDefault(); }
+  else if (e.key === "ArrowUp") { palSel = Math.max(palSel - 1, 0); renderPal(); e.preventDefault(); }
+  else if (e.key === "Enter") runPal(palItems.length ? palSel : -1);
+  else if (e.key === "Escape") closePal(); };
+$("pal").onclick = e => { if (e.target === $("pal")) closePal(); };
+$("palBtn").onclick = openPal;
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("pal").classList.contains("show") ? closePal() : openPal(); } });
+
+// =================== CLIPBOARD AI ===================
+let clipText = "";
+async function showClip(force) {
+  try { const r = await post("/api/clipboard", {}); clipText = ((await r.json()).text || "").trim(); } catch (e) { return; }
+  // never pop up a copied password / OTP / key by itself: auto-show only normal multi-word text
+  if (!force && (clipText.length < 25 || !/\s\S+\s/.test(clipText))) return;
+  if (!clipText || (!force && clipText === showClip.last)) { if (force && !clipText) toast("Your clipboard is empty"); return; }
+  showClip.last = clipText; $("clipT").textContent = clipText.replace(/\s+/g, " ").slice(0, 160); $("clip").classList.add("show");
+  clearTimeout(showClip.t); showClip.t = setTimeout(() => $("clip").classList.remove("show"), 25000);
+}
+$("clip").querySelectorAll("[data-c]").forEach(b => b.onclick = () => { ask(b.dataset.c + ":\n\n" + clipText.slice(0, 3500)); $("clip").classList.remove("show"); });
+$("clipX").onclick = () => $("clip").classList.remove("show");
+addEventListener("focus", () => showClip(false));          // copied something, came back to Atomo -> offer actions
+showClip.last = null; post("/api/clipboard", {}).then(r => r.json()).then(d => showClip.last = (d.text || "").trim()).catch(() => {});
+
+// =================== FOCUS MODE ===================
+let FOCUS = null;
+function setFocus(e) {
+  clearInterval(setFocus.iv);
+  if (!e.minutes) { FOCUS = null; $("focus").classList.remove("show"); return; }
+  FOCUS = {end: (e.start || Date.now() / 1000) * 1000 + e.minutes * 60000, total: e.minutes * 60000};
+  $("focus").classList.add("show");
+  const step = () => { const left = FOCUS.end - Date.now();
+    if (left <= 0) { setFocus({minutes: 0}); toast("🎯 Focus session complete", 4000); return; }
+    $("focusArc").setAttribute("stroke-dashoffset", (590.6 * (1 - left / FOCUS.total)).toFixed(1));
+    const m = Math.floor(left / 60000), sec = Math.floor(left / 1000) % 60; $("focusLbl").textContent = `FOCUS ${m}:${String(sec).padStart(2, "0")}`; };
+  step(); setFocus.iv = setInterval(step, 1000);
+}
+$("focusLbl").onclick = () => ask("stop focus mode");
+
+// =================== AMBIENT MODE: idle -> smart-display clock ===================
+let lastActive = Date.now();
+function ambient(on) {
+  document.body.classList.toggle("amb", on);
+  if (on) ambTick();
+}
+function ambTick() {
+  const d = new Date(); $("aClock").textContent = d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+  $("aDate").textContent = d.toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"}).toUpperCase();
+  const nx = (DAY.reminders || [])[0];
+  $("aInfo").textContent = [WX ? WX.text + (WX.place ? "  " + WX.place : "") : "", nx ? (nx.alarm ? "⏰ " : "🔔 ") + nx.when + " · " + nx.text : ""].filter(Boolean).join("     ");
+}
+const wake = () => { lastActive = Date.now(); if (document.body.classList.contains("amb")) ambient(false); };
+["mousemove", "keydown", "mousedown", "wheel", "touchstart"].forEach(ev => addEventListener(ev, wake, {passive: true}));
+setInterval(() => {
+  const busy = lastState !== "idle" || $("pal").classList.contains("show") || app.dataset.canvas === "1";
+  if (busy) lastActive = Date.now();
+  if (!document.body.classList.contains("amb") && Date.now() - lastActive > 120000) ambient(true);
+  if (document.body.classList.contains("amb")) { if (busy) ambient(false); else ambTick(); }
+}, 5000);
 
 // =================== CREATION CARDS ===================
 const CREATED = {};
@@ -680,8 +875,9 @@ document.querySelectorAll(".dtabs button").forEach(b => b.onclick = () => { dTab
 setInterval(() => { const a = document.activeElement; if (dTab === "rem" || !a || (a.id !== "dAdd" && a.id !== "hCmd")) renderDaily(); }, 30000);
 fetch("/api/everyday").then(r => r.json()).then(d => { DAY = d; renderDaily(); });
 function homeCmd(command, device) { DAY.homeResult = "Sending “" + command + "”…"; if ($("hRes")) $("hRes").textContent = DAY.homeResult; evPost({op: "home", command, device}); }
+let WX = null;
 function showWeather(w) {
-  if (!w || !w.text) return; $("wx").hidden = false;
+  if (!w || !w.text) return; WX = w; $("wx").hidden = false;
   $("wx").innerHTML = `${esc(w.text)}<small>${esc(w.place || w.cond || "")}</small>`; $("wx").title = w.cond || "";
 }
 
@@ -796,6 +992,15 @@ const orbits = [];
   g.add(trail);
   orbits.push({g, line, e, trail, A, B, T, phase: k * 2.1, speed: 1 + k * .18});
 });
+// process satellites: the heaviest running apps orbit the atom as labelled moons
+const satGroup = new THREE.Group(); orb.add(satGroup);
+const satTex = glowTex("rgba(255,255,255,1)", "rgba(155,123,255,.6)"), _sv = new THREE.Vector3(), sats = [];
+for (let i = 0; i < 5; i++) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: satTex, color: 0xb9a4ff, blending: THREE.AdditiveBlending, depthWrite: false}));
+  sp.visible = false; satGroup.add(sp);
+  const lab = document.createElement("div"); lab.className = "sat"; document.getElementById("sats").appendChild(lab);
+  sats.push({sp, lab, a: i * 1.2566, r: 3.05 + (i % 2) * .4, tilt: (i - 2) * .16});
+}
 // distant stars
 const S = 900, sp = new Float32Array(S * 3);
 for (let i = 0; i < S; i++) { const r = 18 + Math.random() * 25, t = Math.random() * 6.28, f = Math.acos(2 * Math.random() - 1);
@@ -850,6 +1055,19 @@ function frame(now) {
     o.e.position.set(Math.cos(o.phase) * o.A * swell, Math.sin(o.phase) * o.B * swell, 0);
     o.line.scale.setScalar(swell); o.line.material.opacity = .3 + level * .5;
     o.g.rotation.y += .002 + spin * .004;
+  });
+  const P = window.ORB.procs || [], showSats = !window.ORB.canvas && !document.body.classList.contains("amb");
+  sats.forEach((st, i) => {
+    const p = P[i];
+    if (!p || !showSats) { st.sp.visible = false; st.lab.style.display = "none"; return; }
+    st.a += dt * (.22 - i * .025);
+    st.sp.position.set(Math.cos(st.a) * st.r, Math.sin(st.a * 1.3) * st.r * st.tilt, Math.sin(st.a) * st.r);
+    const sc = .22 + Math.min(p.gb, 4) * .1; st.sp.scale.set(sc, sc, 1); st.sp.visible = true;
+    _sv.setFromMatrixPosition(st.sp.matrixWorld).project(camera);
+    if (_sv.z < 1) { st.lab.style.display = "block";
+      st.lab.style.transform = `translate(${((_sv.x * .5 + .5) * innerWidth).toFixed(0)}px,${((-_sv.y * .5 + .5) * innerHeight).toFixed(0)}px)`;
+      const txt = p.name.replace(/\.exe$/i, "") + " · " + p.gb + " GB"; if (st.lab.textContent !== txt) st.lab.textContent = txt; }
+    else st.lab.style.display = "none";
   });
   // the nucleus breathes and jitters with energy
   const energy = .02 + level * .12 + (st === "thinking" ? .05 : 0);

@@ -53,6 +53,9 @@ Acting:
 - "Remember that ..." means remember; "forget ..." means forget. Use remembered facts naturally.
 - To find or open a document, photo or file, use find_files (open_first=true when they want it opened).
 - Anything the user wants you to make, write or generate - code in any language, a website, an app, a game, a chart, a drawing or logo, slides, anything 3D (a 3D globe, solar system, atom, 3D model), an animation, a simulation, a music or sound app, an essay, a letter, notes, a plan, a story, a table - means create, with the right kind and the full request including every detail. It appears live on the canvas screen in the command center. Never type generated content with type_text and never read it aloud; just say it's ready.
+- Hard questions - tricky maths or logic, puzzles, proofs, careful analysis, important decisions, comparisons, "think deeply", "are you sure?", "double-check that", anything where being wrong matters - use deep_think (an expert panel of several AI models plus a judge; use_web=true when current facts matter). Then speak the short answer it gives you.
+- Any non-trivial arithmetic, percentages, EMI/interest, unit or date maths, statistics: compute it exactly with calculate (Python) instead of doing it in your head.
+- "Focus mode", "pomodoro", "I need to concentrate for N minutes" -> focus_mode.
 - Smart home (AC, lights, fans, plugs, TV - anything in the user's Google Home): use smart_home with an English command, e.g. "AC on" -> smart_home("turn on the AC", device="AC"); "make it cooler" about the AC -> "decrease the AC temperature by 2 degrees". If it says Google Home isn't connected, explain the one-time setup briefly and offer connect_google_home.
 - A robot dances in the screen corner by itself whenever music plays. "Dance", "make the robot dance" -> robot dance; "hide/stop the robot" -> robot off; "move the robot left/right" -> robot left/right.
 - Everyday assistant: "remind me...", "wake me up at...", "set an alarm" -> set_reminder (alarm=true for alarms; short timers can still use set_timer). Shopping / to-do lists -> list_add, list_remove, list_show, list_clear. "When I say X, do A and B" -> save_routine; when the user says a saved routine's phrase -> run_routine, then do every step it returns. Jokes, riddles, quizzes, trivia, unit conversions, maths, spellings, word meanings and translations: answer directly and briefly (a quiz = one question at a time, wait for the answer, keep score).
@@ -171,6 +174,9 @@ class Brain:
         tools.generate_text = self.generate
         tools.generate_stream = self.generate_stream
         # Vision / web answers need the main provider's (Gemini) multimodal models.
+        import deepthink
+        deepthink.generate_on = self.generate_on
+        deepthink.model_pool = self.health.ranked
         tools.best_models = lambda: [m for m in self.health.ranked() if ":" not in m] or [model]
 
     def reset(self):
@@ -280,7 +286,8 @@ class Brain:
                       "revise_creation", "research", "explain_file", "gestures"}
     # Slow ones get their confirmation spoken while they run.
     SAY_BEFORE = {"open_app", "open_website", "web_search", "youtube_play", "open_folder", "close_app", "open_browser",
-                  "show_dashboard", "write_code", "create", "revise_creation", "research", "explain_file"}
+                  "show_dashboard", "write_code", "create", "revise_creation", "research", "explain_file",
+                  "deep_think"}
     # Slow actions that also get a "finished" line once they're done.
     ANNOUNCE_DONE = {"write_code", "create", "revise_creation", "research", "explain_file"}
 
@@ -306,6 +313,8 @@ class Brain:
         if before and name == "open_browser" and args.get("account"):
             p = tools._match_profile(args["account"], tools.chrome_profiles())
             return f"Opening Chrome as {p['name'].split()[0].capitalize() if p else args['account']}, Sir."
+        if before and name == "deep_think":
+            return "Let me convene the expert panel on that, Sir. One moment."
         if before and name in self.SAY_BEFORE:
             _, label = tools.describe(name, args)
             return label.replace(" · ", " as ") + ", Sir."
@@ -316,8 +325,8 @@ class Brain:
                                     "skip_ad": "Ad skipped, Sir."}.get(args.get("action"), "Done, Sir."),
                 "set_timer": "Timer set, Sir.", "take_screenshot": "Screenshot saved, Sir.",
                 "remember": "I'll remember that, Sir.", "forget": "Forgotten, Sir.",
-                "write_code": "Done, Sir. It's on the command center screen.",
-                "create": "It's ready on the command center screen, Sir. Shall I save it?",
+                "write_code": "Done, Sir. It's on the Atomo Screen.",
+                "create": "It's ready on the Atomo Screen, Sir. Shall I save it?",
                 "save_creation": "Saved, Sir.",
                 "revise_creation": "Done, Sir. The new version is on the screen. Shall I save it?",
                 "research": "Your research report is ready on the screen, Sir. Shall I save it?",
@@ -393,6 +402,19 @@ class Brain:
                 log.warning("generate via %s failed: %s", model, str(e)[:120])
                 last = e
         raise last or RuntimeError("no model could generate")
+
+    def generate_on(self, model, prompt, max_tokens=6000):
+        """One completion on a specific model (Deep Think's expert panel)."""
+        client, name = self._route(model)
+        t = time.monotonic()
+        try:
+            r = client.with_options(timeout=httpx.Timeout(120.0, connect=6.0)).chat.completions.create(
+                model=name, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
+        except Exception as e:
+            self.health.fail(model, weight=12 if "quota" in str(e).lower() or "429" in str(e) else 1)
+            raise
+        self.health.ok(model, min(time.monotonic() - t, 10))
+        return r.choices[0].message.content or ""
 
     def _route(self, model_key):
         """(client, model name) for a pool entry like 'gemini-3.6-flash' or 'xpl:deepseek-v4.1-flash'."""

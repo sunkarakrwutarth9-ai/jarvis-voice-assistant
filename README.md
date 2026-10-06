@@ -72,6 +72,16 @@ electrons racing around it, reacting to your voice), system vitals, the conversa
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
 
+**Power features in the command center**
+- **Ctrl+K command palette** — search and run anything Atomo can do
+- **Deep Think** — "think deeply…": several AI models solve it independently, a judge verifies one answer
+- **Exact maths** — calculations run as real Python, never guessed
+- **Mission log** — a live timeline of every step: tool, result, model and time taken
+- **Process satellites** — your heaviest apps orbit the atom as labelled moons
+- **Clipboard AI** — copy any text, come back: Explain · Summarize · Translate · Fix · Reply
+- **Focus mode** — "focus for 25 minutes": a countdown ring around the atom
+- **Ambient mode** — after 2 idle minutes it becomes a smart-display clock with weather and your next alarm
+
 Everything Atomo creates opens in its own **Atomo Screen** window (on your second monitor if you have one),
 so the command center is never covered: Preview / Code / Run / Save / Copy / VS Code / Full screen.
 

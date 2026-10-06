@@ -1158,6 +1158,23 @@ def news_headlines(n=8):
 robot_command = None  # set by jarvis.py: controls the dancing robot
 
 
+def focus_mode(minutes: int = 25, on: bool = True) -> str:
+    """Pomodoro-style focus session: a countdown ring around the atom, announced when it ends."""
+    if not on:
+        publish({"type": "focus", "minutes": 0})
+        for t in list(_timers):
+            if getattr(t, "focus", False):
+                t.cancel()
+        return "OK: focus mode ended."
+    minutes = max(1, min(int(minutes or 25), 180))
+    publish({"type": "focus", "minutes": minutes, "start": time.time()})
+    t = threading.Timer(minutes * 60, lambda: notify(f"Sir, your {minutes} minute focus session is complete. Take a short break."))
+    t.daemon, t.focus = True, True
+    t.start()
+    _timers.append(t)
+    return f"OK: focus mode on for {minutes} minutes; the ring around the atom counts down."
+
+
 def robot(action: str) -> str:
     """The dancing robot that appears while music plays."""
     if robot_command is None:
@@ -1330,6 +1347,13 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("focus_mode", "Start (or stop with on=false) a focus / Pomodoro session: a countdown ring around the atom in the command center and a spoken alert at the end. 'focus mode', 'start a pomodoro', 'I need to study for 50 minutes'.",
+        {"minutes": {"type": "integer"}, "on": {"type": "boolean"}}),
+    _fn("deep_think", "Expert-panel reasoning for hard questions: several different AI models solve it independently, then a judge compares them, fixes mistakes and writes one verified answer on the Atomo Screen. Use for tricky maths/logic, puzzles, proofs, careful analysis, comparisons, important decisions, or when the user says 'think deeply', 'are you sure', 'double-check'. Takes 15-60 s.",
+        {"question": {"type": "string", "description": "the full question with every detail and number the user gave"},
+         "use_web": {"type": "boolean", "description": "true if current real-world facts (prices, news, recent events) matter"}}, ["question"]),
+    _fn("calculate", "Compute something exactly by running a short pure-Python snippet (math, statistics, fractions, decimal, datetime available; print the result). For arithmetic, percentages, interest/EMI, unit and date calculations, statistics, number puzzles. No files, network or system access.",
+        {"code": {"type": "string", "description": "Python code that prints the answer, e.g. print(round(250000*0.085/12*(1+0.085/12)**60/((1+0.085/12)**60-1), 2))"}}, ["code"]),
     _fn("smart_home", "Control the user's smart home through Google Home: AC, lights, fans, plugs, TV, geysers, any device in their Google Home app. Send the command in plain English exactly as you'd say it to a Google Nest speaker, e.g. 'turn on the bedroom AC', 'set the AC to 24 degrees', 'set the AC to cool mode', 'turn off all the lights', 'is the fan on?'. Translate Telugu/Hindi requests into English first. Report Google's answer briefly.",
         {"command": {"type": "string", "description": "English command for Google Home"},
          "device": {"type": "string", "description": "the device's name, e.g. 'bedroom AC' (shown as a button in the command center)"}}, ["command"]),
@@ -1456,6 +1480,7 @@ TOOLS = [
 
 import everyday  # noqa: E402  (reminders, alarms, lists, routines)
 import smarthome  # noqa: E402  (Google Home devices)
+import deepthink  # noqa: E402  (expert panel + exact computation)
 
 
 def smart_home(command: str, device: str = "") -> str:
@@ -1466,7 +1491,8 @@ def connect_google_home() -> str:
     return smarthome.connect()
 
 FUNCS = {
-    "robot": robot, "smart_home": smart_home, "connect_google_home": connect_google_home,
+    "deep_think": deepthink.deep_think, "calculate": deepthink.calculate,
+    "robot": robot, "focus_mode": focus_mode, "smart_home": smart_home, "connect_google_home": connect_google_home,
     "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
     "cancel_reminder": everyday.cancel_reminder, "list_add": everyday.list_add, "list_remove": everyday.list_remove,
     "list_show": everyday.list_show, "list_clear": everyday.list_clear, "save_routine": everyday.save_routine,
@@ -1571,6 +1597,9 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "focus_mode": lambda: f"Focus · {a.get('minutes', 25)} min" if a.get("on", True) else "Ending focus",
+        "deep_think": lambda: "Deep Think · expert panel",
+        "calculate": lambda: "Calculating",
         "smart_home": lambda: f"Home · {a.get('command', '')}",
         "connect_google_home": lambda: "Connecting Google Home",
         "robot": lambda: {"dance": "Robot dancing", "off": "Robot off", "on": "Robot on"}.get(a.get("action"), "Moving the robot"),
