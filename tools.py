@@ -1173,16 +1173,19 @@ def robot(action: str) -> str:
 set_gestures = None   # set by jarvis.py: starts/stops the system-wide gesture engine; returns '' or an error
 
 
-def gestures(on: bool) -> str:
+def gestures(on: bool, mouse: bool = False) -> str:
     """System-wide hand-gesture control through the webcam (frames stay on this PC)."""
     if set_gestures is None:
         return "FAILED: gesture control is not available."
-    err = set_gestures(bool(on))
+    err = set_gestures(bool(on), bool(mouse))
     if err:
         return f"FAILED: {err}"
-    return ("OK: gesture control is on, in every app: point to move the mouse and pinch to click, open palm = talk, "
-            "fist = stop / pause, thumbs up = yes, victory = full screen, swipe = next / previous." if on
-            else "OK: gesture control is off.")
+    if not on:
+        return "OK: gesture control is off."
+    return ("OK: gesture control is on: open palm = talk, fist = stop / pause, thumbs up = yes, victory = full screen, "
+            "swipe = next / previous; in the command center the hand turns and zooms the atom. "
+            + ("Pointing moves the mouse and a pinch clicks." if mouse else
+               "The mouse is NOT controlled (only if the user explicitly asks for gesture mouse control)."))
 
 
 def briefing() -> str:
@@ -1327,6 +1330,10 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("smart_home", "Control the user's smart home through Google Home: AC, lights, fans, plugs, TV, geysers, any device in their Google Home app. Send the command in plain English exactly as you'd say it to a Google Nest speaker, e.g. 'turn on the bedroom AC', 'set the AC to 24 degrees', 'set the AC to cool mode', 'turn off all the lights', 'is the fan on?'. Translate Telugu/Hindi requests into English first. Report Google's answer briefly.",
+        {"command": {"type": "string", "description": "English command for Google Home"},
+         "device": {"type": "string", "description": "the device's name, e.g. 'bedroom AC' (shown as a button in the command center)"}}, ["command"]),
+    _fn("connect_google_home", "One-time Google Home sign-in (opens the browser for the user to allow access). Use when the user asks to connect / link Google Home, or after smart_home says it isn't connected and the user wants to set it up."),
     _fn("robot", "The little dancing robot that pops up in a screen corner and dances whenever music plays. 'dance' = dance right now; 'off' / 'on' = disable / enable it; 'left' / 'right' = which bottom corner.",
         {"action": {"type": "string", "enum": ["on", "off", "left", "right", "dance"]}}, ["action"]),
     _fn("set_reminder", "Reminder or alarm at a clock time or after some minutes, announced aloud when due (persists across restarts). 'Remind me to call Mom at 6 pm' -> at='18:00'. 'Wake me up at 6:30' / 'set an alarm for 7' -> alarm=true. 'Remind me in 20 minutes' -> in_minutes=20. Use the current date/time you were given to compute dates ('tomorrow at 9' -> 'YYYY-MM-DD 09:00').",
@@ -1367,14 +1374,14 @@ TOOLS = [
         {"city": {"type": "string"}}),
     _fn("open_folder", "Open a folder in File Explorer: downloads, documents, desktop, pictures, music, videos, home, or a full path.",
         {"folder": {"type": "string"}}, ["folder"]),
-    _fn("youtube_play", "Find a video or song on YouTube and start playing the top result in the Jarvis browser window.",
+    _fn("youtube_play", "Find a video or song on YouTube and start playing the top result in the Atomo browser window.",
         {"query": {"type": "string"}}, ["query"]),
     _fn("youtube_control", "Control the video playing in the Jarvis YouTube window: like/unlike/dislike, subscribe, pause/play, skip ad, next video, seek, mute, fullscreen, captions, volume, speed. Like and subscribe need the user signed in to that window.",
         {"action": {"type": "string", "enum": [
             "like", "unlike", "dislike", "subscribe", "pause", "play", "skip_ad", "next_video", "forward_10s",
             "back_10s", "mute", "unmute", "fullscreen", "exit_fullscreen", "captions", "volume_up",
             "volume_down", "speed_up", "slow_down"]}}, ["action"]),
-    _fn("youtube_sign_in", "Open YouTube in the Jarvis browser so the user can sign in themselves (needed once before liking or subscribing)."),
+    _fn("youtube_sign_in", "Open YouTube in the Atomo browser so the user can sign in themselves (needed once before liking or subscribing)."),
     _fn("media_key", "Press a system media key: controls Spotify, the default browser, or whatever media is playing outside the Jarvis YouTube window.",
         {"action": {"type": "string", "enum": list(MEDIA_KEYS)}}, ["action"]),
     _fn("set_volume", "Get or change the PC's master volume. Pass level for an exact percent, change for a relative step (e.g. 10 or -10), mute true/false. No arguments reads the current volume.",
@@ -1401,7 +1408,7 @@ TOOLS = [
         {"question": {"type": "string"}}),
     _fn("click_on_screen", "Click a visible button, link, icon or text on screen, found by description (e.g. 'the Subscribe button', 'search box').",
         {"target": {"type": "string"}, "double": {"type": "boolean"}}, ["target"]),
-    _fn("voice_mode", "Switch Jarvis to speak in the user's own cloned voice (mine=true) or back to the Jarvis voice (mine=false).",
+    _fn("voice_mode", "Switch Atomo to speak in the user's own cloned voice (mine=true) or back to the Atomo voice (mine=false).",
         {"mine": {"type": "boolean"}}, ["mine"]),
     _fn("create", "Create anything the user asks you to make, write or generate - it is written live on the canvas screen inside the command center (not saved until the user agrees). kind: 'code' (a program in any language), 'webpage' (website / web app / HTML), 'game' (browser game), 'chart' (graph / visualisation of data), 'drawing' (picture / illustration / logo, as SVG), 'presentation' (slides), '3d' (anything three-dimensional: 3D globe / Earth, planets, solar system, atom, molecule, 3D model, 3D chart, rotating object), 'animation' (motion graphics, generative art, animated logo), 'simulation' (physics, orbits, algorithms, interactive science), 'music' (piano, drum machine, beat maker, sound visualiser), 'document' (essay, letter, notes, explanation, plan, table, study material, story...). Never type generated content with type_text and never read it aloud.",
         {"kind": {"type": "string", "enum": list(KINDS)},
@@ -1433,12 +1440,12 @@ TOOLS = [
         {"query": {"type": "string", "description": "words from the file name, e.g. 'resume pdf'"},
          "open_first": {"type": "boolean"}}, ["query"]),
     _fn("open_file", "Open a file by its full path (e.g. one returned by find_files).", {"path": {"type": "string"}}, ["path"]),
-    _fn("gestures", "Turn hand-gesture control of the command center on or off (webcam). 'turn on gestures', 'gesture mode', 'stop gestures'.",
-        {"on": {"type": "boolean"}}, ["on"]),
+    _fn("gestures", "Turn hand-gesture control on or off (webcam). 'turn on gestures', 'gesture mode', 'stop gestures'. mouse=true ONLY when the user explicitly asks for their hand to move/click the mouse cursor ('control my mouse with gestures'); never otherwise.",
+        {"on": {"type": "boolean"}, "mouse": {"type": "boolean"}}, ["on"]),
     _fn("set_theme", "Switch Jarvis's look: theme 'cinema' (cinematic 3D orb command center), 'ios' (Apple-style with Iron Man accents) or 'ironman' (full red/gold HUD), and/or appearance 'light' or 'dark' ('dark mode' / 'light mode').",
         {"theme": {"type": "string", "enum": ["cinema", "ios", "ironman"]},
          "appearance": {"type": "string", "enum": ["light", "dark"]}}),
-    _fn("show_dashboard","Open the J.A.R.V.I.S. command center dashboard (live HUD with system vitals, conversation log and controls). For 'open dashboard', 'command center', 'show your interface', 'open HUD'."),
+    _fn("show_dashboard","Open the Atomo command center dashboard (live HUD with system vitals, conversation log and controls). For 'open dashboard', 'command center', 'show your interface', 'open HUD'."),
     _fn("learn_my_voice","Record the user reading a passage aloud for about 25 seconds to improve how their cloned voice sounds. Use when they say 'learn my voice', 'my voice doesn't sound like me', 'train my voice'."),
     _fn("show_desktop", "Minimise all windows / show the desktop (toggles)."),
     _fn("lock_pc", "Lock the PC immediately."),
@@ -1448,9 +1455,19 @@ TOOLS = [
 ]
 
 import everyday  # noqa: E402  (reminders, alarms, lists, routines)
+import smarthome  # noqa: E402  (Google Home devices)
+
+
+def smart_home(command: str, device: str = "") -> str:
+    return smarthome.command(command, device)
+
+
+def connect_google_home() -> str:
+    return smarthome.connect()
 
 FUNCS = {
-    "robot": robot, "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
+    "robot": robot, "smart_home": smart_home, "connect_google_home": connect_google_home,
+    "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
     "cancel_reminder": everyday.cancel_reminder, "list_add": everyday.list_add, "list_remove": everyday.list_remove,
     "list_show": everyday.list_show, "list_clear": everyday.list_clear, "save_routine": everyday.save_routine,
     "run_routine": everyday.run_routine, "delete_routine": everyday.delete_routine,
@@ -1488,6 +1505,7 @@ _ICONS = {
     "set_theme": "\uE790", "set_reminder": "\uEA8F", "list_reminders": "\uEA8F", "cancel_reminder": "\uEA8F",
     "list_add": "\uE7BF", "list_remove": "\uE7BF", "list_show": "\uE7BF", "list_clear": "\uE7BF",
     "save_routine": "\uE945", "run_routine": "\uE945", "delete_routine": "\uE945",
+    "smart_home": "\uE80F", "connect_google_home": "\uE80F",
 }
 _ACTION_ICONS = {"like": "\uEB51", "unlike": "\uEB51", "dislike": "\uE8E0", "subscribe": "\uE8FA",
                  "pause": "\uE769", "mute": "\uE74F", "volume_down": "\uE993", "volume_up": "\uE995"}
@@ -1526,7 +1544,7 @@ def describe(name: str, args: dict):
         "window_control": lambda: f"{a.get('action', '').capitalize()} {a.get('name', '')}".strip(),
         "read_screen": lambda: "Reading your screen",
         "click_on_screen": lambda: f"Clicking {a.get('target', '')}",
-        "voice_mode": lambda: "Switching to your voice" if a.get("mine") else "Switching to Jarvis voice",
+        "voice_mode": lambda: "Switching to your voice" if a.get("mine") else "Switching to Atomo voice",
         "learn_my_voice": lambda: "Learning your voice",
         "show_dashboard": lambda: "Opening command center",
         "do_task": lambda: "Autopilot engaged",
@@ -1553,6 +1571,8 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "smart_home": lambda: f"Home · {a.get('command', '')}",
+        "connect_google_home": lambda: "Connecting Google Home",
         "robot": lambda: {"dance": "Robot dancing", "off": "Robot off", "on": "Robot on"}.get(a.get("action"), "Moving the robot"),
         "set_reminder": lambda: ("Alarm · " if a.get("alarm") else "Reminder · ") + (a.get("at") or f"in {a.get('in_minutes', '')} min"),
         "list_reminders": lambda: "Checking reminders",

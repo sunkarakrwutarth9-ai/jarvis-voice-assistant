@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S. Screen</title>
+<title>A.T.O.M.O. Screen</title>
 <style>
 :root{
   --bg:#03040a; --glass:rgba(14,18,30,.75); --stroke:rgba(140,200,255,.16); --text:#eef4ff; --sub:#8b97b5;
@@ -84,7 +84,7 @@ html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#0b1426 0%,va
 .cstatus{padding:0 16px 10px;font-size:12px;color:var(--sub);display:flex;gap:10px;align-items:center}
 .cstatus .live{color:var(--armor);font-weight:600}
 
-/* on the Jarvis Screen the canvas IS the window */
+/* on the Atomo Screen the canvas IS the window */
 .canvas{margin:0!important;flex:1;min-height:0}
 .canvas.full{position:fixed;inset:0;border-radius:0;z-index:40}
 .canvas.full .chips2{display:none}
@@ -95,12 +95,12 @@ html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#0b1426 0%,va
 <body>
 <div class="app" id="app" data-canvas="0">
   <div class="top">
-    <div class="brand">J.A.R.V.I.S<small>SCREEN</small></div><i class="dot" id="dot"></i>
+    <div class="brand">A.T.O.M.O<small>SCREEN</small></div><i class="dot" id="dot"></i>
     <div class="hint">“full screen” · “show the code” · “run it” · “save it” · “make it blue”</div>
   </div>
   <div class="idle"><div class="ring"></div><b>READY</b>
-    <div>Everything Jarvis creates appears here — web pages, games, 3D, documents, code.<br>
-      Try “OK Jarvis, build a 3D solar system”.</div></div>
+    <div>Everything Atomo creates appears here — web pages, games, 3D, documents, code.<br>
+      Try “OK Atomo, build a 3D solar system”.</div></div>
   <div class="glass canvas" id="canvas">
     <div class="cbar">
       <div class="lights"><i class="r" id="cClose" title="Close"></i><i class="y" id="cSmall" title="Exit full screen"></i><i class="g" id="cFull" title="Full screen"></i></div>

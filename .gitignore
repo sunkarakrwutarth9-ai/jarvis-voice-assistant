@@ -21,3 +21,6 @@ openvoice/checkpoints/checkpoint.pth
 reminders.json
 lists.json
 routines.json
+google_client.json
+google_token.json
+devices.json

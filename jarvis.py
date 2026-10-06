@@ -61,8 +61,8 @@ ME_MODE = os.environ.get("JARVIS_ME_MODE", "0") == "1"
 WAKE_THRESHOLD = float(os.environ.get("JARVIS_WAKE_THRESHOLD", "0.35"))
 FOLLOW_UP_SECONDS = 4.0
 
-WAKE_WORD = re.compile(r"\b(jarvis|jarvi|jervis|jarvish|travis)\b|జార్విస్|జార్విస|जार्विस|जारविस", re.I)
-WAKE_PREFIX = re.compile(r"^\s*((hey|hi|ok|okay|o\.k\.|yo)[\s,]+)?(jarvis|jarvi|jervis|jarvish|travis)\b[\s,.!?]*", re.I)
+WAKE_WORD = re.compile(r"\b(jarvis|jarvi|jervis|jarvish|travis|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo)\b|జార్విస్|జార్విస|जार्विस|जारविस|అటోమో|ఆటోమో|అటామో|ఏటమో|एटमो|ऐटमो|आटोमो|अटोमो|एटोमो", re.I)
+WAKE_PREFIX = re.compile(r"^\s*((hey|hi|ok|okay|o\.k\.|yo)[\s,]+)?(jarvis|jarvi|jervis|jarvish|travis|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo|అటోమో|ఆటోమో|एटमो|आटोमो|अटोमो)\b[\s,.!?]*", re.I)
 STOP_PHRASES = {"stop", "cancel", "never mind", "nevermind", "nothing", "shut up", "be quiet", "quiet",
                 # filler that shouldn't start another round
                 "ok", "okay", "ok ok", "okay okay", "k", "hmm", "hm", "mm", "fine", "good",
@@ -130,7 +130,7 @@ def get_api_key(gui=False) -> str:
         return key
     if gui:
         from PySide6.QtWidgets import QInputDialog, QLineEdit
-        key, ok = QInputDialog.getText(None, "J.A.R.V.I.S. - first-time setup", KEY_HELP[KEY_VAR][0],
+        key, ok = QInputDialog.getText(None, "Atomo - first-time setup", KEY_HELP[KEY_VAR][0],
                                        QLineEdit.Password)
         if not ok:
             sys.exit(0)
@@ -254,7 +254,7 @@ class Assistant(threading.Thread):
         """In conversation mode: listen for the next request without needing the wake word."""
         if self.active and time.monotonic() - self.last_heard > ACTIVE_IDLE_LIMIT:
             self.deactivate()
-            self._speak_standalone("I'll stand by, Sir. Say OK Jarvis when you need me.", "speaking")
+            self._speak_standalone("I'll stand by, Sir. Say OK Atomo when you need me.", "speaking")
             return False
         if not self.active:
             return False
@@ -373,7 +373,7 @@ class Assistant(threading.Thread):
         self.last_heard = time.monotonic()
         if any(DEACTIVATE.search(t) for t in heard.values()):
             self.deactivate()
-            self._speak_standalone("Deactivating, Sir. Say OK Jarvis when you need me.", "speaking")
+            self._speak_standalone("Deactivating, Sir. Say OK Atomo when you need me.", "speaking")
             return
         # What to show on the island (English recogniser if it heard anything, else the first).
         text = heard.get("en-IN") or heard.get("en-US") or next(iter(heard.values()))
@@ -660,7 +660,7 @@ def run_gui(args):
         bridge.me.emit(on)
         set_key(str(ENV_FILE), "JARVIS_ME_MODE", "1" if on else "0")
         if announce:
-            assistant.events.put(("say", "Speaking in your voice now, Sir." if on else "Jarvis voice restored, Sir.", None))
+            assistant.events.put(("say", "Speaking in your voice now, Sir." if on else "Atomo voice restored, Sir.", None))
         return f"OK: now speaking in {'the user' if on else 'the Jarvis'} voice."
 
     def cloner_ready(ok):
@@ -778,7 +778,8 @@ def run_gui(args):
 
     gesture_engine = gestures.GestureEngine(on_gesture, hub.publish, hub.any_visible)
 
-    def set_gestures(on: bool) -> str:
+    def set_gestures(on: bool, mouse: bool = False) -> str:
+        gesture_engine.mouse = bool(on and mouse)
         if not on:
             gesture_engine.stop()
             return ""
@@ -816,6 +817,17 @@ def run_gui(args):
                 ev.list_clear(lst)
             elif op == "delete_routine":
                 ev.delete_routine(str(data.get("trigger", "")))
+            elif op == "home" and data.get("command"):
+                cmd = str(data["command"])[:160]
+                def run_home():
+                    result = tools.smart_home(cmd, str(data.get("device", ""))[:40])
+                    hub.publish({"type": "home_result", "text": result})
+                threading.Thread(target=run_home, daemon=True).start()
+            elif op == "forget_device":
+                tools.smarthome.forget_device(str(data.get("device", "")))
+            elif op == "connect_home":
+                threading.Thread(target=lambda: hub.publish({"type": "home_result", "text": tools.connect_google_home()}),
+                                 daemon=True).start()
             elif op == "run_routine":
                 assistant.on_text(str(data.get("trigger", ""))[:120])
             return
@@ -849,7 +861,7 @@ def run_gui(args):
         else:
             import webbrowser
             webbrowser.open(url)
-        return "OK: opened the J.A.R.V.I.S. command center dashboard."
+        return "OK: opened the Atomo command center dashboard."
 
     tools.open_dashboard = open_dashboard
 
@@ -860,7 +872,7 @@ def run_gui(args):
         if hub.listeners:                          # open but minimised / behind: bring it back
             try:
                 import pygetwindow as gw
-                for w in gw.getWindowsWithTitle("J.A.R.V.I.S. Command Center"):
+                for w in gw.getWindowsWithTitle("A.T.O.M.O. Command Center"):
                     if w.isMinimized:
                         w.restore()
                     w.maximize()
@@ -878,7 +890,7 @@ def run_gui(args):
 
     # ---- Jarvis Screen: creations open in their own window (on a second monitor when there is one),
     # so the command center is never covered.
-    SCREEN_TITLE = "J.A.R.V.I.S. Screen"
+    SCREEN_TITLE = "A.T.O.M.O. Screen"
 
     def open_screen():
         exe = tools._chrome_exe()
@@ -924,8 +936,10 @@ def run_gui(args):
     tools.ensure_screen = ensure_screen
 
     # ---- the command center's Daily panel (reminders, lists, routines) + weather
-    hub.everyday = tools.everyday.snapshot
+    hub.everyday = lambda: dict(tools.everyday.snapshot(), devices=tools.smarthome.devices(),
+                                connected=tools.smarthome.TOKEN_FILE.exists())
     tools.everyday.publish = hub.publish
+    tools.smarthome.publish = hub.publish
 
     def weather_loop():
         from urllib.request import Request, urlopen
@@ -1016,12 +1030,12 @@ def run_gui(args):
     p.drawEllipse(20, 20, 24, 24)
     p.end()
     tray = QSystemTrayIcon(QIcon(pm))
-    tray.setToolTip("J.A.R.V.I.S. - say \"OK Jarvis\" or \"Hey Jarvis\"")
+    tray.setToolTip("Atomo - say \"OK Atomo\" or \"Hey Jarvis\"")
     menu = QMenu()
-    for text, fn in (("Talk to Jarvis", assistant.on_click),
+    for text, fn in (("Talk to Atomo", assistant.on_click),
                      ("Open command center", open_dashboard),
                      ("Toggle my voice and face", lambda: set_me(not me_pending["on"])),
-                     ("New conversation", brain.reset), ("Quit Jarvis", quit_app)):
+                     ("New conversation", brain.reset), ("Quit Atomo", quit_app)):
         a = QAction(text, menu)
         a.triggered.connect(fn)
         menu.addAction(a)

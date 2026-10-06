@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S. Guide</title>
+<title>ATOMO Guide</title>
 <style>
 :root{--bg:#05060c;--panel:#0d1120;--panel2:#121831;--text:#eef3ff;--sub:#93a0bf;--line:rgba(140,200,255,.14);
   --arc:#7fe6ff;--gold:#f4ba42;--red:#e0262f;--grad:linear-gradient(135deg,#e0262f,#f08a24 55%,#f4ba42);
@@ -52,8 +52,8 @@ footer{padding:36px 0 60px;color:var(--sub);font-size:14px;text-align:center;bor
 <body>
 <div class="hero"><div class="wrap">
   <div class="orb" aria-hidden="true"></div>
-  <h1>J.A.R.V.I.S.</h1>
-  <p class="tag">A voice-controlled AI assistant for Windows. Say “OK Jarvis” — it acts, builds, researches and talks back in English, Telugu or Hindi.</p>
+  <h1>ATOMO</h1>
+  <p class="tag">A voice-controlled AI assistant for Windows. Say “OK Atomo” — it acts, builds, researches and talks back in English, Telugu or Hindi.</p>
   <div class="cta"><a class="btn main" href="#install">Install in 3 steps</a><a class="btn" href="#say">What can I say?</a><a class="btn" href="#center">Command center</a></div>
 </div></div>
 
@@ -62,15 +62,15 @@ footer{padding:36px 0 60px;color:var(--sub);font-size:14px;text-align:center;bor
   <div class="steps">
     <div class="card"><div class="num">1</div><h4>Download &amp; extract</h4><p>On GitHub click <b>Code → Download ZIP</b>. Right-click the ZIP → <b>Extract All</b>.</p></div>
     <div class="card"><div class="num">2</div><h4>Double-click <code>run.bat</code></h4><p>First time only, it installs everything automatically (Python if missing, a private environment, AI models). Takes 5–15 minutes.</p></div>
-    <div class="card"><div class="num">3</div><h4>Paste a free key</h4><p>Jarvis asks for a Google Gemini key. Get one free at <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a>. Then say <b>“OK Jarvis”</b>.</p></div>
+    <div class="card"><div class="num">3</div><h4>Paste a free key</h4><p>Atomo asks for a Google Gemini key. Get one free at <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a>. Then say <b>“OK Atomo”</b>.</p></div>
   </div>
-  <p class="note">Next time just double-click <code>run.bat</code> — or <code>Start Jarvis.vbs</code> to start silently with no window. Double-click <code>autostart.bat</code> to have Jarvis start by itself whenever you sign in. Look for the thin glowing line at the top of your screen: that's the Dynamic Island.</p>
+  <p class="note">Next time just double-click <code>run.bat</code> — or <code>Start Jarvis.vbs</code> to start silently with no window. Double-click <code>autostart.bat</code> to have Atomo start by itself whenever you sign in. Look for the thin glowing line at the top of your screen: that's the Dynamic Island.</p>
 </div></section>
 
 <section id="say"><div class="wrap">
   <h2>VOICE</h2><h3>Things you can say</h3>
   <div class="cmds">
-    <div class="cmd"><b>“OK Jarvis, play Believer”</b><span>Plays it on YouTube. “Pause”, “next”, “skip the ad”, “like it”.</span></div>
+    <div class="cmd"><b>“OK Atomo, play Believer”</b><span>Plays it on YouTube. “Pause”, “next”, “skip the ad”, “like it”.</span></div>
     <div class="cmd"><b>“Open Chrome and open Gmail”</b><span>Shows your Chrome accounts — pick one by voice or click.</span></div>
     <div class="cmd"><b>“Write a Python program that…”</b><span>Written live on the canvas. “Run it” shows the output.</span></div>
     <div class="cmd"><b>“Build a snake game” · “make a website for my shop”</b><span>Playable / clickable right inside the command center.</span></div>
@@ -80,32 +80,33 @@ footer{padding:36px 0 60px;color:var(--sub);font-size:14px;text-align:center;bor
     <div class="cmd"><b>“Add milk to my shopping list”</b><span>Shopping, to-do or any list. “What's on my list?”</span></div>
     <div class="cmd"><b>“When I say good night, mute and lock the PC”</b><span>Routines: one phrase runs several steps.</span></div>
     <div class="cmd"><b>Play any music 🎵</b><span>A little robot dances to the beat in the corner of the screen. Clicks go straight through it, and it hides during full-screen video. “Hide the robot” / “make the robot dance”.</span></div>
+    <div class="cmd"><b>“Turn on the AC” · “set the AC to 24”</b><span>Controls your Google Home devices (one-time setup in docs/smarthome.md).</span></div>
     <div class="cmd"><b>“Tell me a joke” · “quiz me”</b><span>Jokes, quizzes, conversions, meanings and translations.</span></div>
     <div class="cmd"><b>“Make the button blue” · “make it shorter”</b><span>Edits whatever is on the canvas, as a new version.</span></div>
     <div class="cmd"><b>“Research electric cars in India”</b><span>Reads the web and writes a report with sources.</span></div>
     <div class="cmd"><b>“Summarise my resume PDF”</b><span>Reads PDF, Word, text and code files.</span></div>
     <div class="cmd"><b>“Open WhatsApp and search for Mom”</b><span>Autopilot: looks at the screen and clicks / types step by step.</span></div>
-    <div class="cmd"><b>“Good morning Jarvis”</b><span>Time, weather, battery, top headlines and your reminders.</span></div>
+    <div class="cmd"><b>“Good morning Atomo”</b><span>Time, weather, battery, top headlines and your reminders.</span></div>
     <div class="cmd"><b>“Remember my exam is on Monday”</b><span>Long-term memory. “Forget my exam” removes it.</span></div>
     <div class="cmd"><b>“Set volume to 30” · “lock the PC”</b><span>Volume, brightness, windows, screenshots, timers, sleep.</span></div>
-    <div class="cmd"><b>“ఈరోజు వాతావరణం ఎలా ఉంది?”</b><span>Speak Telugu or Hindi — Jarvis replies in your language.</span></div>
+    <div class="cmd"><b>“ఈరోజు వాతావరణం ఎలా ఉంది?”</b><span>Speak Telugu or Hindi — Atomo replies in your language.</span></div>
   </div>
-  <p class="note"><b>Conversation mode:</b> after “OK Jarvis” it keeps listening — just keep talking. Say <b>“deactivate”</b> to make it stop listening. Nothing Jarvis creates is saved unless you say “save it”.</p>
+  <p class="note"><b>Conversation mode:</b> after “OK Atomo” it keeps listening — just keep talking. Say <b>“deactivate”</b> to make it stop listening. Nothing Atomo creates is saved unless you say “save it”.</p>
 </div></section>
 
 <section id="center"><div class="wrap">
   <h2>COMMAND CENTER</h2><h3>The cinematic dashboard</h3>
-  <p style="color:var(--sub)">Say <b>“open command center”</b> (or visit <code>http://localhost:7777</code>). A living 3D atom — glowing nucleus, racing electrons — reacts to your voice; around it are your system vitals, the conversation, a <b>Daily</b> panel (alarms, lists you can tick off, routines with ▶ buttons), and live weather. Creations open in a separate <b>Jarvis Screen</b> window — on a second monitor if you have one — with <i>Preview · Code · Run · Save · Full screen</i>, so the command center is never covered. Themes: <b>Cinematic</b>, <b>iOS</b> (light/dark) and <b>Iron Man</b> — just ask.</p>
+  <p style="color:var(--sub)">Say <b>“open command center”</b> (or visit <code>http://localhost:7777</code>). A living 3D atom — glowing nucleus, racing electrons — reacts to your voice; around it are your system vitals, the conversation, a <b>Daily</b> panel (alarms, lists you can tick off, routines with ▶ buttons), and live weather. Creations open in a separate <b>Atomo Screen</b> window — on a second monitor if you have one — with <i>Preview · Code · Run · Save · Full screen</i>, so the command center is never covered. Themes: <b>Cinematic</b>, <b>iOS</b> (light/dark) and <b>Iron Man</b> — just ask.</p>
   <h3 style="margin-top:28px">Gesture control</h3>
   <div class="gest">
     <div class="card"><div class="e">✋</div><b>Open palm</b><span>Talk</span></div>
     <div class="card"><div class="e">✊</div><b>Fist</b><span>Stop / pause media</span></div>
     <div class="card"><div class="e">👍</div><b>Thumbs up</b><span>Yes / save</span></div>
     <div class="card"><div class="e">✌️</div><b>Victory</b><span>Full screen</span></div>
-    <div class="card"><div class="e">☝️🤏</div><b>Point + pinch</b><span>Move the mouse &amp; click — in any app</span></div>
+    <div class="card"><div class="e">☝️🤏</div><b>Point + pinch</b><span>Mouse &amp; click — only if you say “control my mouse with gestures”</span></div>
     <div class="card"><div class="e">👋</div><b>Swipe</b><span>Next / previous</span></div>
   </div>
-  <p class="note">Turn on with the ✋ GESTURE button or say “turn on gestures”. Gestures work in every app, even with the command center minimised. Hand tracking runs entirely on your PC; the camera is used only while gestures are on.</p>
+  <p class="note">Turn on with the ✋ GESTURE button or say “turn on gestures”. Gestures work in every app, even with the command center minimised. In the command center your hand sculpts the 3D atom: turn it, zoom it, collapse it with a fist. Hand tracking runs entirely on your PC; the camera is used only while gestures are on.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -117,13 +118,13 @@ footer{padding:36px 0 60px;color:var(--sub);font-size:14px;text-align:center;bor
   <h2>HELP</h2><h3>Troubleshooting</h3>
   <table>
     <tr><th>Problem</th><th>Fix</th></tr>
-    <tr><td>Doesn't hear “OK Jarvis”</td><td>Raise the microphone level (Settings → System → Sound → Input, 80–90%). Or click the island / press <kbd>Space</kbd> in the command center.</td></tr>
-    <tr><td>“Application Control policy has blocked this file”</td><td>Windows Smart App Control blocked a library. Jarvis works around it automatically; English speech may be ~1 s slower.</td></tr>
-    <tr><td>Slow or “rate limited”</td><td>Free Gemini keys have daily limits; Jarvis switches models by itself. You can add an extra provider key in <code>.env</code>.</td></tr>
+    <tr><td>Doesn't hear “OK Atomo”</td><td>Raise the microphone level (Settings → System → Sound → Input, 80–90%). Or click the island / press <kbd>Space</kbd> in the command center.</td></tr>
+    <tr><td>“Application Control policy has blocked this file”</td><td>Windows Smart App Control blocked a library. Atomo works around it automatically; English speech may be ~1 s slower.</td></tr>
+    <tr><td>Slow or “rate limited”</td><td>Free Gemini keys have daily limits; Atomo switches models by itself. You can add an extra provider key in <code>.env</code>.</td></tr>
     <tr><td>Anything else</td><td>Run <code>run.bat console</code> to watch the live log, or open <code>jarvis.log</code>.</td></tr>
   </table>
 </div></section>
 
-<footer><div class="wrap">J.A.R.V.I.S. · built with Gemini, OpenVoice, Kokoro, openWakeWord, MediaPipe and three.js</div></footer>
+<footer><div class="wrap">ATOMO · built with Gemini, OpenVoice, Kokoro, openWakeWord, MediaPipe and three.js</div></footer>
 </body>
 </html>

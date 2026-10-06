@@ -19,7 +19,7 @@ log = logging.getLogger("jarvis.listener")
 import re
 
 # How speech recognition tends to spell "Jarvis" in Indian English.
-KEYWORD = re.compile(r"\b(jarvis|jarvish|jervis|jarves|jarwis|charvis|javis|jaarvis)\b", re.I)
+KEYWORD = re.compile(r"\b(jarvis|jarvish|jervis|jarves|jarwis|charvis|javis|jaarvis|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo)\b|అటోమో|ఆటోమో|అటామో|एटमो|ऐटमो|आटोमो|अटोमो|एटोमो", re.I)
 
 RATE = 16000
 FRAME = 1280            # 80 ms, what openWakeWord expects

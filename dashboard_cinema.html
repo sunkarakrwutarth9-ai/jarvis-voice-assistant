@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S. Command Center</title>
+<title>A.T.O.M.O. Command Center</title>
 <style>
 :root{
   --bg:#03040a; --glass:rgba(14,18,30,.55); --stroke:rgba(140,200,255,.14); --text:#eef4ff; --sub:#8b97b5;
@@ -64,10 +64,10 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .net{padding:0 18px}.net canvas{width:100%;height:50px;display:block}
 .netrow{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:4px}.netrow b{color:var(--text)}
 .mem{padding:6px 18px 14px;font-size:12px;color:var(--sub)}
-/* Daily panel: reminders, lists, routines (the Alexa side of Jarvis) */
+/* Daily panel: reminders, lists, routines (the Alexa side of Atomo) */
 .daily{flex:1;min-height:150px;display:flex;flex-direction:column}
 .dtabs{display:flex;gap:4px;padding:0 12px}
-.dtabs button{flex:1;border:0;background:var(--track);color:var(--sub);font:600 10px var(--hud);letter-spacing:1.2px;
+.dtabs button{flex:1;border:0;background:var(--track);color:var(--sub);font:600 9px var(--hud);letter-spacing:.6px;
   padding:6px 2px;border-radius:8px;cursor:pointer}
 .dtabs button.on{background:rgba(127,230,255,.16);color:var(--arc)}
 .dtabs b{color:var(--gold);margin-left:3px}
@@ -95,7 +95,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .hchips{display:flex;gap:8px}
 .hchip{padding:7px 13px;border-radius:16px;background:rgba(9,12,22,.82);border:1px solid var(--stroke);font:600 12px var(--font);white-space:nowrap}
 .hchip small{color:var(--sub);font-weight:500;margin-left:4px}
-/* a creation's card in the feed (the creation itself opens on the Jarvis Screen) */
+/* a creation's card in the feed (the creation itself opens on the Atomo Screen) */
 .ccard{align-self:flex-start;max-width:92%;padding:10px 14px;border-radius:16px;background:rgba(127,230,255,.07);
   border:1px solid rgba(127,230,255,.35);font-size:13px;animation:pop .3s}
 .ccard b{display:block}.ccard small{color:var(--sub)}
@@ -233,14 +233,14 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 <body>
 <canvas id="gl"></canvas>
 <div class="boot" id="boot">
-  <div class="logo">J.A.R.V.I.S</div>
+  <div class="logo">A.T.O.M.O</div>
   <div class="lines" id="bootLines"></div>
   <div class="bar"><i id="bootBar"></i></div>
 </div>
 
 <div class="app" id="app" data-state="idle" data-me="0" data-canvas="0">
   <header>
-    <div class="brand">J.A.R.V.I.S<small>NEURAL COMMAND CORE</small></div>
+    <div class="brand">A.T.O.M.O<small>NEURAL COMMAND CORE</small></div>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span></div>
     <div class="clock"><span id="time">--:--</span><small id="date"></small></div>
@@ -258,7 +258,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
     <div class="net"><canvas id="net"></canvas><div class="netrow"><span>↓ <b id="down">0</b></span><span>↑ <b id="up">0</b></span><span>UP <b id="uptime">0h</b></span></div></div>
     <div class="daily">
       <div class="ph">DAILY</div>
-      <div class="dtabs"><button data-t="rem" class="on">⏰ ALERTS<b id="nRem"></b></button><button data-t="lists">🛒 LISTS<b id="nList"></b></button><button data-t="rout">⚡ ROUTINES<b id="nRout"></b></button></div>
+      <div class="dtabs"><button data-t="rem" class="on">⏰ ALERTS<b id="nRem"></b></button><button data-t="lists">🛒 LISTS<b id="nList"></b></button><button data-t="rout">⚡ ROUTINES<b id="nRout"></b></button><button data-t="home">🏠 HOME<b id="nHome"></b></button></div>
       <div class="dlist" id="dlist"></div>
     </div>
   </section>
@@ -266,7 +266,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
   <section class="center">
     <div class="stage">
       <div class="st" id="st">STANDING BY</div>
-      <div class="tt" id="tt">Say “OK Jarvis”</div>
+      <div class="tt" id="tt">Say “OK Atomo”</div>
       <div class="you" id="you"></div>
       <div class="say" id="say"></div>
       <div class="progress" id="prog"></div>
@@ -291,11 +291,11 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 
   <section class="glass msgs">
     <div class="ph">TRANSMISSIONS</div>
-    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Jarvis”, type below,<br>or turn on gestures ✋</div></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Atomo”, type below,<br>or turn on gestures ✋</div></div>
   </section>
 
   <div class="dock">
-    <div class="glass cmdbar"><input id="cmd" placeholder="Command Jarvis…   (Space to talk)" autocomplete="off">
+    <div class="glass cmdbar"><input id="cmd" placeholder="Command Atomo…   (Space to talk)" autocomplete="off">
       <button class="send" id="send"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l7 7-1.4 1.4L13 7.8V20h-2V7.8l-4.6 4.6L5 11z"/></svg></button></div>
     <div class="glass models" id="models"></div>
   </div>
@@ -342,7 +342,7 @@ let lastState = "idle";
 function setState(s, title, body) {
   lastState = s; window.ORB.state = s; if (app.dataset.state !== s) app.dataset.state = s;
   $("st").textContent = $("st2").textContent = STATES[s] || s.toUpperCase();
-  const t = {idle: "Say “OK Jarvis”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…"}[s];
+  const t = {idle: "Say “OK Atomo”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…"}[s];
   if (s === "speaking") { $("say").textContent = body; $("tt").textContent = ""; }
   else if (s === "action") $("tt").textContent = title;
   else if (s === "choice") $("tt").textContent = title || "Choose an option";
@@ -375,7 +375,7 @@ function onEvent(e) {
       c.textContent = e.label + (failed ? " · failed" : ""); $("feed").scrollTop = 1e9; break; }
     case "reply": if (e.text) bubble("j", e.text, e.ts); break;
     case "progress": $("prog").textContent = e.text; break;
-    // the orb reacts to YOUR voice all the time (boosted), and to Jarvis's voice while it speaks
+    // the orb reacts to YOUR voice all the time (boosted), and to Atomo's voice while it speaks
     case "lv": window.ORB.level = Math.max(Math.min(1, e.mic * 4), e.speech); break;
     case "vitals": vitals(e); break;
     case "me": app.dataset.me = e.on ? "1" : "0"; $("me").classList.toggle("on", e.on); break;
@@ -383,17 +383,19 @@ function onEvent(e) {
     case "ranking": models(e.models); break;
     case "theme": if (e.theme !== PAGE_THEME) location.reload(); break;
     case "gestures": setGestures(e.on); break;
-    case "hand": if (gesturesOn) drawHand(e); break;
+    case "hand": if (gesturesOn) drawHand(e); window.ORB.hand = e.pts.length ? Object.assign(e, {t: performance.now()}) : null; break;
     case "gesture_fired": toast(FIRED[e.name] || e.name); break;
     case "gesture_error": setGestures(false); toast("Gesture control unavailable: " + e.text, 7000); break;
-    // creations open on the separate Jarvis Screen; here they're a card (with "Show here" if wanted)
-    case "canvas_start": creationCard(e, "● Writing live on Jarvis Screen…"); break;
+    // creations open on the separate Atomo Screen; here they're a card (with "Show here" if wanted)
+    case "canvas_start": creationCard(e, "● Writing live on Atomo Screen…"); break;
     case "canvas_chunk": break;
-    case "canvas": CREATED[e.id] = e; creationCard(e, e.file ? "Saved · " + e.file : "Ready on Jarvis Screen · not saved"); break;
+    case "canvas": CREATED[e.id] = e; creationCard(e, e.file ? "Saved · " + e.file : "Ready on Atomo Screen · not saved"); break;
     case "canvas_output": if (app.dataset.canvas === "1") canvasOutput(e); break;
     case "canvas_cmd": if (app.dataset.canvas === "1") canvasCmd(e.action); break;
     case "canvas_error": creationCard(e, "⚠ " + e.text); break;
-    case "everyday": DAY = e; renderDaily(); break;
+    case "everyday": DAY = Object.assign(DAY, e); renderDaily(); break;
+    case "devices": DAY.devices = e.devices; DAY.connected = e.connected; renderDaily(); break;
+    case "home_result": DAY.homeResult = e.text.replace(/^(OK|FAILED): /, ""); if (dTab === "home") renderDaily(); break;
     case "everyday_focus": dTab = e.tab; curList = e.list || curList; renderDaily(); break;
     case "weather": showWeather(e); break;
     case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
@@ -607,7 +609,7 @@ function creationCard(e, status) {
   if (!el) { el = document.createElement("div"); el.className = "ccard"; el.id = "cc-" + e.id; $("feed").appendChild(el); }
   const kind = (typeof KIND_LABEL !== "undefined" && KIND_LABEL[e.kind]) || "Creation";
   el.innerHTML = `<b>🧩 ${esc(kind)}${e.title ? " · " + esc(e.title) : ""}</b><small>${esc(status)}</small>` +
-    `<div class="row"><button class="hot" data-a="screen">Open Jarvis Screen</button>` +
+    `<div class="row"><button class="hot" data-a="screen">Open Atomo Screen</button>` +
     (CREATED[e.id] ? `<button data-a="here">Show here</button>` : "") + `</div>`;
   el.querySelector('[data-a="screen"]').onclick = () => post("/api/action", {action: "open_screen"});
   const here = el.querySelector('[data-a="here"]'); if (here) here.onclick = () => canvasDone(CREATED[e.id]);
@@ -625,6 +627,7 @@ function rel(iso) {
 function renderDaily() {
   const R = DAY.reminders || [], L = DAY.lists || {}, T = DAY.routines || {};
   const nItems = Object.values(L).reduce((a, v) => a + v.length, 0);
+  $("nHome").textContent = (DAY.devices || []).length || "";
   $("nRem").textContent = R.length || ""; $("nList").textContent = nItems || ""; $("nRout").textContent = Object.keys(T).length || "";
   document.querySelectorAll(".dtabs button").forEach(b => b.classList.toggle("on", b.dataset.t === dTab));
   const nx = R.find(r => r.alarm) || R[0];
@@ -642,6 +645,16 @@ function renderDaily() {
         <div class="dadd"><input id="dAdd" placeholder="Add to ${esc(curList)} list…  (Enter)"></div>` +
       ((L[curList] || []).map(it => `<div class="drow"><i class="chk" data-it="${esc(it)}" title="Done"></i><div class="tx"><div>${esc(it)}</div></div></div>`).join("")
        || `<div class="dempty">Empty. Type above or say<br>“add milk and eggs to my shopping list”.</div>`);
+  } else if (dTab === "home") {
+    const D = DAY.devices || [];
+    h = (DAY.connected ? "" : `<div class="dempty">Google Home isn't connected yet.<br><button class="go" id="hConnect">Connect Google Home</button><br>(one-time setup: docs/smarthome.md)</div>`) +
+      `<div class="dadd"><input id="hCmd" placeholder="Tell Google Home…  e.g. set the AC to 24"></div>` +
+      D.map(d => `<div class="drow"><span>${/\bac\b|air/i.test(d) ? "❄️" : /light|lamp|bulb/i.test(d) ? "💡" : /fan/i.test(d) ? "🌀" : /tv/i.test(d) ? "📺" : "🔌"}</span>
+        <div class="tx"><div>${esc(d)}</div></div>
+        <button class="go" data-on="${esc(d)}">ON</button><button class="go" style="filter:grayscale(1)" data-off="${esc(d)}">OFF</button>
+        <button class="x" data-fg="${esc(d)}" title="Remove">✕</button></div>`).join("") +
+      (D.length ? "" : `<div class="dempty">Say “turn on the AC” — devices you use appear here as buttons.</div>`) +
+      `<div class="dempty" id="hRes">${esc(DAY.homeResult || "")}</div>`;
   } else {
     const ks = Object.keys(T);
     h = ks.length ? ks.map(k => `<div class="drow"><div class="tx"><div>“${esc(k)}”</div><small>${esc(T[k].join(" → "))}</small></div>
@@ -655,21 +668,27 @@ function renderDaily() {
     setTimeout(() => evPost({op: "list_remove", list: curList, item: b.dataset.it}), 450); });
   box.querySelectorAll("[data-run]").forEach(b => b.onclick = () => evPost({op: "run_routine", trigger: b.dataset.run}));
   box.querySelectorAll("[data-del]").forEach(b => b.onclick = () => evPost({op: "delete_routine", trigger: b.dataset.del}));
+  box.querySelectorAll("[data-on]").forEach(b => b.onclick = () => homeCmd(`turn on the ${b.dataset.on}`, b.dataset.on));
+  box.querySelectorAll("[data-off]").forEach(b => b.onclick = () => homeCmd(`turn off the ${b.dataset.off}`, b.dataset.off));
+  box.querySelectorAll("[data-fg]").forEach(b => b.onclick = () => evPost({op: "forget_device", device: b.dataset.fg}));
+  if ($("hConnect")) $("hConnect").onclick = () => evPost({op: "connect_home"});
+  if ($("hCmd")) $("hCmd").onkeydown = ev => { if (ev.key === "Enter" && ev.target.value.trim()) { homeCmd(ev.target.value.trim(), ""); ev.target.value = ""; } };
   const add = $("dAdd");
   if (add) add.onkeydown = ev => { if (ev.key === "Enter" && add.value.trim()) { evPost({op: "list_add", list: curList, item: add.value.trim()}); add.value = ""; } };
 }
 document.querySelectorAll(".dtabs button").forEach(b => b.onclick = () => { dTab = b.dataset.t; renderDaily(); });
-setInterval(() => { if (dTab === "rem" || !document.activeElement || document.activeElement.id !== "dAdd") renderDaily(); }, 30000);
+setInterval(() => { const a = document.activeElement; if (dTab === "rem" || !a || (a.id !== "dAdd" && a.id !== "hCmd")) renderDaily(); }, 30000);
 fetch("/api/everyday").then(r => r.json()).then(d => { DAY = d; renderDaily(); });
+function homeCmd(command, device) { DAY.homeResult = "Sending “" + command + "”…"; if ($("hRes")) $("hRes").textContent = DAY.homeResult; evPost({op: "home", command, device}); }
 function showWeather(w) {
   if (!w || !w.text) return; $("wx").hidden = false;
   $("wx").innerHTML = `${esc(w.text)}<small>${esc(w.place || w.cond || "")}</small>`; $("wx").title = w.cond || "";
 }
 
-// =================== GESTURES: tracked by Jarvis itself (works in every app); this is the live HUD ===================
+// =================== GESTURES: tracked by Atomo itself (works in every app); this is the live HUD ===================
 let gesturesOn = false;
 function toast(t, ms = 1400) { const el = $("gtoast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), ms); }
-function setGestures(on) {                          // state reported by Jarvis
+function setGestures(on) {                          // state reported by Atomo
   gesturesOn = on; $("gBtn").classList.toggle("on", on); $("gcam").classList.toggle("on", on);
   if (on) toast("✋ Gestures on in every app — ☝️ point: mouse · 🤏 pinch: click · ✋ talk · ✊ stop · 👍 yes · ✌️ full screen · 👋 swipe", 4000);
   else { toast("Gestures off"); $("gdraw").getContext("2d").clearRect(0, 0, 220, 165); }
@@ -701,7 +720,10 @@ const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100); camera.position.set
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
 
-const orb = new THREE.Group(); scene.add(orb);
+// the hand-controlled pivot: your hand turns and zooms the whole atom (orb spins inside it)
+const pivot = new THREE.Group(); scene.add(pivot);
+const orb = new THREE.Group(); pivot.add(orb);
+const HAND = {rx: 0, ry: 0, zoom: 1, burst: 1, rush: 0, active: 0};
 // sphere of particles (fibonacci lattice)
 const N = 2600, pos = new Float32Array(N * 3), seed = new Float32Array(N);
 for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963;
@@ -798,11 +820,30 @@ function frame(now) {
   uniforms.uA.value.lerp(cA.set(a), .05); uniforms.uB.value.lerp(cB.set(b), .05);
   uniforms.uTime.value = t; uniforms.uLevel.value = level;
   uniforms.uChaos.value += ((st === "thinking" ? .32 : .12) - uniforms.uChaos.value) * .05;
-  orb.rotation.y += spin * .016; orb.rotation.x = Math.sin(t * .3) * .12;
+  // ---- hand control (from Atomo's gesture engine): palm position turns the atom, distance zooms,
+  //      a fist pulls the electrons into the nucleus, an open hand bursts them out, ✌️ makes them race
+  const hd = window.ORB.hand, live = hd && performance.now() - hd.t < 600;
+  HAND.active += ((live ? 1 : 0) - HAND.active) * .08;
+  let tRx = 0, tRy = 0, tZoom = 1, tBurst = 1, tRush = 0;
+  if (live) {
+    const P = hd.pts, c = P[9], w = P[0];
+    const size = Math.hypot(P[5][0] - P[17][0], P[5][1] - P[17][1]) + Math.hypot(c[0] - w[0], c[1] - w[1]);
+    tRy = (0.5 - c[0]) * Math.PI * 1.6;                       // mirrored camera: move right = turn right
+    tRx = (c[1] - 0.5) * Math.PI * 0.9;
+    tZoom = Math.min(1.6, Math.max(0.6, size / 0.32));       // hand closer to the camera = bigger atom
+    if (hd.g === "fist") tBurst = 0.25;
+    else if (hd.g === "palm") tBurst = 1.4;
+    if (hd.g === "victory") tRush = 3;
+    if (hd.pinch) tZoom *= 0.75;
+  }
+  HAND.rx += (tRx - HAND.rx) * .12; HAND.ry += (tRy - HAND.ry) * .12; HAND.zoom += (tZoom - HAND.zoom) * .1;
+  HAND.burst += (tBurst - HAND.burst) * .1; HAND.rush += (tRush - HAND.rush) * .06;
+  pivot.rotation.set(HAND.rx, HAND.ry, 0);
+  orb.rotation.y += spin * .016 * (1 - HAND.active * .7); orb.rotation.x = Math.sin(t * .3) * .12 * (1 - HAND.active);
   // electrons race faster while thinking/acting and the orbits swell with the voice
-  const swell = 1 + level * .35, dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now;
+  const swell = (1 + level * .35) * HAND.burst, dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now;
   orbits.forEach(o => {
-    o.phase += dt * o.speed * (1.1 + spin * 2.2 + level * 2);
+    o.phase += dt * o.speed * (1.1 + spin * 2.2 + level * 2 + HAND.rush + (HAND.burst < .6 ? 3 : 0));
     const tp = o.trail.geometry.attributes.position;
     for (let i = 0; i < o.T; i++) { const a = o.phase - i * .035; tp.setXYZ(i, Math.cos(a) * o.A * swell, Math.sin(a) * o.B * swell, 0); }
     tp.needsUpdate = true;
@@ -823,7 +864,8 @@ function frame(now) {
   // canvas open: the orb shrinks and rises above the work area
   const tScale = window.ORB.canvas ? .32 : 1, tY = window.ORB.canvas ? 2.35 : 0.25;
   scale += (tScale - scale) * .06; yOff += (tY - yOff) * .06;
-  orb.scale.setScalar(scale); orb.position.y = yOff;
+  orb.scale.setScalar(scale * HAND.zoom); orb.position.y = yOff;
+  uniforms.uLevel.value = Math.max(level, (HAND.burst - 1) * .8, HAND.burst < .6 ? .5 : 0);   // the cloud reacts too
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);

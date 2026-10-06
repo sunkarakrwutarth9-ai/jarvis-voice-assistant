@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>J.A.R.V.I.S. Command Center</title>
+<title>A.T.O.M.O. Command Center</title>
 <style>
 :root{
   --bg:#07030a; --panel:rgba(26,8,12,.72); --panel-2:rgba(40,10,16,.55);
@@ -147,12 +147,12 @@ footer{grid-column:1/-1;display:flex;gap:14px;align-items:center}
 <body>
 <div class="app" id="app" data-state="idle" data-me="0">
   <header>
-    <div class="logo"><div class="mark"></div><div><h1>J.A.R.V.I.S.</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div></div>
+    <div class="logo"><div class="mark"></div><div><h1>A.T.O.M.O.</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div></div>
     <div class="pills">
       <div class="pill"><span class="dot" id="linkDot"></span>LINK <b id="link">ONLINE</b></div>
       <div class="pill">CORE <b id="model">—</b></div>
-      <div class="pill">VOICE <b id="voice">JARVIS</b></div>
-      <div class="pill">WAKE <b>"OK JARVIS"</b></div>
+      <div class="pill">VOICE <b id="voice">ATOMO</b></div>
+      <div class="pill">WAKE <b>"OK ATOMO"</b></div>
     </div>
     <div class="clock"><div class="t" id="time">--:--</div><div class="d" id="date"></div></div>
   </header>
@@ -189,19 +189,19 @@ footer{grid-column:1/-1;display:flex;gap:14px;align-items:center}
       <div class="glow" id="glow"></div>
       <div class="face" id="face"></div>
     </div>
-    <div class="status"><div class="st" id="st">STANDING BY</div><div class="tt" id="tt">Say “OK Jarvis”</div></div>
+    <div class="status"><div class="st" id="st">STANDING BY</div><div class="tt" id="tt">Say “OK Atomo”</div></div>
     <div class="dialog"><div class="you" id="you"></div><div class="say" id="say"></div></div>
     <canvas class="wave" id="wave"></canvas>
   </section>
 
   <section class="panel log">
     <div class="ph">COMMUNICATION LOG</div>
-    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Jarvis” or type below.</div></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Atomo” or type below.</div></div>
   </section>
 
   <footer>
     <button class="btn talk" id="talk" title="Talk (Space)">●</button>
-    <div class="cmd"><input id="cmd" placeholder="Type a command — or just say “OK Jarvis” …" autocomplete="off">
+    <div class="cmd"><input id="cmd" placeholder="Type a command — or just say “OK Atomo” …" autocomplete="off">
       <button class="btn" id="send">EXECUTE</button></div>
     <button class="btn" id="me"><img src="/avatar.jpg" onerror="this.remove()">MY VOICE</button>
     <button class="btn" id="mute">MUTE</button>
@@ -209,7 +209,7 @@ footer{grid-column:1/-1;display:flex;gap:14px;align-items:center}
     <div class="models" id="models"></div>
   </footer>
 </div>
-<div class="offline" id="offline">RE-ESTABLISHING LINK WITH J.A.R.V.I.S …</div>
+<div class="offline" id="offline">RE-ESTABLISHING LINK WITH A.T.O.M.O …</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -235,7 +235,7 @@ let lastState = "idle";
 function setState(s, title, body) {
   lastState = s; if (app.dataset.state !== s) app.dataset.state = s;
   $("st").textContent = STATES[s] || s.toUpperCase();
-  const t = {idle: "Say “OK Jarvis”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…",
+  const t = {idle: "Say “OK Atomo”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…",
              choice: title || "Choose an option"}[s];
   if (s === "speaking") { $("say").textContent = body; $("tt").textContent = ""; }
   else { $("tt").textContent = t !== undefined ? t : (title || ""); if (s === "action") $("tt").textContent = title; }
@@ -252,7 +252,7 @@ function addMsg(kind, text, meta) {
   $("empty")?.remove();
   const el = document.createElement("div"); el.className = "msg " + kind;
   const time = new Date(meta.ts * 1000).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
-  el.innerHTML = `<div class="meta">${kind === "u" ? "YOU" : "J.A.R.V.I.S"} · ${time} <span class="lang">${langOf(text)}</span>${meta.model ? ` · ${esc(meta.model)}` : ""}</div><div class="tx">${esc(text)}</div>`;
+  el.innerHTML = `<div class="meta">${kind === "u" ? "YOU" : "A.T.O.M.O"} · ${time} <span class="lang">${langOf(text)}</span>${meta.model ? ` · ${esc(meta.model)}` : ""}</div><div class="tx">${esc(text)}</div>`;
   $("feed").appendChild(el); $("feed").scrollTop = 1e9; return el;
 }
 function onEvent(e) {
@@ -274,7 +274,7 @@ function onEvent(e) {
       current.querySelector(".lang").textContent = langOf(e.text); current = null; break;
     case "lv": target = lastState === "listening" ? e.mic : e.speech; break;
     case "vitals": vitals(e); break;
-    case "me": app.dataset.me = e.on ? "1" : "0"; $("me").classList.toggle("on", e.on); $("voice").textContent = e.on ? "YOURS" : "JARVIS"; break;
+    case "me": app.dataset.me = e.on ? "1" : "0"; $("me").classList.toggle("on", e.on); $("voice").textContent = e.on ? "YOURS" : "ATOMO"; break;
     case "muted": $("mute").classList.toggle("on", e.on); $("mute").textContent = e.on ? "UNMUTE" : "MUTE"; break;
     case "ranking": models(e.models); break;
     case "progress": $("tt").textContent = e.text; break;
@@ -353,7 +353,7 @@ document.addEventListener("keydown", e => { if (e.code === "Space" && document.a
 fetch("/api/state").then(r => r.json()).then(s => {
   onEvent({type: "me", on: s.me}); onEvent({type: "muted", on: s.muted}); models(s.ranking);
   (s.history || []).forEach(onEvent); setState(s.state, s.title, s.body); });
-// Tell Jarvis when this window is on screen: the floating island hides while it is, and returns when minimised.
+// Tell Atomo when this window is on screen: the floating island hides while it is, and returns when minimised.
 const VIEW = Math.random().toString(36).slice(2, 12);
 const reportView = () => post("/api/visibility", {id: VIEW, visible: document.visibilityState === "visible"});
 document.addEventListener("visibilitychange", reportView);
