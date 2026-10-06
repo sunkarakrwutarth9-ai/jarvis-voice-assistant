@@ -21,6 +21,8 @@ with **hand gestures**.
    <https://aistudio.google.com/apikey> and paste it in. Done — say **"OK Atomo"**.
 
 From then on, just double-click `run.bat` (or `Start Jarvis.vbs` for no console window).
+For an **Atomo app icon** on your Desktop and in the Start menu, run `.venv\Scripts\python.exe build_exe.py`
+(or `python build_exe.py`). Double-click it to start Atomo, or to open the command center when it's already running.
 To have Atomo start by itself every time you sign in to Windows, double-click **`autostart.bat`**
 (`autostart.bat off` turns that off again).
 
