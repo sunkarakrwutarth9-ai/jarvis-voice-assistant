@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Screen</title>
+<style>
+:root{
+  --bg:#03040a; --glass:rgba(14,18,30,.75); --stroke:rgba(140,200,255,.16); --text:#eef4ff; --sub:#8b97b5;
+  --arc:#7fe6ff; --gold:#f4ba42; --armor:#e0262f; --ok:#3ee08b; --err:#ff4d4d;
+  --accent-grad:linear-gradient(135deg,#e0262f,#f08a24 55%,#f4ba42); --track:rgba(255,255,255,.08);
+  --font:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif; --hud:"Bahnschrift","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#0b1426 0%,var(--bg) 60%);color:var(--text);
+  font-family:var(--font);overflow:hidden}
+.app{height:100%;display:flex;flex-direction:column;padding:10px 14px 14px;gap:10px}
+.top{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+.brand{font:600 14px var(--hud);letter-spacing:7px;color:var(--arc);text-shadow:0 0 16px rgba(127,230,255,.5)}
+.brand small{font:500 9px var(--hud);letter-spacing:4px;color:var(--sub);margin-left:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.dot.off{background:var(--err);box-shadow:0 0 10px var(--err)}
+.hint{margin-left:auto;font-size:12px;color:var(--sub)}
+.glass{background:var(--glass);border:1px solid var(--stroke);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--sub);text-align:center}
+.idle .ring{width:150px;height:150px;border-radius:50%;position:relative;
+  background:radial-gradient(circle,#fff 0 4%,var(--arc) 12%,rgba(127,230,255,.18) 38%,transparent 62%)}
+.idle .ring::before,.idle .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(244,186,66,.55);
+  border-left-color:transparent;border-right-color:transparent;animation:spin 6s linear infinite}
+.idle .ring::after{inset:-30px;border-color:rgba(224,38,47,.45);border-top-color:transparent;animation-duration:9s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.idle b{font:600 15px var(--hud);letter-spacing:5px;color:var(--text)}
+.app[data-canvas="1"] .idle{display:none}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+/*__CANVAS_CSS__*/
+/* on the Jarvis Screen the canvas IS the window */
+.canvas{margin:0!important;flex:1;min-height:0}
+.canvas.full{position:fixed;inset:0;border-radius:0;z-index:40}
+.canvas.full .chips2{display:none}
+.cbar{border-bottom-color:var(--stroke)}
+.seg button.on{background:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-canvas="0">
+  <div class="top">
+    <div class="brand">J.A.R.V.I.S<small>SCREEN</small></div><i class="dot" id="dot"></i>
+    <div class="hint">“full screen” · “show the code” · “run it” · “save it” · “make it blue”</div>
+  </div>
+  <div class="idle"><div class="ring"></div><b>READY</b>
+    <div>Everything Jarvis creates appears here — web pages, games, 3D, documents, code.<br>
+      Try “OK Jarvis, build a 3D solar system”.</div></div>
+  <div class="glass canvas" id="canvas">
+    <div class="cbar">
+      <div class="lights"><i class="r" id="cClose" title="Close"></i><i class="y" id="cSmall" title="Exit full screen"></i><i class="g" id="cFull" title="Full screen"></i></div>
+      <div class="ctitle"><span id="cTitle">Canvas</span><small id="cMeta"></small></div>
+      <div class="seg"><button data-tab="preview" class="on">Preview</button><button data-tab="code">Code</button></div>
+      <div class="cbtns"><button id="cSave" class="hot" hidden>Save</button><button id="cRun" hidden>▶ Run</button><button id="cCopy">Copy</button><button id="cVs">VS Code</button><button id="cFs">⛶</button></div>
+    </div>
+    <div class="chips2" id="cChips"></div>
+    <div class="cbody">
+      <iframe id="cFrame" sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock" title="preview"></iframe>
+      <div class="doc" id="cDoc"></div>
+      <pre class="code" id="cCode"></pre>
+      <pre class="cout" id="cOut"></pre>
+    </div>
+    <div class="cstatus" id="cStatus"></div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const app = $("app");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const post = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(body)});
+/*__CANVAS_JS__*/
+function onEvent(e) {
+  switch (e.type) {
+    case "canvas_start": canvasStart(e); break;
+    case "canvas_chunk": canvasChunk(e); break;
+    case "canvas": canvasDone(e); break;
+    case "canvas_output": canvasOutput(e); break;
+    case "canvas_cmd": canvasCmd(e.action); break;
+    case "canvas_error": $("cStatus").textContent = "⚠ " + e.text; break;
+    case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
+  }
+}
+fetch("/api/state").then(r => r.json()).then(s => (s.history || []).filter(e => e.type === "canvas").forEach(onEvent));
+const VIEW = "screen-" + Math.random().toString(36).slice(2, 10);
+const es = new EventSource("/events?id=" + VIEW);
+es.onopen = () => $("dot").classList.remove("off");
+es.onerror = () => $("dot").classList.add("off");
+es.onmessage = m => onEvent(JSON.parse(m.data));
+</script>
+</body>
+</html>

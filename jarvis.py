@@ -800,6 +800,25 @@ def run_gui(args):
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
             return
+        if action == "open_screen":
+            threading.Thread(target=tools.ensure_screen, daemon=True).start()
+            return
+        if action == "everyday":
+            ev = tools.everyday
+            op, lst, item = data.get("op"), str(data.get("list", ""))[:60], str(data.get("item", ""))[:200]
+            if op == "cancel":
+                ev.cancel_id(data.get("id"))
+            elif op == "list_add" and item:
+                ev.list_add([item], lst or "to-do")
+            elif op == "list_remove" and item:
+                ev.list_remove([item], lst or "to-do")
+            elif op == "list_clear":
+                ev.list_clear(lst)
+            elif op == "delete_routine":
+                ev.delete_routine(str(data.get("trigger", "")))
+            elif op == "run_routine":
+                assistant.on_text(str(data.get("trigger", ""))[:120])
+            return
         if action == "gestures":
             threading.Thread(target=set_gestures, args=(bool(data.get("on")),), daemon=True).start()
             return
@@ -856,6 +875,73 @@ def run_gui(args):
         time.sleep(2.5)                            # let the page connect before content streams in
 
     tools.ensure_dashboard = ensure_dashboard
+
+    # ---- Jarvis Screen: creations open in their own window (on a second monitor when there is one),
+    # so the command center is never covered.
+    SCREEN_TITLE = "J.A.R.V.I.S. Screen"
+
+    def open_screen():
+        exe = tools._chrome_exe()
+        url = f"http://localhost:{server.PORT}/screen"
+        if not exe:
+            import webbrowser
+            webbrowser.open(url)
+            return
+        args = [exe, f"--app={url}"]
+        screens = app.screens()
+        others = [sc for sc in screens if sc is not app.primaryScreen()]
+        if others:
+            g = others[0].availableGeometry()
+            args += [f"--window-position={g.x()},{g.y()}", f"--window-size={g.width()},{g.height()}"]
+        args.append("--start-maximized")
+        subprocess.Popen(args, creationflags=subprocess.DETACHED_PROCESS)
+
+    def ensure_screen():
+        """Show the Jarvis Screen window (open it, or bring it back if minimised / behind)."""
+        if hub.screen_open():
+            try:
+                import pygetwindow as gw
+                for w in gw.getWindowsWithTitle(SCREEN_TITLE):
+                    if w.isMinimized:
+                        w.restore()
+                    if not w.isMaximized:
+                        w.maximize()
+                    try:
+                        w.activate()
+                    except Exception:
+                        pass
+                    return
+            except Exception:
+                log.exception("could not raise the Jarvis Screen")
+            return
+        open_screen()
+        for _ in range(40):                         # let the page connect before content streams in
+            if hub.screen_open():
+                time.sleep(0.3)
+                return
+            time.sleep(0.1)
+
+    tools.ensure_screen = ensure_screen
+
+    # ---- the command center's Daily panel (reminders, lists, routines) + weather
+    hub.everyday = tools.everyday.snapshot
+    tools.everyday.publish = hub.publish
+
+    def weather_loop():
+        from urllib.request import Request, urlopen
+        while True:
+            try:
+                req = Request("https://wttr.in/?format=%c%t|%C|%l", headers={"User-Agent": "curl/8"})
+                text = urlopen(req, timeout=10).read().decode("utf-8", "replace").strip()
+                if text and "<" not in text and len(text) < 160:
+                    now, cond, place = (text.split("|") + ["", ""])[:3]
+                    hub.publish({"type": "weather", "text": " ".join(now.split()), "cond": cond.strip(),
+                                 "place": place.split(",")[0].strip().title()})
+            except Exception as e:
+                log.info("weather update failed: %s", e)
+            time.sleep(20 * 60)
+
+    threading.Thread(target=weather_loop, name="weather", daemon=True).start()
 
     # ---- Themes: "ios" (default) or "ironman", for both the island and the dashboard.
     def set_theme(theme=None, appearance=None):

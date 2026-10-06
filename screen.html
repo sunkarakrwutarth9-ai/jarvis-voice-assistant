@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S. Screen</title>
+<style>
+:root{
+  --bg:#03040a; --glass:rgba(14,18,30,.75); --stroke:rgba(140,200,255,.16); --text:#eef4ff; --sub:#8b97b5;
+  --arc:#7fe6ff; --gold:#f4ba42; --armor:#e0262f; --ok:#3ee08b; --err:#ff4d4d;
+  --accent-grad:linear-gradient(135deg,#e0262f,#f08a24 55%,#f4ba42); --track:rgba(255,255,255,.08);
+  --font:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif; --hud:"Bahnschrift","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#0b1426 0%,var(--bg) 60%);color:var(--text);
+  font-family:var(--font);overflow:hidden}
+.app{height:100%;display:flex;flex-direction:column;padding:10px 14px 14px;gap:10px}
+.top{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+.brand{font:600 14px var(--hud);letter-spacing:7px;color:var(--arc);text-shadow:0 0 16px rgba(127,230,255,.5)}
+.brand small{font:500 9px var(--hud);letter-spacing:4px;color:var(--sub);margin-left:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.dot.off{background:var(--err);box-shadow:0 0 10px var(--err)}
+.hint{margin-left:auto;font-size:12px;color:var(--sub)}
+.glass{background:var(--glass);border:1px solid var(--stroke);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--sub);text-align:center}
+.idle .ring{width:150px;height:150px;border-radius:50%;position:relative;
+  background:radial-gradient(circle,#fff 0 4%,var(--arc) 12%,rgba(127,230,255,.18) 38%,transparent 62%)}
+.idle .ring::before,.idle .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(244,186,66,.55);
+  border-left-color:transparent;border-right-color:transparent;animation:spin 6s linear infinite}
+.idle .ring::after{inset:-30px;border-color:rgba(224,38,47,.45);border-top-color:transparent;animation-duration:9s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.idle b{font:600 15px var(--hud);letter-spacing:5px;color:var(--text)}
+.app[data-canvas="1"] .idle{display:none}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+/* ---------- creation canvas: a small screen in the middle of the command center */
+.center{position:relative;min-height:0}
+.app[data-canvas="1"] .center{justify-content:flex-start}
+.app[data-canvas="1"] .center>.orb{width:84px;transition:width .4s}
+.app[data-canvas="1"] .center>.state,.app[data-canvas="1"] .center>.headline,.app[data-canvas="1"] .center>.you,
+.app[data-canvas="1"] .center>.say{display:none}
+.canvas{display:none;flex-direction:column;width:100%;flex:1;min-height:0;margin-top:14px;overflow:hidden;
+  animation:pop .4s cubic-bezier(.2,1.2,.4,1)}
+.app[data-canvas="1"] .canvas{display:flex}
+.canvas.full{position:fixed;inset:14px;z-index:40;margin:0;border-radius:22px}
+.cbar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--stroke)}
+.lights{display:flex;gap:8px}
+.lights i{width:13px;height:13px;border-radius:50%;cursor:pointer;display:block}
+.lights .r{background:#ff5f57}.lights .y{background:#febc2e}.lights .g{background:#28c840}
+.ctitle{flex:1;min-width:0;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctitle small{font-weight:500;color:var(--sub);margin-left:8px;font-size:12px}
+.seg{display:flex;background:var(--track);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;color:var(--text);font:600 12px var(--font);padding:5px 14px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--glass);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.cbtns{display:flex;gap:6px}
+.cbtns button{border:1px solid var(--stroke);background:var(--glass);color:var(--text);font:600 12px var(--font);
+  padding:6px 11px;border-radius:9px;cursor:pointer}
+.cbtns button.hot{background:var(--accent-grad);color:#fff;border:0}
+.chips2{display:flex;gap:6px;padding:8px 14px 0;overflow-x:auto}
+.chips2 button{flex:0 0 auto;border:1px solid var(--stroke);background:var(--track);color:var(--text);font:12px var(--font);
+  padding:4px 10px;border-radius:12px;cursor:pointer;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chips2 button.on{background:var(--accent-grad);color:#fff;border:0}
+.cbody{position:relative;flex:1;min-height:0;margin:10px 14px 14px;border-radius:14px;overflow:hidden;background:#fff}
+.cbody>*{position:absolute;inset:0;display:none}
+.cbody>.show{display:block}
+.cbody iframe{width:100%;height:100%;border:0;background:#fff}
+.cbody .code{margin:0;overflow:auto;background:#16161a;color:#e6e6ea;font:13px/1.55 "Cascadia Code",Consolas,monospace;
+  padding:14px 0;counter-reset:ln;white-space:pre}
+.cbody .code .l{display:block;padding:0 16px 0 58px;position:relative;min-height:1.55em}
+.cbody .code .l::before{counter-increment:ln;content:counter(ln);position:absolute;left:0;width:44px;text-align:right;color:#5b5b66}
+.code .k{color:#ff7ab2}.code .s{color:#ffc56d}.code .c{color:#7f8c98;font-style:italic}.code .n{color:#d9c97c}.code .t{color:#6bdfff}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--gold);vertical-align:-2px;animation:blink .8s infinite}
+@keyframes blink{50%{opacity:0}}
+.cbody .doc{overflow:auto;padding:26px 34px;color:#1c1c1e;font:15px/1.65 var(--font);background:#fff}
+.doc h1{font-size:28px;margin:4px 0 12px}.doc h2{font-size:21px;margin:22px 0 8px}.doc h3{font-size:17px;margin:18px 0 6px}
+.doc p{margin:8px 0}.doc ul,.doc ol{margin:8px 0 8px 24px}.doc li{margin:3px 0}
+.doc code{background:#f2f2f7;padding:1px 6px;border-radius:5px;font:13px Consolas,monospace}
+.doc pre{background:#16161a;color:#eee;padding:12px 14px;border-radius:10px;overflow:auto;font:13px/1.5 Consolas,monospace}
+.doc table{border-collapse:collapse;margin:12px 0;width:100%}.doc th,.doc td{border:1px solid #e5e5ea;padding:7px 10px;text-align:left}
+.doc th{background:#f6f3ee}.doc blockquote{border-left:4px solid var(--gold);padding:4px 14px;color:#555;margin:10px 0}
+.doc hr{border:0;border-top:1px solid #e5e5ea;margin:18px 0}
+.cout{position:absolute;left:0;right:0;bottom:0;top:auto!important;height:38%;display:none;background:#0d0d10;color:#9ef5b4;
+  font:12.5px/1.5 Consolas,monospace;padding:12px 16px;overflow:auto;white-space:pre-wrap;border-top:2px solid var(--gold);z-index:2}
+.cout.show{display:block}
+.cstatus{padding:0 16px 10px;font-size:12px;color:var(--sub);display:flex;gap:10px;align-items:center}
+.cstatus .live{color:var(--armor);font-weight:600}
+
+/* on the Jarvis Screen the canvas IS the window */
+.canvas{margin:0!important;flex:1;min-height:0}
+.canvas.full{position:fixed;inset:0;border-radius:0;z-index:40}
+.canvas.full .chips2{display:none}
+.cbar{border-bottom-color:var(--stroke)}
+.seg button.on{background:rgba(255,255,255,.12)}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-canvas="0">
+  <div class="top">
+    <div class="brand">J.A.R.V.I.S<small>SCREEN</small></div><i class="dot" id="dot"></i>
+    <div class="hint">“full screen” · “show the code” · “run it” · “save it” · “make it blue”</div>
+  </div>
+  <div class="idle"><div class="ring"></div><b>READY</b>
+    <div>Everything Jarvis creates appears here — web pages, games, 3D, documents, code.<br>
+      Try “OK Jarvis, build a 3D solar system”.</div></div>
+  <div class="glass canvas" id="canvas">
+    <div class="cbar">
+      <div class="lights"><i class="r" id="cClose" title="Close"></i><i class="y" id="cSmall" title="Exit full screen"></i><i class="g" id="cFull" title="Full screen"></i></div>
+      <div class="ctitle"><span id="cTitle">Canvas</span><small id="cMeta"></small></div>
+      <div class="seg"><button data-tab="preview" class="on">Preview</button><button data-tab="code">Code</button></div>
+      <div class="cbtns"><button id="cSave" class="hot" hidden>Save</button><button id="cRun" hidden>▶ Run</button><button id="cCopy">Copy</button><button id="cVs">VS Code</button><button id="cFs">⛶</button></div>
+    </div>
+    <div class="chips2" id="cChips"></div>
+    <div class="cbody">
+      <iframe id="cFrame" sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock" title="preview"></iframe>
+      <div class="doc" id="cDoc"></div>
+      <pre class="code" id="cCode"></pre>
+      <pre class="cout" id="cOut"></pre>
+    </div>
+    <div class="cstatus" id="cStatus"></div>
+  </div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const app = $("app");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const post = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(body)});
+// ================= creation canvas =================
+const creations = {}; let cur = null, tab = "preview";
+const KIND_LABEL = {code: "Code", webpage: "Web page", game: "Game", chart: "Chart", drawing: "Drawing",
+                    presentation: "Slides", document: "Document", "3d": "3D", animation: "Animation",
+                    simulation: "Simulation", music: "Music"};
+const isHtml = c => c && c.lang === "html", isDoc = c => c && c.lang === "md";
+// The preview is sandboxed (no access to this page), which also blocks localStorage - games use it for
+// high scores - so give previews an in-memory stand-in instead of letting them crash.
+const STORAGE_SHIM = `<script>(function(){function S(){var d={};return{getItem:function(k){return k in d?d[k]:null},
+setItem:function(k,v){d[k]=String(v)},removeItem:function(k){delete d[k]},clear:function(){d={}},
+key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(d).length}}}
+try{window.localStorage}catch(e){try{Object.defineProperty(window,"localStorage",{value:S(),configurable:true});
+Object.defineProperty(window,"sessionStorage",{value:S(),configurable:true})}catch(_){}}})();<\/script>`;
+
+// The shim goes right after <head>, so the page keeps standards mode (a script before <!DOCTYPE> switches
+// to quirks mode, which breaks full-window layouts such as 3D scenes). Libraries load from the public CDN:
+// Chrome blocks sandboxed previews from fetching localhost.
+function previewDoc(html) {
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + STORAGE_SHIM) : STORAGE_SHIM + html;
+}
+function stripFence(t) {                       // text inside the first ``` fence, while it's still streaming
+  const i = t.indexOf("```"); if (i < 0) return t;
+  const nl = t.indexOf("\n", i); if (nl < 0) return "";
+  const body = t.slice(nl + 1), end = body.indexOf("```");
+  return end < 0 ? body : body.slice(0, end);
+}
+const KW = /\b(def|class|return|if|elif|else|for|while|in|import|from|as|try|except|finally|with|lambda|yield|const|let|var|function|new|this|public|private|static|void|int|float|double|char|bool|boolean|string|String|struct|include|using|namespace|package|interface|extends|implements|async|await|export|default|switch|case|break|continue|null|None|True|False|true|false|print|println|fn|mut|impl|pub|match|defmodule|do|end)\b/g;
+const TOKENS = new RegExp(
+  "(&quot;(?:(?!&quot;).)*&quot;|'[^']*'|`[^`]*`)" +       // strings
+  "|\\b(" + KW.source.slice(3, -3) + ")\\b" +                // keywords
+  "|\\b(\\d+(?:\\.\\d+)?)\\b" +                             // numbers
+  "|(&lt;\\/?)([a-zA-Z][\\w-]*)", "g");                    // html tags
+function highlight(code, lang) {
+  const hashComments = ["py", "sh", "r", "rb", "ex", "ps1"].includes(lang);
+  return code.split("\n").map(line => {
+    let h = esc(line);
+    const ci = line.search(hashComments ? /(^|\s)(#|\/\/)/ : /(^|\s)\/\//);
+    let tail = "";
+    if (ci >= 0 && !/["'`]/.test(line.slice(0, ci))) { tail = `<span class="c">${esc(line.slice(ci))}</span>`; h = esc(line.slice(0, ci)); }
+    // one pass over the escaped line, so inserted <span class="..."> markup is never re-matched
+    h = h.replace(TOKENS, (m, str, kw, num, lt, tag) =>
+      str ? `<span class="s">${str}</span>` : kw ? `<span class="k">${kw}</span>` :
+      num ? `<span class="n">${num}</span>` : `${lt}<span class="t">${tag}</span>`);
+    return `<span class="l">${h + tail}</span>`;
+  }).join("");
+}
+function plainLines(code) { return code.split("\n").map(l => `<span class="l">${esc(l)}</span>`).join(""); }
+function md(src) {                              // small Markdown renderer for documents
+  const lines = src.replace(/\r/g, "").split("\n"); let out = "", i = 0;
+  const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/\*([^*]+)\*/g, "<i>$1</i>").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<u>$1</u>");
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^```/.test(l)) { let b = []; i++; while (i < lines.length && !/^```/.test(lines[i])) b.push(lines[i++]); i++; out += `<pre>${esc(b.join("\n"))}</pre>`; continue; }
+    if (/^#{1,3} /.test(l)) { const n = l.match(/^#+/)[0].length; out += `<h${n}>${inline(l.slice(n + 1))}</h${n}>`; i++; continue; }
+    if (/^\s*([-*_])\1\1+\s*$/.test(l)) { out += "<hr>"; i++; continue; }
+    if (/^>\s?/.test(l)) { out += `<blockquote>${inline(l.replace(/^>\s?/, ""))}</blockquote>`; i++; continue; }
+    if (/^\|.*\|\s*$/.test(l)) { let rows = []; while (i < lines.length && /^\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
+      rows = rows.filter(r => !/^\|[\s:|-]+\|\s*$/.test(r)).map(r => r.trim().slice(1, -1).split("|").map(c => inline(c.trim())));
+      out += "<table>" + rows.map((r, k) => "<tr>" + r.map(c => k ? `<td>${c}</td>` : `<th>${c}</th>`).join("") + "</tr>").join("") + "</table>"; continue; }
+    if (/^\s*([-*+]|\d+\.)\s+/.test(l)) { const ol = /^\s*\d+\./.test(l); let items = "";
+      while (i < lines.length && /^\s*([-*+]|\d+\.)\s+/.test(lines[i])) items += `<li>${inline(lines[i++].replace(/^\s*([-*+]|\d+\.)\s+/, ""))}</li>`;
+      out += ol ? `<ol>${items}</ol>` : `<ul>${items}</ul>`; continue; }
+    if (!l.trim()) { i++; continue; }
+    let p = [l]; i++; while (i < lines.length && lines[i].trim() && !/^(#|```|\||>|\s*([-*+]|\d+\.)\s)/.test(lines[i])) p.push(lines[i++]);
+    // reference lists ("[1] Title - url") keep one entry per line
+    out += `<p>${p.map((s, k) => (k && /^\s*\[\d+\]/.test(s) ? "<br>" : (k ? " " : "")) + inline(s)).join("")}</p>`;
+  }
+  return out;
+}
+function showTab(t) {
+  tab = t; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  const c = creations[cur]; const preview = t === "preview" && c && (isHtml(c) || isDoc(c));
+  $("cFrame").classList.toggle("show", preview && isHtml(c));
+  $("cDoc").classList.toggle("show", preview && isDoc(c));
+  $("cCode").classList.toggle("show", !preview);
+}
+function renderChips() {
+  $("cChips").innerHTML = Object.entries(creations).slice(-8).map(([id, c]) =>
+    `<button data-id="${id}" class="${id === cur ? "on" : ""}">${esc(KIND_LABEL[c.kind] || "")}: ${esc(c.title)}</button>`).join("");
+  $("cChips").querySelectorAll("button").forEach(b => b.onclick = () => select(b.dataset.id));
+}
+function select(id) {
+  cur = id; const c = creations[id]; if (!c) return;
+  app.dataset.canvas = "1";
+  $("cTitle").textContent = c.title;
+  $("cMeta").textContent = `${KIND_LABEL[c.kind] || ""} · ${c.lang}` + (c.done ? (c.file ? " · saved" : " · not saved") : "");
+  $("cRun").hidden = !c.runnable; $("cOut").classList.remove("show");
+  $("cSave").hidden = !c.done || !!c.file;
+  if (c.done) {
+    $("cCode").innerHTML = highlight(c.content, c.lang);
+    if (isHtml(c)) $("cFrame").srcdoc = previewDoc(c.content);
+    if (isDoc(c)) $("cDoc").innerHTML = md(c.content);
+    $("cStatus").textContent = `${c.content.split("\n").length} lines · ` +
+      (c.file ? `saved to ${c.file}` : "Not saved — say “save it” or tap Save to keep it");
+  }
+  showTab(c.done && (isHtml(c) || isDoc(c)) ? "preview" : "code"); renderChips();
+}
+function canvasStart(e) {
+  creations[e.id] = {kind: e.kind, title: e.title, lang: e.lang, content: "", done: false};
+  select(e.id);
+  $("cCode").innerHTML = '<span class="l"><span class="cursor"></span></span>';
+  $("cStatus").innerHTML = '<span class="live">● Writing live…</span>';
+  if (isDoc(creations[e.id])) { $("cDoc").innerHTML = ""; showTab("preview"); }
+}
+let chunkPending = null;
+function canvasChunk(e) {                       // repaint at most once per animation frame
+  chunkPending = e; if (canvasChunk.raf) return;
+  canvasChunk.raf = requestAnimationFrame(() => {
+    canvasChunk.raf = 0; const ev = chunkPending, c = creations[ev.id]; if (!c || ev.id !== cur) return;
+    const body = stripFence(ev.text);
+    if (isDoc(c)) { $("cDoc").innerHTML = md(body); $("cDoc").scrollTop = 1e9; }
+    else { $("cCode").innerHTML = plainLines(body) + '<span class="l"><span class="cursor"></span></span>'; $("cCode").scrollTop = 1e9; }
+    $("cStatus").innerHTML = `<span class="live">● Writing live…</span> ${body.split("\n").length} lines`;
+  });
+}
+function canvasDone(e) {
+  creations[e.id] = {kind: e.kind, title: e.title, lang: e.lang, content: e.content, file: e.file, runnable: e.runnable, done: true};
+  select(e.id);
+}
+function canvasOutput(e) {
+  if (e.id !== cur) select(e.id);
+  $("cOut").textContent = e.text; $("cOut").classList.add("show"); showTab("code");
+}
+function canvasCmd(a) {
+  if (a === "close") { app.dataset.canvas = "0"; $("canvas").classList.remove("full"); return; }
+  if (cur) app.dataset.canvas = "1";
+  if (a === "fullscreen") $("canvas").classList.add("full");
+  if (a === "exit_fullscreen") $("canvas").classList.remove("full");
+  if (a === "toggle_fullscreen") $("canvas").classList.toggle("full");
+  if (a === "show_code") showTab("code");
+  if (a === "show_preview") showTab("preview");
+}
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$("cClose").onclick = () => canvasCmd("close");
+$("cSmall").onclick = () => canvasCmd("exit_fullscreen");
+$("cFull").onclick = $("cFs").onclick = () => $("canvas").classList.toggle("full");
+$("cCopy").onclick = () => { const c = creations[cur]; if (c) navigator.clipboard.writeText(c.content); $("cCopy").textContent = "Copied ✓"; setTimeout(() => $("cCopy").textContent = "Copy", 1500); };
+$("cVs").onclick = () => cur && post("/api/action", {action: "canvas_vscode", id: cur});
+$("cRun").onclick = () => cur && post("/api/action", {action: "canvas_run", id: cur});
+$("cSave").onclick = () => cur && post("/api/action", {action: "canvas_save", id: cur});
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("canvas").classList.remove("full"); });
+
+
+function onEvent(e) {
+  switch (e.type) {
+    case "canvas_start": canvasStart(e); break;
+    case "canvas_chunk": canvasChunk(e); break;
+    case "canvas": canvasDone(e); break;
+    case "canvas_output": canvasOutput(e); break;
+    case "canvas_cmd": canvasCmd(e.action); break;
+    case "canvas_error": $("cStatus").textContent = "⚠ " + e.text; break;
+    case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
+  }
+}
+fetch("/api/state").then(r => r.json()).then(s => (s.history || []).filter(e => e.type === "canvas").forEach(onEvent));
+const VIEW = "screen-" + Math.random().toString(36).slice(2, 10);
+const es = new EventSource("/events?id=" + VIEW);
+es.onopen = () => $("dot").classList.remove("off");
+es.onerror = () => $("dot").classList.add("off");
+es.onmessage = m => onEvent(JSON.parse(m.data));
+</script>
+</body>
+</html>

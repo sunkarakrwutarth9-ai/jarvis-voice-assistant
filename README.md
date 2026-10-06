@@ -64,7 +64,11 @@ Speak **Telugu or Hindi** any time — Jarvis answers in the language you use.
 
 Say **"open command center"**. A full-screen dashboard with a living 3D **atom** (a glowing nucleus with
 electrons racing around it, reacting to your voice), system vitals, the conversation log and the **canvas**
-where everything Jarvis creates appears (Preview / Code / Run / Save / Full screen).
+with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
+routines with ▶ run buttons), live weather and next-alarm chips.
+
+Everything Jarvis creates opens in its own **Jarvis Screen** window (on your second monitor if you have one),
+so the command center is never covered: Preview / Code / Run / Save / Copy / VS Code / Full screen.
 
 **Gestures — in every app** (click ✋ GESTURE or say "turn on gestures"; the camera stays on your PC):
 ☝️ point = move the mouse · 🤏 pinch = click · ✋ palm = talk · ✊ fist = stop Jarvis / pause-play media ·

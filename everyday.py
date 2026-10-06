@@ -32,6 +32,21 @@ def _load(path, default):
 
 def _save(path, data):
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    threading.Thread(target=_announce, daemon=True).start()     # outside the lock
+
+
+def snapshot() -> dict:
+    """Everything the command center's Daily panel shows."""
+    items = sorted(_load(REMINDERS, []), key=lambda r: r["due"])
+    return {"reminders": [{**r, "when": _say_time(datetime.datetime.fromisoformat(r["due"]))} for r in items],
+            "lists": _load(LISTS, {}), "routines": _load(ROUTINES, {})}
+
+
+def _announce():
+    try:
+        publish({"type": "everyday", **snapshot()})
+    except Exception:
+        log.exception("could not publish the daily panel")
 
 
 # ------------------------------------------------------------------ reminders & alarms
@@ -120,6 +135,14 @@ def cancel_reminder(match: str = "", all: bool = False) -> str:
     return f"OK: cancelled {len(items) - len(keep)} reminder(s)."
 
 
+def cancel_id(rid) -> str:
+    with _lock:
+        items = _load(REMINDERS, [])
+        keep = [r for r in items if str(r["id"]) != str(rid)]
+        _save(REMINDERS, keep)
+    return f"OK: cancelled {len(items) - len(keep)} reminder(s)."
+
+
 def all_words(words, r):
     hay = (r["text"] + " " + r["due"] + " " + ("alarm" if r["alarm"] else "reminder")).lower()
     hay += " " + datetime.datetime.fromisoformat(r["due"]).strftime("%I:%M %p %H:%M").lower()
@@ -176,9 +199,7 @@ def _list_name(name):
 
 
 def _show_list(name, items):
-    body = "\n".join(f"- [ ] {i}" for i in items) or "_(empty)_"
-    publish({"type": "list", "name": name, "items": items})
-    return body
+    publish({"type": "everyday_focus", "tab": "lists", "list": name})
 
 
 def list_add(items: list, list_name: str = "to-do") -> str:

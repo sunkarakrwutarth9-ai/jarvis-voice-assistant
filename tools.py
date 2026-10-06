@@ -892,6 +892,7 @@ publish = lambda event: None  # set by the app: shows events (like generated cod
 
 generate_stream = None        # set by Brain: (prompt, on_text, max_tokens) -> text, streaming
 ensure_dashboard = lambda: None   # set by the app: opens the command center if it isn't on screen
+ensure_screen = lambda: ensure_dashboard()   # set by the app: shows the separate Jarvis Screen for creations
 CREATIONS = {}                # id -> {"kind", "title", "lang", "content", "file"}
 _last_creation = [None]
 
@@ -960,7 +961,7 @@ def create(kind: str, request: str, language: str = "", title: str = "") -> str:
 def _canvas_generate(kind, title, fixed_ext, lang, prompt, note=""):
     """Stream a generation live into the canvas; keep it in memory (unsaved). Returns the tool result."""
     cid = f"c{int(time.time() * 1000) % 10_000_000}"
-    ensure_dashboard()
+    ensure_screen()
     publish({"type": "canvas_start", "id": cid, "kind": kind, "title": title, "lang": fixed_ext or lang or "code"})
 
     buf, last = [], [0.0]
@@ -1240,7 +1241,8 @@ def canvas_control(action: str) -> str:
         return run_creation(cid)
     if cid is None and action not in ("close",):
         return "FAILED: nothing has been created yet."
-    ensure_dashboard()
+    if action != "close":
+        ensure_screen()
     publish({"type": "canvas_cmd", "action": action, "id": cid})
     return f"OK: canvas {action.replace('_', ' ')}."
 

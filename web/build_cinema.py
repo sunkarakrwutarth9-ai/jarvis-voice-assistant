@@ -1,5 +1,6 @@
-"""Builds dashboard_cinema.html from web/cinema_template.html, copying the shared creation-canvas
-CSS and JavaScript out of dashboard_ios.html so both themes run the same canvas code.
+"""Builds dashboard_cinema.html (from web/cinema_template.html) and screen.html - the separate Jarvis Screen
+window for creations (from web/screen_template.html) - copying the shared creation-canvas CSS and
+JavaScript out of dashboard_ios.html so every page runs the same canvas code.
 
     python web/build_cinema.py
 """
@@ -19,4 +20,6 @@ css = between(ios, "/* ---------- creation canvas", ".offline{position:fixed;ins
 js = between(ios, "// ================= creation canvas =================", "const post = (url")
 out = tpl.replace("/*__CANVAS_CSS__*/", css).replace("/*__CANVAS_JS__*/", js)
 (ROOT / "dashboard_cinema.html").write_text(out, encoding="utf-8")
+scr = (ROOT / "web" / "screen_template.html").read_text(encoding="utf-8")
+(ROOT / "screen.html").write_text(scr.replace("/*__CANVAS_CSS__*/", css).replace("/*__CANVAS_JS__*/", js), encoding="utf-8")
 print(f"built dashboard_cinema.html ({len(out) // 1024} KB; canvas css {len(css)} chars, js {len(js)} chars)")

@@ -36,6 +36,8 @@ class Hub:
         self._subs = []
         self._lock = threading.Lock()
         self._views = {}             # dashboard tab id -> is it visible (not minimised / hidden)?
+        self._screens = set()        # open "Jarvis Screen" windows (creations), tracked apart from the dashboard
+        self.everyday = lambda: {}   # set by the app: reminders, lists, routines for the Daily panel
         self.on_visibility = lambda any_visible: None
         self.history = []            # recent conversation events, replayed to new tabs
         self.snapshot = {"state": "idle", "title": "", "body": "", "me": False, "muted": False, "ranking": [],
@@ -60,8 +62,19 @@ class Hub:
         with self._lock:
             return any(self._views.values())
 
+    def screen_open(self):
+        with self._lock:
+            return bool(self._screens)
+
     def set_view(self, view_id, visible):
         """Track whether any dashboard is on screen (visible=None removes a closed tab)."""
+        if view_id.startswith("screen-"):
+            with self._lock:
+                if visible is None:
+                    self._screens.discard(view_id)
+                else:
+                    self._screens.add(view_id)
+            return
         with self._lock:
             before = any(self._views.values())
             if visible is None:
@@ -83,6 +96,8 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "weather":
+            self.snapshot["weather"] = {k: event.get(k, "") for k in ("text", "cond", "place")}
         elif kind == "gestures":
             self.snapshot["gestures"] = bool(event.get("on"))
         if kind in ("user", "reply", "tool"):
@@ -144,6 +159,10 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send(200, pic.read_bytes(), "image/jpeg")
             else:
                 self.send_error(404)
+        elif self.path == "/screen":
+            self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/everyday":
+            self._send(200, json.dumps(self.hub.everyday(), ensure_ascii=False).encode())
         elif self.path == "/api/state":
             body = dict(self.hub.snapshot, history=self.hub.history)
             self._send(200, json.dumps(body, ensure_ascii=False).encode())
@@ -193,7 +212,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:500])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/visibility" and isinstance(data.get("id"), str):
@@ -209,6 +228,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.end_headers()
         q = self.hub.subscribe()
+        if view_id and view_id.startswith("screen-"):
+            self.hub.set_view(view_id, True)          # a Jarvis Screen window is connected
         try:
             self.wfile.write(b"retry: 1500\n\n")
             self.wfile.flush()
