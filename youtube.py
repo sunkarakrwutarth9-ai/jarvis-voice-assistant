@@ -10,8 +10,16 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote_plus, urlparse
 from urllib.request import Request, urlopen
 
-from playwright.sync_api import Error as PlaywrightError
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import Error as PlaywrightError
+    from playwright.sync_api import sync_playwright
+except Exception as _e:          # e.g. Windows Smart App Control blocks greenlet's DLL - work without Playwright
+    class PlaywrightError(Exception):
+        pass
+    sync_playwright = None
+    PLAYWRIGHT_MISSING = str(_e)
+else:
+    PLAYWRIGHT_MISSING = ""
 
 PROFILE_DIR = Path(__file__).resolve().parent / "browser_profile"
 
@@ -60,6 +68,8 @@ class YouTube:
             except PlaywrightError:
                 pass
             self._ctx = None
+        if sync_playwright is None:
+            raise RuntimeError(f"browser automation is unavailable ({PLAYWRIGHT_MISSING})")
         if self._pw is None:
             self._pw = sync_playwright().start()
         last_error = None
@@ -118,11 +128,19 @@ class YouTube:
             return None, None
         return m.group(1), json.loads(f'"{m.group(2)}"')
 
+    open_url = None    # set by tools: opens a URL in the user's Chrome (used when Playwright is unavailable)
+
     def play(self, query: str) -> str:
         try:
             video_id, title = self._search_top(query)
         except Exception:
             video_id, title = None, None
+        if sync_playwright is None and self.open_url:
+            url = (f"https://www.youtube.com/watch?v={video_id}" if video_id
+                   else "https://www.youtube.com/results?search_query=" + quote_plus(query))
+            self.open_url(url)
+            return (f"OK: now playing '{title or query}' on YouTube." if video_id
+                    else f"OK: showing YouTube results for '{query}'.")
         page = self._ensure_page()
         if video_id is None:            # fall back to the search page in the browser
             page.goto("https://www.youtube.com/results?search_query=" + quote_plus(query), wait_until="domcontentloaded")

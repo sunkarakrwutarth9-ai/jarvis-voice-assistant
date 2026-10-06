@@ -1154,6 +1154,21 @@ def news_headlines(n=8):
     return [html_lib.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", t)).strip() for t in titles[:n]]
 
 
+robot_command = None  # set by jarvis.py: controls the dancing robot
+
+
+def robot(action: str) -> str:
+    """The dancing robot that appears while music plays."""
+    if robot_command is None:
+        return "FAILED: the robot is not available."
+    if action not in ("on", "off", "left", "right", "dance"):
+        return "FAILED: action must be on, off, left, right or dance."
+    robot_command(action)
+    return {"on": "OK: the robot will dance whenever music plays.", "off": "OK: the dancing robot is off.",
+            "left": "OK: the robot moved to the bottom-left corner.", "right": "OK: the robot moved to the bottom-right corner.",
+            "dance": "OK: the robot is dancing."}[action]
+
+
 set_gestures = None   # set by jarvis.py: starts/stops the system-wide gesture engine; returns '' or an error
 
 
@@ -1310,6 +1325,8 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("robot", "The little dancing robot that pops up in a screen corner and dances whenever music plays. 'dance' = dance right now; 'off' / 'on' = disable / enable it; 'left' / 'right' = which bottom corner.",
+        {"action": {"type": "string", "enum": ["on", "off", "left", "right", "dance"]}}, ["action"]),
     _fn("set_reminder", "Reminder or alarm at a clock time or after some minutes, announced aloud when due (persists across restarts). 'Remind me to call Mom at 6 pm' -> at='18:00'. 'Wake me up at 6:30' / 'set an alarm for 7' -> alarm=true. 'Remind me in 20 minutes' -> in_minutes=20. Use the current date/time you were given to compute dates ('tomorrow at 9' -> 'YYYY-MM-DD 09:00').",
         {"text": {"type": "string", "description": "what to remind about (for alarms: a short label)"},
          "at": {"type": "string", "description": "24-hour 'HH:MM' (next occurrence) or 'YYYY-MM-DD HH:MM'"},
@@ -1431,7 +1448,7 @@ TOOLS = [
 import everyday  # noqa: E402  (reminders, alarms, lists, routines)
 
 FUNCS = {
-    "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
+    "robot": robot, "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
     "cancel_reminder": everyday.cancel_reminder, "list_add": everyday.list_add, "list_remove": everyday.list_remove,
     "list_show": everyday.list_show, "list_clear": everyday.list_clear, "save_routine": everyday.save_routine,
     "run_routine": everyday.run_routine, "delete_routine": everyday.delete_routine,
@@ -1534,6 +1551,7 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "robot": lambda: {"dance": "Robot dancing", "off": "Robot off", "on": "Robot on"}.get(a.get("action"), "Moving the robot"),
         "set_reminder": lambda: ("Alarm · " if a.get("alarm") else "Reminder · ") + (a.get("at") or f"in {a.get('in_minutes', '')} min"),
         "list_reminders": lambda: "Checking reminders",
         "cancel_reminder": lambda: "Cancelling reminder",
@@ -1568,3 +1586,6 @@ def run_tool(name: str, raw_args: str):
     except Exception as e:
         log.exception("tool %s failed", name)
         return args, f"FAILED: {type(e).__name__}: {e}"
+
+
+YT.open_url = _open_url      # YouTube in the user's Chrome when browser automation is unavailable

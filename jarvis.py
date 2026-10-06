@@ -594,6 +594,7 @@ def run_gui(args):
         dashboard = Signal(bool)
         theme = Signal(str)
         appearance = Signal(str)
+        robot = Signal(str)
         quit = Signal()
 
     bridge = Bridge()
@@ -712,11 +713,30 @@ def run_gui(args):
         mic_level["v"] = v
         bridge.level.emit(v)
 
+    system_audio = SystemAudio()
     listener = Listener(on_wake=assistant.on_wake, on_utterance=assistant.on_utterance,
                         on_timeout=assistant.on_timeout, on_level=on_level,
                         wake_threshold=WAKE_THRESHOLD, wake_enabled=not args.no_wake,
-                        on_keyword=assistant.on_keyword, system_audio=SystemAudio())
+                        on_keyword=assistant.on_keyword, system_audio=system_audio)
     assistant.listener = listener
+
+    # ---- the dancing robot: appears in a screen corner whenever music plays (click-through, never in the way)
+    from robot import DancingRobot
+    dancer = DancingRobot(system_audio, speaker.busy, enabled=tools._state("robot", True),
+                          side=tools._state("robot_side", "right"))
+
+    def robot_command(action):
+        if action in ("on", "off"):
+            dancer.set_enabled(action == "on")
+            tools._save_state("robot", action == "on")
+        elif action in ("left", "right"):
+            dancer.set_side(action)
+            tools._save_state("robot_side", action)
+        elif action == "dance":
+            dancer.dance(12)
+
+    bridge.robot.connect(robot_command)
+    tools.robot_command = bridge.robot.emit
 
     # ---- Local dashboard: http://localhost:7777
     import server

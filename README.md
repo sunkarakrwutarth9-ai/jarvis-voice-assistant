@@ -41,6 +41,7 @@ From then on, just double-click `run.bat` (or `Start Jarvis.vbs` for no console 
 | "Remind me to call Mom at 6 pm" · "wake me up at 6:30 on weekdays" | Reminders and alarms, spoken aloud when due (survive restarts) |
 | "Add milk and eggs to my shopping list" · "what's on my to-do list?" | Shopping / to-do / any lists |
 | "When I say good night, mute the volume and lock the PC" | Routines: your own phrase runs several steps |
+| Play any music | A little robot dances to the beat in the screen corner (click-through; hides in full screen). "Make the robot dance" · "hide the robot" · "move the robot left" |
 | "Tell me a joke" · "quiz me on capitals" · "how many km in 10 miles?" | Jokes, quizzes, conversions, meanings, translations |
 | "Research electric cars in India" | Searches the web, reads sources, writes a cited report |
 | "Summarise my resume PDF" | Reads PDFs, Word, text and code files |
@@ -111,6 +112,7 @@ JARVIS_ME_MODE=0
 | `listener.py` / `systemaudio.py` | Microphone, wake word, and ignoring the PC's own audio |
 | `speech.py` / `voiceclone.py` | Voices (Kokoro / Microsoft neural) and your cloned voice |
 | `everyday.py` | Reminders, alarms, lists and routines |
+| `robot.py` | The dancing robot (beat detection from the speakers) |
 | `gestures.py` | System-wide hand-gesture control (webcam + MediaPipe) |
 | `island.py` | The Dynamic Island |
 | `server.py` + `dashboard*.html` | Command center at localhost:7777 |

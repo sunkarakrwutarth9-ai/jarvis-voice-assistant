@@ -18,6 +18,7 @@ log = logging.getLogger("jarvis.systemaudio")
 class SystemAudio:
     def __init__(self):
         self._level = 0.0
+        self._bass = 0.0
         self._t = 0.0
         self.ok = False
         threading.Thread(target=self._run, daemon=True, name="loopback").start()
@@ -25,6 +26,10 @@ class SystemAudio:
     def level(self) -> float:
         """Loudness (RMS, int16 scale) of what the speakers are playing right now; 0 when silent."""
         return self._level if time.monotonic() - self._t < 0.3 else 0.0
+
+    def bass(self) -> float:
+        """Loudness of the 40-160 Hz band (kick drum / bass line) - drives the dancing robot's beat."""
+        return self._bass if time.monotonic() - self._t < 0.3 else 0.0
 
     def _run(self):
         try:
@@ -36,6 +41,11 @@ class SystemAudio:
             def cb(data, frames, _info, _status):
                 x = np.frombuffer(data, dtype=np.int16).astype(np.float32)
                 self._level = float(np.sqrt(np.mean(x * x))) if len(x) else 0.0
+                if len(x) >= ch * 256:
+                    mono = x[: len(x) // ch * ch].reshape(-1, ch).mean(axis=1)
+                    spec = np.abs(np.fft.rfft(mono * np.hanning(len(mono))))
+                    hz = rate / len(mono)
+                    self._bass = float(spec[max(1, int(40 / hz)): int(160 / hz) + 1].mean()) / len(mono) * 4
                 self._t = time.monotonic()
                 return (None, pyaudio.paContinue)
 
