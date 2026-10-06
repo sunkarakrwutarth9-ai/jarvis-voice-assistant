@@ -364,7 +364,8 @@ const orb = $("orb"); let target = 0, level = 0, lastT = 0;
 // ================= creation canvas =================
 const creations = {}; let cur = null, tab = "preview";
 const KIND_LABEL = {code: "Code", webpage: "Web page", game: "Game", chart: "Chart", drawing: "Drawing",
-                    presentation: "Slides", document: "Document"};
+                    presentation: "Slides", document: "Document", "3d": "3D", animation: "Animation",
+                    simulation: "Simulation", music: "Music"};
 const isHtml = c => c && c.lang === "html", isDoc = c => c && c.lang === "md";
 // The preview is sandboxed (no access to this page), which also blocks localStorage - games use it for
 // high scores - so give previews an in-memory stand-in instead of letting them crash.
@@ -374,6 +375,12 @@ key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(
 try{window.localStorage}catch(e){try{Object.defineProperty(window,"localStorage",{value:S(),configurable:true});
 Object.defineProperty(window,"sessionStorage",{value:S(),configurable:true})}catch(_){}}})();<\/script>`;
 
+// The shim goes right after <head>, so the page keeps standards mode (a script before <!DOCTYPE> switches
+// to quirks mode, which breaks full-window layouts such as 3D scenes). Libraries load from the public CDN:
+// Chrome blocks sandboxed previews from fetching localhost.
+function previewDoc(html) {
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + STORAGE_SHIM) : STORAGE_SHIM + html;
+}
 function stripFence(t) {                       // text inside the first ``` fence, while it's still streaming
   const i = t.indexOf("```"); if (i < 0) return t;
   const nl = t.indexOf("\n", i); if (nl < 0) return "";
@@ -445,7 +452,7 @@ function select(id) {
   $("cSave").hidden = !c.done || !!c.file;
   if (c.done) {
     $("cCode").innerHTML = highlight(c.content, c.lang);
-    if (isHtml(c)) $("cFrame").srcdoc = STORAGE_SHIM + c.content;
+    if (isHtml(c)) $("cFrame").srcdoc = previewDoc(c.content);
     if (isDoc(c)) $("cDoc").innerHTML = md(c.content);
     $("cStatus").textContent = `${c.content.split("\n").length} lines · ` +
       (c.file ? `saved to ${c.file}` : "Not saved — say “save it” or tap Save to keep it");
@@ -483,6 +490,7 @@ function canvasCmd(a) {
   if (cur) app.dataset.canvas = "1";
   if (a === "fullscreen") $("canvas").classList.add("full");
   if (a === "exit_fullscreen") $("canvas").classList.remove("full");
+  if (a === "toggle_fullscreen") $("canvas").classList.toggle("full");
   if (a === "show_code") showTab("code");
   if (a === "show_preview") showTab("preview");
 }

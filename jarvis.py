@@ -73,6 +73,9 @@ QUIT_PHRASES = {"shut down jarvis", "exit jarvis", "quit jarvis", "turn off jarv
 DEACTIVATE = re.compile(r"\b(de-?activate|deactivated|go to sleep|sleep mode|stop listening|goodbye|good bye|bye bye|"
                         r"that'?s all for now|you can rest)\b|డీయాక్టివేట్|డియాక్టివేట్|డీ ?ఆక్టివేట్|डीएक्टिवेट|डिएक्टिवेट",
                         re.I)
+# Replies meaning "I couldn't make that out" - in conversation mode they're dropped silently (it was noise).
+UNHEARD = re.compile(r"(did ?n.?t|did not|could ?n.?t|could not|unable to|can.?t) (quite )?(catch|hear|make out|understand)"
+                     r"|(repeat that|speak again|say (that|it) again|no (clear )?speech)", re.I)
 ACTIVE_IDLE_LIMIT = 10 * 60        # conversation mode ends by itself after 10 minutes of silence
 
 log = logging.getLogger("jarvis")
@@ -353,6 +356,12 @@ class Assistant(threading.Thread):
         if not heard and explicit and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.2:
             # The recognisers caught nothing, but the user did call Jarvis: let Gemini listen to the audio.
             heard = {"audio-only": "(the recognisers could not make it out - listen to the recording)"}
+        elif not heard and self.active and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.5:
+            # Conversation mode: a long recording the recognisers missed (accent, mixed language, quiet mic)
+            # may still be a request - let Gemini listen, but stay silent if it's only noise.
+            heard = {"audio-only": "(the recognisers could not make it out - listen to the recording. If it is not "
+                                   "clear speech addressed to you - noise, music, a video, other people talking - "
+                                   "reply with exactly NOREPLY and nothing else)"}
         if not heard:
             if self._keep_listening():
                 return
@@ -391,11 +400,13 @@ class Assistant(threading.Thread):
             return
 
         self.bridge.state.emit("thinking", "Thinking", f"“{text}”", "")
-        self._pub({"type": "user", "text": text if text != "…" else "(voice)", "heard": heard})
+        quiet_check = "audio-only" in heard and not explicit     # may turn out to be noise: don't show it yet
+        if not quiet_check:
+            self._pub({"type": "user", "text": text if text != "…" else "(voice)", "heard": heard})
         shown = []
 
         def on_sentence(s):
-            if cancelled():
+            if cancelled() or "NOREPLY" in s or (quiet_check and UNHEARD.search(s)):
                 return
             if not shown:
                 log.info("timing: first reply sentence %.1fs after speech ended", time.monotonic() - t0)
@@ -443,6 +454,15 @@ class Assistant(threading.Thread):
             self._speak_standalone(msg, "error")
             return
         log.info("JARVIS: %s", reply)
+        if (("NOREPLY" in (reply or "") or (quiet_check and UNHEARD.search(reply or "")))
+                and not shown and not used_tools):
+            log.info("unclear recording was not a request - still listening")
+            if not self._keep_listening():
+                self.bridge.state.emit("idle", "", "", "")
+                self.listener.set_idle()
+            return
+        if quiet_check:
+            self._pub({"type": "user", "text": "(voice)", "heard": heard})
         self._pub({"type": "reply", "text": reply or ("Done, Sir." if used_tools else ""),
                    "model": self.brain.current_model, "secs": round(time.monotonic() - t0, 1)})
         self._pub({"type": "ranking", "models": self.brain.health.table()})
@@ -605,6 +625,15 @@ def run_gui(args):
     island.speech_level = speaker.level
     assistant = Assistant(brain, speaker, bridge)
     tools.notify = assistant.notify
+    tools.everyday.notify = assistant.notify
+
+    def ring_alarm():
+        for _ in range(4):
+            speaker.chime(True)
+            time.sleep(0.7)
+
+    tools.everyday.alarm = ring_alarm
+    tools.everyday.start()
 
     def show_choice(title, options, on_pick):
         assistant.pending_pick = on_pick
@@ -706,6 +735,40 @@ def run_gui(args):
             speaker.stop()
         hub.publish({"type": "muted", "on": m})
 
+    # ---- system-wide hand gestures (webcam + MediaPipe inside Jarvis, works in every app)
+    import gestures
+
+    def on_gesture(name):
+        if name == "talk":
+            assistant.on_click()
+        elif name == "stop":
+            if speaker.busy():
+                dashboard_action("stop")
+            else:
+                tools.media_key("play_pause")
+        elif name == "yes":
+            assistant.on_text("yes")
+        elif name == "fullscreen":
+            if hub.any_visible():
+                hub.publish({"type": "canvas_cmd", "action": "toggle_fullscreen"})
+            else:
+                tools.press_keys("f11")
+        elif name in ("next", "prev"):
+            tools.press_keys("right" if name == "next" else "left")
+
+    gesture_engine = gestures.GestureEngine(on_gesture, hub.publish, hub.any_visible)
+
+    def set_gestures(on: bool) -> str:
+        if not on:
+            gesture_engine.stop()
+            return ""
+        err = gesture_engine.start()
+        if err:
+            hub.publish({"type": "gesture_error", "text": err})
+        return err
+
+    tools.set_gestures = set_gestures
+
     def dashboard_action(action, data=None):
         data = data or {}
         if action == "canvas_vscode":
@@ -716,6 +779,9 @@ def run_gui(args):
             return
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
+            return
+        if action == "gestures":
+            threading.Thread(target=set_gestures, args=(bool(data.get("on")),), daemon=True).start()
             return
         if action == "talk":
             assistant.on_click()

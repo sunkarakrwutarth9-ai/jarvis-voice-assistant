@@ -83,8 +83,20 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "gestures":
+            self.snapshot["gestures"] = bool(event.get("on"))
         if kind in ("user", "reply", "tool"):
             self.history = (self.history + [event])[-60:]
+        elif kind in ("canvas", "canvas_saved"):
+            # finished creations are replayed too, so a dashboard opened later still shows them
+            if kind == "canvas_saved":
+                event = next(({**h, "file": event.get("file")} for h in self.history
+                              if h.get("type") == "canvas" and h.get("id") == event.get("id")), None) or event
+            if event.get("type") == "canvas":
+                old = [h for h in self.history if h.get("type") == "canvas" and h.get("id") != event["id"]]
+                keep = {id(h) for h in old[-5:]}
+                self.history = [h for h in self.history if h.get("type") != "canvas" or id(h) in keep] + [event]
+            event = {**event, "type": kind} if kind == "canvas_saved" else event
         data = json.dumps(event, ensure_ascii=False)
         with self._lock:
             subs = list(self._subs)
@@ -181,7 +193,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:500])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/visibility" and isinstance(data.get("id"), str):

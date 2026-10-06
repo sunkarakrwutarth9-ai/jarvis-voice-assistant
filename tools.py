@@ -907,6 +907,29 @@ KINDS = {
                              "centred and responsive"),
     "presentation": ("html", "a single-file HTML slide deck (arrow keys / buttons to move between slides, attractive "
                              "16:9 slides, smooth transitions)"),
+    "3d":           ("html", "a stunning interactive 3D scene in one HTML file using three.js - globes, planets, solar "
+                             "systems, molecules/atoms, 3D models built from shapes, terrains, 3D charts, product "
+                             "showcases. Load three.js ONLY with this import map: <script type=\"importmap\">{\"imports\":"
+                             "{\"three\":\"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js\","
+                             "\"three/addons/\":\"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/\"}}</script> "
+                             "then <script type=\"module\"> import * as THREE from 'three'; import {OrbitControls} from "
+                             "'three/addons/controls/OrbitControls.js'. Real textures available (use TextureLoader, "
+                             "colorSpace SRGBColorSpace for colour maps): https://cdn.jsdelivr.net/gh/mrdoob/three.js@r170/"
+                             "examples/textures/planets/ + earth_atmos_2048.jpg (Earth day), earth_normal_2048.jpg, "
+                             "earth_specular_2048.jpg, earth_clouds_1024.png (transparent clouds), earth_lights_2048.png "
+                             "(night lights), moon_1024.jpg. Anything else: procedural materials/canvas textures, no other "
+                             "files. Full-window canvas, resize handling, OrbitControls with damping (drag to rotate, scroll "
+                             "to zoom), gentle auto-rotation, good lighting, a starfield or gradient background, smooth "
+                             "animation, a small title/legend overlay, labels via HTML overlays where useful"),
+    "animation":    ("html", "a beautiful smooth animation / motion-graphics piece in one HTML file (canvas 2D, SVG or "
+                             "CSS animations; particles, generative art, animated logo or story), full-window, no external "
+                             "files"),
+    "simulation":   ("html", "an interactive simulation in one HTML file (physics, gravity/orbits, pendulums, fluids, "
+                             "ecosystems, algorithms, maths visualisation) with live controls (sliders/buttons) and "
+                             "clear labels, canvas-based, no external files"),
+    "music":        ("html", "an interactive music / sound app in one HTML file using the Web Audio API (synth piano "
+                             "playable with mouse and keyboard, drum machine, beat sequencer, ambient generator, "
+                             "visualiser) - sound starts after the first click (browsers require it), no external files"),
     "document":     ("md",   "a well-structured document in Markdown (headings, bullet points, bold, tables where "
                              "useful) - essays, letters, notes, explanations, plans, study material"),
     "code":         (None,   "complete, working, well-structured code in one file that runs as-is, with brief comments"),
@@ -1131,13 +1154,18 @@ def news_headlines(n=8):
     return [html_lib.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", t)).strip() for t in titles[:n]]
 
 
+set_gestures = None   # set by jarvis.py: starts/stops the system-wide gesture engine; returns '' or an error
+
+
 def gestures(on: bool) -> str:
-    """Hand-gesture control runs inside the command center page (camera stays on this PC)."""
-    if on:
-        ensure_dashboard()
-    publish({"type": "gestures", "on": bool(on)})
-    return ("OK: gesture control is on: open palm = talk, fist = stop, thumbs up = yes, victory = full screen, "
-            "point to move the cursor and pinch to click, swipe to switch creations." if on
+    """System-wide hand-gesture control through the webcam (frames stay on this PC)."""
+    if set_gestures is None:
+        return "FAILED: gesture control is not available."
+    err = set_gestures(bool(on))
+    if err:
+        return f"FAILED: {err}"
+    return ("OK: gesture control is on, in every app: point to move the mouse and pinch to click, open palm = talk, "
+            "fist = stop / pause, thumbs up = yes, victory = full screen, swipe = next / previous." if on
             else "OK: gesture control is off.")
 
 
@@ -1151,11 +1179,14 @@ def briefing() -> str:
     parts = [f"Time: {current_time()}", f"Weather: {weather.result()}", f"System: {status.result()}"]
     if news.result():
         parts.append("Top stories: " + " | ".join(news.result()))
+    extra = everyday.prompt_context()
+    if extra:
+        parts.append(extra)
     facts = memories()
     if facts:
         parts.append("Remembered: " + "; ".join(m["fact"] for m in facts[-8:]))
     return "OK: " + "\n".join(parts) + ("\n(Brief the user warmly in 4-6 short spoken sentences: greeting, weather, "
-                                        "2-3 headlines, anything remembered that matters today, battery.)")
+                                        "2-3 headlines, today's reminders, anything remembered that matters today, battery.)")
 
 
 def save_creation(name: str = "", cid=None) -> str:
@@ -1279,6 +1310,27 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("set_reminder", "Reminder or alarm at a clock time or after some minutes, announced aloud when due (persists across restarts). 'Remind me to call Mom at 6 pm' -> at='18:00'. 'Wake me up at 6:30' / 'set an alarm for 7' -> alarm=true. 'Remind me in 20 minutes' -> in_minutes=20. Use the current date/time you were given to compute dates ('tomorrow at 9' -> 'YYYY-MM-DD 09:00').",
+        {"text": {"type": "string", "description": "what to remind about (for alarms: a short label)"},
+         "at": {"type": "string", "description": "24-hour 'HH:MM' (next occurrence) or 'YYYY-MM-DD HH:MM'"},
+         "in_minutes": {"type": "number"},
+         "repeat": {"type": "string", "enum": ["", "daily", "weekdays", "weekends", "weekly"]},
+         "alarm": {"type": "boolean", "description": "true for an alarm (rings), false for a spoken reminder"}}, ["text"]),
+    _fn("list_reminders", "List upcoming reminders and alarms."),
+    _fn("cancel_reminder", "Cancel reminders/alarms matching words (text or time), or all=true for every one.",
+        {"match": {"type": "string"}, "all": {"type": "boolean"}}),
+    _fn("list_add", "Add items to a list (shopping, to-do, or any named list): 'add milk and eggs to my shopping list', 'put call the bank on my to-do list'.",
+        {"items": {"type": "array", "items": {"type": "string"}}, "list_name": {"type": "string", "description": "shopping, to-do, or the list's name"}}, ["items"]),
+    _fn("list_remove", "Remove / tick off items from a list.",
+        {"items": {"type": "array", "items": {"type": "string"}}, "list_name": {"type": "string"}}, ["items"]),
+    _fn("list_show", "Read out a list ('what's on my shopping list'); empty list_name = all lists.",
+        {"list_name": {"type": "string"}}),
+    _fn("list_clear", "Empty a whole list.", {"list_name": {"type": "string"}}, ["list_name"]),
+    _fn("save_routine", "Save a routine: a trigger phrase that runs several steps. 'When I say good night, turn off the volume, lock the PC' -> trigger='good night', steps=['set volume to 0', 'lock the PC'].",
+        {"trigger": {"type": "string"}, "steps": {"type": "array", "items": {"type": "string"}, "description": "each step as a short spoken command"}}, ["trigger", "steps"]),
+    _fn("run_routine", "Run a saved routine by its trigger phrase; then carry out the steps it returns.",
+        {"trigger": {"type": "string"}}, ["trigger"]),
+    _fn("delete_routine", "Delete a saved routine.", {"trigger": {"type": "string"}}, ["trigger"]),
     _fn("open_app", "Launch an installed desktop app or Windows settings page, e.g. spotify, vs code, discord, notepad, bluetooth settings.",
         {"name": {"type": "string"}}, ["name"]),
     _fn("close_app", "Close a running desktop app by name, e.g. spotify, chrome, notepad.",
@@ -1332,7 +1384,7 @@ TOOLS = [
         {"target": {"type": "string"}, "double": {"type": "boolean"}}, ["target"]),
     _fn("voice_mode", "Switch Jarvis to speak in the user's own cloned voice (mine=true) or back to the Jarvis voice (mine=false).",
         {"mine": {"type": "boolean"}}, ["mine"]),
-    _fn("create", "Create anything the user asks you to make, write or generate - it is written live on the canvas screen inside the command center (not saved until the user agrees). kind: 'code' (a program in any language), 'webpage' (website / web app / HTML), 'game' (browser game), 'chart' (graph / visualisation of data), 'drawing' (picture / illustration / logo, as SVG), 'presentation' (slides), 'document' (essay, letter, notes, explanation, plan, table, study material, story...). Never type generated content with type_text and never read it aloud.",
+    _fn("create", "Create anything the user asks you to make, write or generate - it is written live on the canvas screen inside the command center (not saved until the user agrees). kind: 'code' (a program in any language), 'webpage' (website / web app / HTML), 'game' (browser game), 'chart' (graph / visualisation of data), 'drawing' (picture / illustration / logo, as SVG), 'presentation' (slides), '3d' (anything three-dimensional: 3D globe / Earth, planets, solar system, atom, molecule, 3D model, 3D chart, rotating object), 'animation' (motion graphics, generative art, animated logo), 'simulation' (physics, orbits, algorithms, interactive science), 'music' (piano, drum machine, beat maker, sound visualiser), 'document' (essay, letter, notes, explanation, plan, table, study material, story...). Never type generated content with type_text and never read it aloud.",
         {"kind": {"type": "string", "enum": list(KINDS)},
          "request": {"type": "string", "description": "Exactly what to make, with every detail the user gave."},
          "language": {"type": "string", "description": "for code: python, java, c++, javascript... (empty = best choice)"},
@@ -1376,7 +1428,13 @@ TOOLS = [
         {"action": {"type": "string", "enum": ["shutdown", "restart", "cancel"]}}, ["action"]),
 ]
 
+import everyday  # noqa: E402  (reminders, alarms, lists, routines)
+
 FUNCS = {
+    "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
+    "cancel_reminder": everyday.cancel_reminder, "list_add": everyday.list_add, "list_remove": everyday.list_remove,
+    "list_show": everyday.list_show, "list_clear": everyday.list_clear, "save_routine": everyday.save_routine,
+    "run_routine": everyday.run_routine, "delete_routine": everyday.delete_routine,
     "open_app": open_app, "close_app": close_app, "open_website": open_website, "web_search": web_search,
     "open_browser": open_browser,
     "web_lookup": web_lookup, "get_weather": get_weather, "open_folder": open_folder,
@@ -1408,7 +1466,9 @@ _ICONS = {
     "power_off": "\uE7E8", "type_text": "\uE765", "press_keys": "\uE765", "scroll": "\uE8CB",
     "window_control": "\uE737", "read_screen": "\uE7B3", "click_on_screen": "\uE8B0", "voice_mode": "\uE720",
     "do_task": "\uE945", "remember": "\uE734", "forget": "\uE74D", "find_files": "\uE721", "open_file": "\uE8E5",
-    "set_theme": "\uE790",
+    "set_theme": "\uE790", "set_reminder": "\uEA8F", "list_reminders": "\uEA8F", "cancel_reminder": "\uEA8F",
+    "list_add": "\uE7BF", "list_remove": "\uE7BF", "list_show": "\uE7BF", "list_clear": "\uE7BF",
+    "save_routine": "\uE945", "run_routine": "\uE945", "delete_routine": "\uE945",
 }
 _ACTION_ICONS = {"like": "\uEB51", "unlike": "\uEB51", "dislike": "\uE8E0", "subscribe": "\uE8FA",
                  "pause": "\uE769", "mute": "\uE74F", "volume_down": "\uE993", "volume_up": "\uE995"}
@@ -1455,7 +1515,9 @@ def describe(name: str, args: dict):
         "create": lambda: {"code": f"Writing {a.get('language') or ''} code".replace("  ", " "),
                            "webpage": "Building the web page", "game": "Building the game",
                            "chart": "Drawing the chart", "drawing": "Drawing it",
-                           "presentation": "Making the slides", "document": "Writing the document"
+                           "presentation": "Making the slides", "document": "Writing the document",
+                           "3d": "Building the 3D scene", "animation": "Animating it",
+                           "simulation": "Building the simulation", "music": "Building the music app"
                            }.get(a.get("kind"), "Creating it"),
         "save_creation": lambda: "Saving it",
         "revise_creation": lambda: "Making the change",
@@ -1472,6 +1534,16 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "set_reminder": lambda: ("Alarm · " if a.get("alarm") else "Reminder · ") + (a.get("at") or f"in {a.get('in_minutes', '')} min"),
+        "list_reminders": lambda: "Checking reminders",
+        "cancel_reminder": lambda: "Cancelling reminder",
+        "list_add": lambda: f"Adding to {a.get('list_name') or 'to-do'} list",
+        "list_remove": lambda: f"Updating {a.get('list_name') or 'to-do'} list",
+        "list_show": lambda: f"{(a.get('list_name') or 'Your').capitalize()} list",
+        "list_clear": lambda: f"Clearing {a.get('list_name', '')} list",
+        "save_routine": lambda: f"Saving routine · {a.get('trigger', '')}",
+        "run_routine": lambda: f"Routine · {a.get('trigger', '')}",
+        "delete_routine": lambda: "Deleting routine",
         "set_theme": lambda: f"Theme: {a.get('theme') or ''} {a.get('appearance') or ''}".strip(),
     }
     icon = _ACTION_ICONS.get(a.get("action"), _ICONS.get(name, "\uE945"))

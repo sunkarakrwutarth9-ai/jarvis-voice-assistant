@@ -120,7 +120,8 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .gcam{position:fixed;right:22px;bottom:104px;width:220px;height:165px;border-radius:16px;overflow:hidden;z-index:30;display:none;
   border:1px solid var(--gold);box-shadow:0 0 30px rgba(244,186,66,.25)}
 .gcam.on{display:block}
-.gcam video,.gcam canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);object-fit:cover}
+.gcam{background:radial-gradient(circle at 50% 40%,rgba(127,230,255,.12),rgba(5,8,16,.92))}
+.gcam canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
 .gcam .lbl{position:absolute;left:8px;bottom:6px;font:600 11px var(--hud);letter-spacing:2px;color:#fff;text-shadow:0 1px 4px #000}
 .gcursor{position:fixed;width:34px;height:34px;margin:-17px;border-radius:50%;border:2px solid var(--gold);z-index:70;display:none;
   pointer-events:none;box-shadow:0 0 16px rgba(244,186,66,.7),inset 0 0 10px rgba(244,186,66,.4);transition:transform .08s}
@@ -265,7 +266,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
   <button id="newc" style="--a:180deg;--r:min(26vh,250px)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>RESET</button>
 </div>
 
-<div class="gcam" id="gcam"><video id="gvid" playsinline muted></video><canvas id="gdraw"></canvas><div class="lbl" id="glbl">GESTURES ON</div></div>
+<div class="gcam" id="gcam"><canvas id="gdraw"></canvas><div class="lbl" id="glbl">GESTURES ON</div></div>
 <div class="gcursor" id="gcursor"></div>
 <div class="gtoast" id="gtoast"></div>
 <div class="offline" id="offline">RE-ESTABLISHING NEURAL LINK…</div>
@@ -338,6 +339,9 @@ function onEvent(e) {
     case "ranking": models(e.models); break;
     case "theme": if (e.theme !== PAGE_THEME) location.reload(); break;
     case "gestures": setGestures(e.on); break;
+    case "hand": if (gesturesOn) drawHand(e); break;
+    case "gesture_fired": toast(FIRED[e.name] || e.name); break;
+    case "gesture_error": setGestures(false); toast("Gesture control unavailable: " + e.text, 7000); break;
     case "canvas_start": canvasStart(e); break;
     case "canvas_chunk": canvasChunk(e); break;
     case "canvas": canvasDone(e); break;
@@ -377,7 +381,8 @@ function models(list) { $("models").innerHTML = (list || []).slice(0, 3).map(m =
 // ================= creation canvas =================
 const creations = {}; let cur = null, tab = "preview";
 const KIND_LABEL = {code: "Code", webpage: "Web page", game: "Game", chart: "Chart", drawing: "Drawing",
-                    presentation: "Slides", document: "Document"};
+                    presentation: "Slides", document: "Document", "3d": "3D", animation: "Animation",
+                    simulation: "Simulation", music: "Music"};
 const isHtml = c => c && c.lang === "html", isDoc = c => c && c.lang === "md";
 // The preview is sandboxed (no access to this page), which also blocks localStorage - games use it for
 // high scores - so give previews an in-memory stand-in instead of letting them crash.
@@ -387,6 +392,12 @@ key:function(i){return Object.keys(d)[i]||null},get length(){return Object.keys(
 try{window.localStorage}catch(e){try{Object.defineProperty(window,"localStorage",{value:S(),configurable:true});
 Object.defineProperty(window,"sessionStorage",{value:S(),configurable:true})}catch(_){}}})();<\/script>`;
 
+// The shim goes right after <head>, so the page keeps standards mode (a script before <!DOCTYPE> switches
+// to quirks mode, which breaks full-window layouts such as 3D scenes). Libraries load from the public CDN:
+// Chrome blocks sandboxed previews from fetching localhost.
+function previewDoc(html) {
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + STORAGE_SHIM) : STORAGE_SHIM + html;
+}
 function stripFence(t) {                       // text inside the first ``` fence, while it's still streaming
   const i = t.indexOf("```"); if (i < 0) return t;
   const nl = t.indexOf("\n", i); if (nl < 0) return "";
@@ -458,7 +469,7 @@ function select(id) {
   $("cSave").hidden = !c.done || !!c.file;
   if (c.done) {
     $("cCode").innerHTML = highlight(c.content, c.lang);
-    if (isHtml(c)) $("cFrame").srcdoc = STORAGE_SHIM + c.content;
+    if (isHtml(c)) $("cFrame").srcdoc = previewDoc(c.content);
     if (isDoc(c)) $("cDoc").innerHTML = md(c.content);
     $("cStatus").textContent = `${c.content.split("\n").length} lines · ` +
       (c.file ? `saved to ${c.file}` : "Not saved — say “save it” or tap Save to keep it");
@@ -496,6 +507,7 @@ function canvasCmd(a) {
   if (cur) app.dataset.canvas = "1";
   if (a === "fullscreen") $("canvas").classList.add("full");
   if (a === "exit_fullscreen") $("canvas").classList.remove("full");
+  if (a === "toggle_fullscreen") $("canvas").classList.toggle("full");
   if (a === "show_code") showTab("code");
   if (a === "show_preview") showTab("preview");
 }
@@ -523,11 +535,12 @@ $("me").onclick = () => post("/api/action", {action: "me"});
 $("mute").onclick = () => post("/api/action", {action: "mute"});
 $("newc").onclick = () => { post("/api/action", {action: "new_chat"}); $("feed").innerHTML = '<div class="empty" id="empty">Conversation reset.</div>'; };
 $("theme").onclick = () => post("/api/command", {text: "switch to the iOS theme"});
-$("gBtn").onclick = () => setGestures(!gesturesOn);
+$("gBtn").onclick = () => requestGestures(!gesturesOn);
 document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement !== $("cmd")) { e.preventDefault(); $("talk").click(); } });
 
 fetch("/api/state").then(r => r.json()).then(s => {
   onEvent({type: "me", on: s.me}); onEvent({type: "muted", on: s.muted}); models(s.ranking);
+  if (s.gestures) setGestures(true);
   (s.history || []).forEach(onEvent); setState(s.state, s.title, s.body); });
 const VIEW = Math.random().toString(36).slice(2, 12);
 const reportView = () => post("/api/visibility", {id: VIEW, visible: document.visibilityState === "visible"});
@@ -537,96 +550,32 @@ es.onopen = () => { $("offline").classList.remove("show"); reportView(); };
 es.onmessage = m => onEvent(JSON.parse(m.data));
 es.onerror = () => $("offline").classList.add("show");
 
-// =================== GESTURES (MediaPipe hand tracking, all on this PC) ===================
-let gesturesOn = false, landmarker = null, gStream = null, gRaf = 0;
-const G = {held: "", count: 0, lastFire: 0, xs: [], cursor: {x: innerWidth / 2, y: innerHeight / 2}, pinch: false};
-function toast(t) { const el = $("gtoast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 1400); }
-async function setGestures(on) {
-  if (on === gesturesOn) return;
+// =================== GESTURES: tracked by Jarvis itself (works in every app); this is the live HUD ===================
+let gesturesOn = false;
+function toast(t, ms = 1400) { const el = $("gtoast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), ms); }
+function setGestures(on) {                          // state reported by Jarvis
   gesturesOn = on; $("gBtn").classList.toggle("on", on); $("gcam").classList.toggle("on", on);
-  if (!on) { cancelAnimationFrame(gRaf); gStream?.getTracks().forEach(t => t.stop()); gStream = null;
-    $("gcursor").classList.remove("on"); toast("Gestures off"); return; }
-  toast("Starting gesture control…");
-  try {
-    if (!landmarker) {
-      const {FilesetResolver, HandLandmarker} = await import("/vendor/vision_bundle.mjs");
-      const fs = await FilesetResolver.forVisionTasks("/vendor/wasm");
-      landmarker = await HandLandmarker.createFromOptions(fs, {baseOptions: {modelAssetPath: "/vendor/hand_landmarker.task", delegate: "GPU"},
-        runningMode: "VIDEO", numHands: 1});
-    }
-    gStream = await navigator.mediaDevices.getUserMedia({video: {width: 640, height: 480, facingMode: "user"}});
-    const v = $("gvid"); v.srcObject = gStream; await v.play();
-    toast("✋ Gestures on — palm: talk · fist: stop · 👍: yes · ✌️: full screen · ☝️: point & pinch");
-    loopGestures();
-  } catch (err) { console.error(err); toast("Gesture control unavailable: " + err.message); gesturesOn = false;
-    $("gBtn").classList.remove("on"); $("gcam").classList.remove("on"); }
+  if (on) toast("✋ Gestures on in every app — ☝️ point: mouse · 🤏 pinch: click · ✋ talk · ✊ stop · 👍 yes · ✌️ full screen · 👋 swipe", 4000);
+  else { toast("Gestures off"); $("gdraw").getContext("2d").clearRect(0, 0, 220, 165); }
 }
-const d2 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-function classify(l) {
-  const ext = (tip, pip) => d2(l[tip], l[0]) > d2(l[pip], l[0]) * 1.12;
-  const idx = ext(8, 6), mid = ext(12, 10), rng = ext(16, 14), pnk = ext(20, 18);
-  const thumbOut = d2(l[4], l[5]) > d2(l[3], l[5]) * 1.25 && d2(l[4], l[9]) > d2(l[0], l[9]) * 0.55;
-  const pinch = d2(l[4], l[8]) < d2(l[5], l[0]) * 0.28;
-  if (idx && mid && rng && pnk && thumbOut) return {g: "palm", pinch};
-  if (!idx && !mid && !rng && !pnk && thumbOut && l[4].y < l[3].y && l[4].y < l[5].y - 0.04) return {g: "thumbs", pinch};
-  if (!idx && !mid && !rng && !pnk) return {g: "fist", pinch};
-  if (idx && mid && !rng && !pnk) return {g: "victory", pinch};
-  if (idx && !mid && !rng && !pnk) return {g: "point", pinch};
-  return {g: "other", pinch};
+function requestGestures(on) { toast(on ? "Starting the camera…" : "Stopping gestures…", 8000); post("/api/action", {action: "gestures", on}); }
+const BONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function drawHand(e) {
+  const cv = $("gdraw"), cx = cv.getContext("2d"); if (cv.width !== 220) { cv.width = 220; cv.height = 165; }
+  cx.clearRect(0, 0, 220, 165);
+  $("glbl").textContent = e.pts.length ? ({palm: "✋ PALM", fist: "✊ FIST", thumbs: "👍 THUMBS UP", victory: "✌️ VICTORY",
+    point: e.pinch ? "🤏 CLICK" : "☝️ POINTING", other: "…"}[e.g] || "…") : "SHOW YOUR HAND";
+  if (!e.pts.length) return;
+  const P = e.pts.map(([x, y]) => [x * 220, y * 165]);
+  cx.strokeStyle = "rgba(127,230,255,.8)"; cx.lineWidth = 2; cx.beginPath();
+  BONES.forEach(([i, j]) => { cx.moveTo(...P[i]); cx.lineTo(...P[j]); }); cx.stroke();
+  cx.fillStyle = "#f4ba42"; P.forEach(([x, y]) => { cx.beginPath(); cx.arc(x, y, 2.8, 0, 7); cx.fill(); });
 }
-const ACTIONS = {
-  palm: ["✋ Listening", () => post("/api/action", {action: "talk"})],
-  fist: ["✊ Stop", () => { post("/api/action", {action: "stop"}); canvasCmd("exit_fullscreen"); }],
-  thumbs: ["👍 Yes", () => post("/api/command", {text: "yes"})],
-  victory: ["✌️ Full screen", () => $("canvas").classList.toggle("full")],
-};
-function loopGestures() {
-  const v = $("gvid"), cv = $("gdraw"), cx = cv.getContext("2d"); let lastT = -1;
-  const step = () => {
-    if (!gesturesOn) return; gRaf = requestAnimationFrame(step);
-    if (v.currentTime === lastT || document.hidden) return; lastT = v.currentTime;
-    const res = landmarker.detectForVideo(v, performance.now());
-    if (cv.width !== 220) { cv.width = 220; cv.height = 165; }
-    cx.clearRect(0, 0, 220, 165);
-    const l = res.landmarks && res.landmarks[0];
-    if (!l) { $("glbl").textContent = "SHOW YOUR HAND"; $("gcursor").classList.remove("on"); G.held = ""; G.xs = []; return; }
-    cx.fillStyle = "#f4ba42"; l.forEach(p => { cx.beginPath(); cx.arc(p.x * 220, p.y * 165, 2.6, 0, 7); cx.fill(); });
-    const {g, pinch} = classify(l);
-    $("glbl").textContent = {palm: "✋ PALM", fist: "✊ FIST", thumbs: "👍 THUMBS UP", victory: "✌️ VICTORY", point: "☝️ POINT", other: "…"}[g];
-    const now = performance.now();
-    // pointing: move the air cursor; pinch clicks what's under it
-    if (g === "point" || (pinch && G.cursorOn)) {
-      const tx = (1 - l[8].x) * innerWidth * 1.3 - innerWidth * .15, ty = l[8].y * innerHeight * 1.3 - innerHeight * .15;
-      G.cursor.x += (tx - G.cursor.x) * .35; G.cursor.y += (ty - G.cursor.y) * .35; G.cursorOn = true;
-      const c = $("gcursor"); c.classList.add("on"); c.style.left = G.cursor.x + "px"; c.style.top = G.cursor.y + "px";
-      c.classList.toggle("pinch", pinch);
-      if (pinch && !G.pinch && now - G.lastFire > 600) {
-        G.lastFire = now; const el = document.elementFromPoint(G.cursor.x, G.cursor.y); el?.click?.(); toast("🤏 Click");
-      }
-      G.pinch = pinch; return;
-    }
-    G.cursorOn = false; $("gcursor").classList.remove("on");
-    // swipe: fast sideways hand movement switches between creations
-    G.xs.push([now, l[0].x]); G.xs = G.xs.filter(([t]) => now - t < 350);
-    if (G.xs.length > 4 && now - G.lastFire > 900) {
-      const dx = G.xs[G.xs.length - 1][1] - G.xs[0][1];
-      if (Math.abs(dx) > 0.28) { G.lastFire = now; G.xs = []; swipe(dx < 0 ? 1 : -1); return; }
-    }
-    // held poses fire once after ~0.45 s
-    if (g === G.held) G.count++; else { G.held = g; G.count = 0; }
-    if (ACTIONS[g] && G.count === 9 && now - G.lastFire > 1200) { G.lastFire = now; toast(ACTIONS[g][0]); ACTIONS[g][1](); }
-  };
-  step();
-}
-function swipe(dir) {                                   // camera is mirrored: moving your hand right = next
-  const ids = Object.keys(creations); if (!ids.length) { toast("Nothing to swipe through yet"); return; }
-  const i = Math.max(0, ids.indexOf(cur)); const j = (i + dir + ids.length) % ids.length; select(ids[j]);
-  toast(dir > 0 ? "👉 Next" : "👈 Previous");
-}
+const FIRED = {talk: "✋ Listening", stop: "✊ Stop", yes: "👍 Yes", fullscreen: "✌️ Full screen", next: "👉 Next", prev: "👈 Previous"};
 </script>
 
 <script type="module">
-// =================== THE ORB: a living particle sphere (three.js, GPU) ===================
+// =================== THE ORB: a living atom - nucleus, electron orbits, electron cloud (three.js, GPU) ===================
 import * as THREE from "/vendor/three.module.min.js";
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: false, powerPreference: "high-performance"});
@@ -638,7 +587,7 @@ addEventListener("resize", resize); resize();
 
 const orb = new THREE.Group(); scene.add(orb);
 // sphere of particles (fibonacci lattice)
-const N = 4200, pos = new Float32Array(N * 3), seed = new Float32Array(N);
+const N = 2600, pos = new Float32Array(N * 3), seed = new Float32Array(N);
 for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963;
   pos.set([Math.cos(th) * r, y, Math.sin(th) * r], i * 3); seed[i] = Math.random(); }
 const geo = new THREE.BufferGeometry();
@@ -658,7 +607,7 @@ const mat = new THREE.ShaderMaterial({uniforms, transparent: true, depthWrite: f
       gl_Position = projectionMatrix * mv;
       gl_PointSize = uSize * (1.0 + uLevel*0.8) * (6.0 / -mv.z);
       vMix = clamp(0.5 + n*0.9 + p.y*0.15, 0.0, 1.0);
-      vAlpha = 0.55 + 0.45*seed;
+      vAlpha = (0.22 + 0.3*seed) * (1.0 + uLevel*1.2);   // faint electron cloud
     }`,
   fragmentShader: `
     uniform vec3 uA, uB; varying float vMix; varying float vAlpha;
@@ -666,23 +615,48 @@ const mat = new THREE.ShaderMaterial({uniforms, transparent: true, depthWrite: f
       float a = smoothstep(0.5, 0.0, d) * vAlpha; gl_FragColor = vec4(mix(uA, uB, vMix), a); }`});
 orb.add(new THREE.Points(geo, mat));
 
-// glowing core
+// glowing core behind the nucleus
 function glowTex(c1, c2) { const cv = document.createElement("canvas"); cv.width = cv.height = 256; const x = cv.getContext("2d");
   const g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, c1); g.addColorStop(.25, c2); g.addColorStop(1, "rgba(0,0,0,0)");
   x.fillStyle = g; x.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(cv); }
 const core = new THREE.Sprite(new THREE.SpriteMaterial({map: glowTex("rgba(255,255,255,1)", "rgba(127,230,255,.55)"), blending: THREE.AdditiveBlending, depthWrite: false}));
-core.scale.set(2.2, 2.2, 1); orb.add(core);
+core.scale.set(1.5, 1.5, 1); orb.add(core);
 const halo = new THREE.Sprite(new THREE.SpriteMaterial({map: glowTex("rgba(127,230,255,.25)", "rgba(127,230,255,.08)"), blending: THREE.AdditiveBlending, depthWrite: false}));
 halo.scale.set(9, 9, 1); orb.add(halo);
 
-// orbiting particle rings
-const rings = [];
-[[2.25, .6, 0x7fe6ff], [2.55, -.35, 0xf4ba42], [2.85, 1.2, 0xe0262f]].forEach(([R, tilt, col], k) => {
-  const M = 520, rp = new Float32Array(M * 3);
-  for (let i = 0; i < M; i++) { const a = i / M * Math.PI * 2; rp.set([Math.cos(a) * R, (Math.random() - .5) * .05, Math.sin(a) * R], i * 3); }
-  const g2 = new THREE.BufferGeometry(); g2.setAttribute("position", new THREE.BufferAttribute(rp, 3));
-  const p = new THREE.Points(g2, new THREE.PointsMaterial({color: col, size: .022, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false}));
-  p.rotation.x = tilt; p.rotation.z = k * .4; orb.add(p); rings.push(p);
+// nucleus: a tight cluster of protons (red-gold) and neutrons (arc blue)
+scene.add(new THREE.AmbientLight(0xffffff, .35));
+const key = new THREE.PointLight(0xffffff, 40, 0, 2); key.position.set(2, 2.5, 4); scene.add(key);
+const nucleus = new THREE.Group(); orb.add(nucleus);
+const nGeo = new THREE.SphereGeometry(.16, 24, 16);
+const proton = new THREE.MeshStandardMaterial({color: 0xe0262f, emissive: 0xff5a2f, emissiveIntensity: .55, roughness: .35, metalness: .3});
+const neutron = new THREE.MeshStandardMaterial({color: 0x7fe6ff, emissive: 0x2fa8ff, emissiveIntensity: .5, roughness: .35, metalness: .3});
+const nucleons = [];
+for (let i = 0, M = 18; i < M; i++) {
+  const y = 1 - (i / (M - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963, R = i % 3 ? .3 : .16;
+  const m = new THREE.Mesh(nGeo, i % 2 ? proton : neutron);
+  m.position.set(Math.cos(th) * r * R, y * R, Math.sin(th) * r * R); m.userData.home = m.position.clone(); m.userData.ph = Math.random() * 6.28;
+  nucleus.add(m); nucleons.push(m);
+}
+
+// electron orbits: three tilted ellipses, each with a glowing electron and a fading comet trail
+const eTex = glowTex("rgba(255,255,255,1)", "rgba(255,255,255,.5)");
+const orbits = [];
+[[0x7fe6ff, 0], [0xf4ba42, Math.PI / 3], [0xff4d5a, -Math.PI / 3]].forEach(([col, rotZ], k) => {
+  const g = new THREE.Group(); g.rotation.z = rotZ; g.rotation.x = .35 * (k - 1); orb.add(g);
+  const A = 2.45, B = .9, P = 256, lp = new Float32Array(P * 3);
+  for (let i = 0; i < P; i++) { const a = i / P * Math.PI * 2; lp.set([Math.cos(a) * A, Math.sin(a) * B, 0], i * 3); }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute("position", new THREE.BufferAttribute(lp, 3));
+  const line = new THREE.LineLoop(lg, new THREE.LineBasicMaterial({color: col, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false}));
+  g.add(line);
+  const e = new THREE.Sprite(new THREE.SpriteMaterial({map: eTex, color: col, blending: THREE.AdditiveBlending, depthWrite: false}));
+  e.scale.set(.42, .42, 1); g.add(e);
+  const T = 48, tp = new Float32Array(T * 3), tc = new Float32Array(T * 3), c = new THREE.Color(col);
+  for (let i = 0; i < T; i++) { const f = (1 - i / T) ** 2; tc.set([c.r * f, c.g * f, c.b * f], i * 3); }
+  const tg = new THREE.BufferGeometry(); tg.setAttribute("position", new THREE.BufferAttribute(tp, 3)); tg.setAttribute("color", new THREE.BufferAttribute(tc, 3));
+  const trail = new THREE.Points(tg, new THREE.PointsMaterial({size: .07, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false}));
+  g.add(trail);
+  orbits.push({g, line, e, trail, A, B, T, phase: k * 2.1, speed: 1 + k * .18});
 });
 // distant stars
 const S = 900, sp = new Float32Array(S * 3);
@@ -709,8 +683,25 @@ function frame(now) {
   uniforms.uTime.value = t; uniforms.uLevel.value = level;
   uniforms.uChaos.value += ((st === "thinking" ? .32 : .12) - uniforms.uChaos.value) * .05;
   orb.rotation.y += spin * .016; orb.rotation.x = Math.sin(t * .3) * .12;
-  rings.forEach((r, k) => r.rotation.y += (k % 2 ? -1 : 1) * (.002 + spin * .01 * (k + 1)));
-  core.material.color.copy(uniforms.uA.value); core.scale.setScalar(2.0 + level * 1.4 + Math.sin(t * 2) * .05);
+  // electrons race faster while thinking/acting and the orbits swell with the voice
+  const swell = 1 + level * .35, dt = Math.min(.05, (now - (frame.last || now)) / 1000); frame.last = now;
+  orbits.forEach(o => {
+    o.phase += dt * o.speed * (1.1 + spin * 2.2 + level * 2);
+    const tp = o.trail.geometry.attributes.position;
+    for (let i = 0; i < o.T; i++) { const a = o.phase - i * .035; tp.setXYZ(i, Math.cos(a) * o.A * swell, Math.sin(a) * o.B * swell, 0); }
+    tp.needsUpdate = true;
+    o.e.position.set(Math.cos(o.phase) * o.A * swell, Math.sin(o.phase) * o.B * swell, 0);
+    o.line.scale.setScalar(swell); o.line.material.opacity = .3 + level * .5;
+    o.g.rotation.y += .002 + spin * .004;
+  });
+  // the nucleus breathes and jitters with energy
+  const energy = .02 + level * .12 + (st === "thinking" ? .05 : 0);
+  nucleons.forEach(m => { const h = m.userData.home, ph = m.userData.ph;
+    m.position.set(h.x * (1 + level * .5) + Math.sin(t * 7 + ph) * energy, h.y * (1 + level * .5) + Math.cos(t * 6 + ph) * energy, h.z * (1 + level * .5) + Math.sin(t * 5 + ph * 2) * energy); });
+  nucleus.rotation.y += .01 + spin * .02; nucleus.rotation.x += .004;
+  proton.emissive.copy(uniforms.uB.value); neutron.emissive.copy(uniforms.uA.value);
+  proton.emissiveIntensity = neutron.emissiveIntensity = .45 + level * 1.2;
+  core.material.color.copy(uniforms.uA.value); core.scale.setScalar(1.3 + level * 1.6 + Math.sin(t * 2) * .05);
   halo.material.color.copy(uniforms.uA.value);
   stars.rotation.y += .0003;
   // canvas open: the orb shrinks and rises above the work area

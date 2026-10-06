@@ -52,7 +52,8 @@ Acting:
 - For multi-step jobs inside an app or website that no direct tool covers, use do_task with the full goal. Prefer direct tools when they fit (they are faster). After do_task, report its result briefly.
 - "Remember that ..." means remember; "forget ..." means forget. Use remembered facts naturally.
 - To find or open a document, photo or file, use find_files (open_first=true when they want it opened).
-- Anything the user wants you to make, write or generate - code in any language, a website, an app, a game, a chart, a drawing or logo, slides, an essay, a letter, notes, a plan, a story, a table - means create, with the right kind and the full request including every detail. It appears live on the canvas screen in the command center. Never type generated content with type_text and never read it aloud; just say it's ready.
+- Anything the user wants you to make, write or generate - code in any language, a website, an app, a game, a chart, a drawing or logo, slides, anything 3D (a 3D globe, solar system, atom, 3D model), an animation, a simulation, a music or sound app, an essay, a letter, notes, a plan, a story, a table - means create, with the right kind and the full request including every detail. It appears live on the canvas screen in the command center. Never type generated content with type_text and never read it aloud; just say it's ready.
+- Everyday assistant: "remind me...", "wake me up at...", "set an alarm" -> set_reminder (alarm=true for alarms; short timers can still use set_timer). Shopping / to-do lists -> list_add, list_remove, list_show, list_clear. "When I say X, do A and B" -> save_routine; when the user says a saved routine's phrase -> run_routine, then do every step it returns. Jokes, riddles, quizzes, trivia, unit conversions, maths, spellings, word meanings and translations: answer directly and briefly (a quiz = one question at a time, wait for the answer, keep score).
 - "Full screen", "make it bigger", "exit full screen", "show me the code", "show the preview", "close it", "open it in VS Code", "run it" refer to the canvas: use canvas_control.
 - Changes to what's on the canvas ("make it blue", "add a dark mode", "shorter", "fix it") mean revise_creation.
 - "Research X", "find out about X", "compare X and Y", "report on X" mean research (reads the web and writes a sourced report). Quick factual questions still use web_lookup.
@@ -454,6 +455,9 @@ class Brain:
             f"(UTC{offset[:3]}:{offset[3:]}). The user is in India, so this IS the time in India. Answer time/date "
             f"questions about India straight from this, exactly to the minute (e.g. \"It's 3:19 PM, Sir\"). "
             f"For other countries use world_time.")
+        extra = tools.everyday.prompt_context()
+        if extra:
+            system += "\n\n" + extra
         facts = tools.memories()
         if facts:
             system += "\n\nThings the user asked you to remember (use them when relevant):\n" + "\n".join(

@@ -35,7 +35,13 @@ From then on, just double-click `run.bat` (or `Start Jarvis.vbs` for no console 
 | "Open Chrome" | Pops up your Chrome accounts — pick one by voice or click |
 | "Set volume to 30" · "brightness 70" · "lock the PC" | Controls your system |
 | "Write a Python program that…" · "build a snake game" · "make a website for…" | Written **live** on the command-center canvas |
+| "Make a 3D globe of the Earth" · "build a solar system" · "show a 3D atom" | Interactive **3D** scenes you can rotate and zoom |
+| "Make a piano" · "a drum machine" · "simulate gravity" · "an animated logo" | Music apps, simulations and animations |
 | "Make the button blue" · "make it shorter" | Edits what's on the canvas |
+| "Remind me to call Mom at 6 pm" · "wake me up at 6:30 on weekdays" | Reminders and alarms, spoken aloud when due (survive restarts) |
+| "Add milk and eggs to my shopping list" · "what's on my to-do list?" | Shopping / to-do / any lists |
+| "When I say good night, mute the volume and lock the PC" | Routines: your own phrase runs several steps |
+| "Tell me a joke" · "quiz me on capitals" · "how many km in 10 miles?" | Jokes, quizzes, conversions, meanings, translations |
 | "Research electric cars in India" | Searches the web, reads sources, writes a cited report |
 | "Summarise my resume PDF" | Reads PDFs, Word, text and code files |
 | "What's on my screen?" · "click the Subscribe button" | Sees and operates your screen |
@@ -53,11 +59,13 @@ Speak **Telugu or Hindi** any time — Jarvis answers in the language you use.
 
 ## 🖥️ The command center — <http://localhost:7777>
 
-Say **"open command center"**. A full-screen dashboard with a living 3D orb, system vitals, the conversation
-log and the **canvas** where everything Jarvis creates appears (Preview / Code / Run / Save / Full screen).
+Say **"open command center"**. A full-screen dashboard with a living 3D **atom** (a glowing nucleus with
+electrons racing around it, reacting to your voice), system vitals, the conversation log and the **canvas**
+where everything Jarvis creates appears (Preview / Code / Run / Save / Full screen).
 
-**Gestures** (click ✋ on the orb or say "turn on gestures"; camera stays on your PC):
-✋ palm = talk · ✊ fist = stop · 👍 = yes · ✌️ = full screen · ☝️ point + 🤏 pinch = click · 👋 swipe = next/previous.
+**Gestures — in every app** (click ✋ GESTURE or say "turn on gestures"; the camera stays on your PC):
+☝️ point = move the mouse · 🤏 pinch = click · ✋ palm = talk · ✊ fist = stop Jarvis / pause-play media ·
+👍 = yes · ✌️ = full screen · 👋 swipe = next/previous (slides, photos, video seek).
 
 ---
 
@@ -102,6 +110,8 @@ JARVIS_ME_MODE=0
 | `tools.py` | Everything Jarvis can do (apps, browser, canvas creations, research, files, autopilot…) |
 | `listener.py` / `systemaudio.py` | Microphone, wake word, and ignoring the PC's own audio |
 | `speech.py` / `voiceclone.py` | Voices (Kokoro / Microsoft neural) and your cloned voice |
+| `everyday.py` | Reminders, alarms, lists and routines |
+| `gestures.py` | System-wide hand-gesture control (webcam + MediaPipe) |
 | `island.py` | The Dynamic Island |
 | `server.py` + `dashboard*.html` | Command center at localhost:7777 |
 
