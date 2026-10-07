@@ -1,5 +1,5 @@
-' Starts Atomo without any console window (uses the private .venv made by setup.bat if present).
-' If Atomo is already running, opens the command center instead.
+' Starts Ultron without any console window (uses the private .venv made by setup.bat if present).
+' If Ultron is already running, opens the command center instead.
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh = CreateObject("WScript.Shell")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)

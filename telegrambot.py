@@ -1,11 +1,11 @@
-"""Telegram anywhere: talk to Atomo and control the PC from anywhere in the world through your own private
+"""Telegram anywhere: talk to Ultron and control the PC from anywhere in the world through your own private
 Telegram bot - text, voice notes (any language), photos ("what's this?"), files and quick commands.
 
-How it connects: Atomo polls Telegram's servers over HTTPS (no ports opened on this PC, works behind any
+How it connects: Ultron polls Telegram's servers over HTTPS (no ports opened on this PC, works behind any
 router). Who can use it: only the account that pairs with a one-time 6-digit code shown on the PC;
 everyone else gets "private assistant" and is ignored. The bot token is kept in .env (never committed).
 
-Extras: when you're away from the PC (idle > 10 min), Atomo's reminders and alerts are also sent to
+Extras: when you're away from the PC (idle > 10 min), Ultron's reminders and alerts are also sent to
 Telegram; creations (pages, notes, reports) arrive as files; /screen sends a screenshot.
 """
 
@@ -25,7 +25,7 @@ log = logging.getLogger("jarvis.telegram")
 API = "https://api.telegram.org"
 ctx = {"hub": None, "on_command": None, "on_action": None, "state": None, "save": None, "ask_token": None}
 _st = {"token": None, "thread": None, "owner": None, "pair": None, "pair_until": 0, "active_until": 0, "stop": False}
-HELP = ("🛰 *Atomo is connected.* Just talk to me like on the PC:\n"
+HELP = ("🛰 *Ultron is connected.* Just talk to me like on the PC:\n"
         "• type or send a *voice note* (English / Telugu / Hindi)\n• send a *photo* with a question\n"
         "• send a *file* (PDF, doc) with what to do\n\nQuick commands: /screen /status /briefing /day /stop /help")
 
@@ -64,7 +64,7 @@ def push(text):
         pass
 
 
-# ------------------------------------------------------------------ forward Atomo's answers to the chat
+# ------------------------------------------------------------------ forward Ultron's answers to the chat
 def _forwarder():
     q = ctx["hub"].subscribe()
     while not _st["stop"]:
@@ -167,7 +167,7 @@ def _handle(m):
         return send(answer or "I couldn't analyse that photo.")
     if m.get("document"):
         d = m["document"]
-        folder = Path.home() / "Downloads" / "Atomo Telegram"
+        folder = Path.home() / "Downloads" / "Ultron Telegram"
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / Path(d.get("file_name") or "file").name
         path.write_bytes(_download(d["file_id"]))
@@ -219,7 +219,7 @@ def connect_telegram(new_pairing: bool = False) -> str:
     if not _st["token"]:
         token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
         if not token and ctx["ask_token"]:
-            token = (ctx["ask_token"]() or "").strip()          # the user pastes it into Atomo's own dialog
+            token = (ctx["ask_token"]() or "").strip()          # the user pastes it into Ultron's own dialog
         if not token:
             return ("FAILED: no bot token yet. Tell the user: open Telegram, message @BotFather, send /newbot, pick a "
                     "name, copy the token it gives, then say 'connect Telegram' again and paste it in the box.")
@@ -233,14 +233,14 @@ def connect_telegram(new_pairing: bool = False) -> str:
     else:
         me = _call("getMe")
     if _st["owner"] and not new_pairing:
-        send("👋 Atomo here - connected and ready.")
+        send("👋 Ultron here - connected and ready.")
         return f"OK: Telegram is already paired (bot @{me.get('username')}); I just sent you a hello there."
     _st["pair"], _st["pair_until"] = f"{random.randint(0, 999999):06d}", time.time() + 600
     page = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{{margin:0;background:#05070f;color:#eef4ff;
 font:17px "Segoe UI",system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center}}
 h1{{font:600 26px Bahnschrift;letter-spacing:4px;color:#7fe6ff}}.c{{font:600 64px Bahnschrift;letter-spacing:14px;color:#f4ba42;margin:16px 0}}
 p{{color:#8b97b5}}</style></head><body><div><h1>📲 PAIR TELEGRAM</h1><p>In Telegram open <b>@{me.get('username')}</b> and send:</p>
-<div class="c">/pair {_st['pair']}</div><p>The code works once and expires in 10 minutes. Only the account that pairs can use Atomo.</p></div></body></html>"""
+<div class="c">/pair {_st['pair']}</div><p>The code works once and expires in 10 minutes. Only the account that pairs can use Ultron.</p></div></body></html>"""
     tools.show_content("webpage", "Pair Telegram", "html", page)
-    return (f"OK: bot @{me.get('username')} is online. The pairing code is on the Atomo Screen: the user must open "
+    return (f"OK: bot @{me.get('username')} is online. The pairing code is on the Ultron Screen: the user must open "
             f"@{me.get('username')} in Telegram and send /pair followed by the code within 10 minutes.")

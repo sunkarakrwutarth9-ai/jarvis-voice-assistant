@@ -1,4 +1,4 @@
-"""Screen copilot: while the user allows it, Atomo glances at the screen when it changes and speaks up
+"""Screen copilot: while the user allows it, Ultron glances at the screen when it changes and speaks up
 only when it can help - an error dialog, a failed build, an exception, a broken page, a bug in code.
 
 Privacy: it's off until asked, shows a visible indicator, switches itself off after the chosen time,
@@ -43,7 +43,7 @@ def _loop():
         time.sleep(3)
         try:
             title = _front_title()
-            if PRIVATE.search(title) or "A.T.O.M.O" in title:
+            if PRIVATE.search(title) or "U.L.T.R.O.N" in title:
                 prev = None
                 continue
             th = _thumb()
@@ -85,7 +85,7 @@ def screen_copilot(on: bool = True, minutes: int = 60) -> str:
     if not on:
         _state["on"] = False
         tools.publish({"type": "copilot", "on": False})
-        return "OK: screen copilot off; Atomo is no longer looking at the screen."
+        return "OK: screen copilot off; Ultron is no longer looking at the screen."
     minutes = max(5, min(int(minutes or 60), 240))
     _state["until"] = time.time() + minutes * 60
     if not _state["on"]:
@@ -93,5 +93,5 @@ def screen_copilot(on: bool = True, minutes: int = 60) -> str:
         _state["thread"] = threading.Thread(target=_loop, name="copilot", daemon=True)
         _state["thread"].start()
     tools.publish({"type": "copilot", "on": True, "until": _state["until"]})
-    return (f"OK: screen copilot on for {minutes} minutes - Atomo glances at the screen when it changes and speaks up "
+    return (f"OK: screen copilot on for {minutes} minutes - Ultron glances at the screen when it changes and speaks up "
             f"only to help with errors or problems (never on password, banking or payment windows).")

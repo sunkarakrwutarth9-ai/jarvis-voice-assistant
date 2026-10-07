@@ -1,10 +1,10 @@
-"""Puts an "Atomo" app icon on the Desktop (and in the Start menu).
+"""Puts an "Ultron" app icon on the Desktop (and in the Start menu).
 
     python build_exe.py          Desktop + Start-menu icon (works everywhere, incl. Smart App Control PCs)
-    python build_exe.py --exe    also build a native Atomo.exe launcher (blocked on PCs with Smart App
+    python build_exe.py --exe    also build a native Ultron.exe launcher (blocked on PCs with Smart App
                                  Control on, because it isn't signed by a trusted publisher)
 
-Double-clicking the icon starts Atomo in the background (no console window); if Atomo is already
+Double-clicking the icon starts Ultron in the background (no console window); if Ultron is already
 running it opens the command center instead.
 """
 
@@ -16,7 +16,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ICON = HERE / "assets" / "atomo.ico"
-EXE = HERE / "Atomo.exe"
+EXE = HERE / "Ultron.exe"
 CSC = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
 
 LAUNCHER = r'''
@@ -25,11 +25,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 
-[assembly: System.Reflection.AssemblyTitle("Atomo")]
-[assembly: System.Reflection.AssemblyProduct("Atomo voice assistant")]
+[assembly: System.Reflection.AssemblyTitle("Ultron")]
+[assembly: System.Reflection.AssemblyProduct("Ultron voice assistant")]
 [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 
-class Atomo {
+class Ultron {
     const string Home = @"__HOME__";
     const string Python = @"__PYTHONW__";
 
@@ -43,7 +43,7 @@ class Atomo {
 
     [STAThread]
     static void Main() {
-        // the exe may live on the Desktop: find the Atomo folder next to it, else the one it was built in
+        // the exe may live on the Desktop: find the Ultron folder next to it, else the one it was built in
         string dir = AppDomain.CurrentDomain.BaseDirectory;
         if (!File.Exists(Path.Combine(dir, "jarvis.py"))) dir = Home;
         if (Running()) {                                   // already on: just show the command center
@@ -95,7 +95,7 @@ def shortcut(path):
     wscript = r"C:\Windows\System32\wscript.exe"
     ps = (f"$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{path}');"
           f"$s.TargetPath='{wscript}';$s.Arguments='\"{vbs}\"';"
-          f"$s.WorkingDirectory='{HERE}';$s.IconLocation='{ICON},0';$s.Description='Atomo voice assistant';$s.Save()")
+          f"$s.WorkingDirectory='{HERE}';$s.IconLocation='{ICON},0';$s.Description='Ultron voice assistant';$s.Save()")
     subprocess.run(["powershell", "-NoProfile", "-Command", ps], check=True)
 
 
@@ -108,9 +108,9 @@ def folder(name):
 def main():
     make_icon()
     desktop = folder("Desktop")
-    shortcut(desktop / "Atomo.lnk")
-    shortcut(folder("Programs") / "Atomo.lnk")
-    print(f"Atomo icon added to {desktop} and the Start menu")
+    shortcut(desktop / "Ultron.lnk")
+    shortcut(folder("Programs") / "Ultron.lnk")
+    print(f"Ultron icon added to {desktop} and the Start menu")
     if "--exe" in sys.argv:
         build_exe(desktop)
 
@@ -121,13 +121,13 @@ def build_exe(desktop):
     pyw = shutil.which("pythonw") or ""
     if "WindowsApps" in pyw:                                # the Store alias, not a real Python
         pyw = str(Path(sys.executable).with_name("pythonw.exe"))
-    src = HERE / "build" / "Atomo.cs"
+    src = HERE / "build" / "Ultron.cs"
     src.parent.mkdir(exist_ok=True)
     src.write_text(LAUNCHER.replace("__HOME__", str(HERE)).replace("__PYTHONW__", pyw), encoding="utf-8")
     subprocess.run([str(CSC), "/nologo", "/target:winexe", "/optimize+", f"/win32icon:{ICON}", f"/out:{EXE}", str(src)],
                    check=True)
-    shutil.copy2(EXE, desktop / "Atomo.exe")
-    print(f"built {EXE} and copied it to {desktop / 'Atomo.exe'}")
+    shutil.copy2(EXE, desktop / "Ultron.exe")
+    print(f"built {EXE} and copied it to {desktop / 'Ultron.exe'}")
 
 
 if __name__ == "__main__":

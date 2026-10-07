@@ -1,6 +1,6 @@
-"""Phone remote: your phone becomes Atomo's remote control over your home Wi-Fi.
+"""Phone remote: your phone becomes Ultron's remote control over your home Wi-Fi.
 
-Scan the QR code on the Atomo Screen -> a mobile page: live status, the conversation, type (or use the
+Scan the QR code on the Ultron Screen -> a mobile page: live status, the conversation, type (or use the
 keyboard's mic to dictate) commands, TALK (the PC listens), STOP, media and volume buttons, your
 reminders and lists, and replies spoken on the phone.
 
@@ -40,7 +40,7 @@ def lan_ip():
 
 
 class _H(BaseHTTPRequestHandler):
-    server_version = "Atomo"
+    server_version = "Ultron"
 
     def log_message(self, *a):
         pass
@@ -51,7 +51,7 @@ class _H(BaseHTTPRequestHandler):
             self.send_error(403)
             return False
         qs = parse_qs(urlparse(self.path).query)
-        tok = self.headers.get("X-Atomo-Key") or (qs.get("k") or [""])[0]
+        tok = self.headers.get("X-Ultron-Key") or (qs.get("k") or [""])[0]
         if not _srv["token"] or not secrets.compare_digest(tok, _srv["token"]):
             self.send_error(403, "wrong or missing key - scan the QR code again")
             return False
@@ -164,11 +164,11 @@ h1{{font:600 28px Bahnschrift,"Segoe UI";letter-spacing:4px;color:#7fe6ff;margin
 .u{{font:13px Consolas,monospace;color:#8b97b5;word-break:break-all;max-width:420px;margin-top:14px}} .w{{color:#f4ba42;font-size:13px;margin-top:14px;max-width:420px}}
 </style></head><body><div class="qr"><img src="data:image/png;base64,{qr}" alt="QR"></div><div><h1>📱 PHONE REMOTE</h1><ol>
 <li>Connect your phone to the <b>same Wi-Fi</b> as this PC.</li><li>Open the phone camera and scan the code.</li>
-<li>Tap the link: Atomo's remote opens. Add it to your home screen.</li></ol>
+<li>Tap the link: Ultron's remote opens. Add it to your home screen.</li></ol>
 <div class="u">{url}</div><div class="w">If the page doesn't load: Windows may ask to allow Python on <b>private networks</b>, so click Allow.
-The key in the link is secret; anyone on your Wi-Fi with it can control Atomo. Say “turn off phone remote” to disable it.</div></div></body></html>"""
+The key in the link is secret; anyone on your Wi-Fi with it can control Ultron. Say “turn off phone remote” to disable it.</div></div></body></html>"""
     tools.show_content("webpage", "Phone remote", "html", page)
-    return ("OK: phone remote is on; the QR code is on the Atomo Screen. Tell the user to scan it with their phone on the "
+    return ("OK: phone remote is on; the QR code is on the Ultron Screen. Tell the user to scan it with their phone on the "
             "same Wi-Fi (and to click Allow if Windows asks about the firewall).")
 
 
@@ -184,7 +184,7 @@ def resume():
 PAGE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05070f"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>Atomo</title><style>
+<title>Ultron</title><style>
 :root{--arc:#7fe6ff;--gold:#f4ba42;--red:#e0262f;--sub:#8b97b5;--card:#0d1222;--line:#1d2742}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow-x:hidden;background:#05070f;color:#eef4ff;font:15px -apple-system,"Segoe UI",Roboto,system-ui,sans-serif}
@@ -226,7 +226,7 @@ footer input{flex:1;min-width:0;background:var(--card);border:1px solid var(--li
 .btn.talk{width:56px;height:56px;background:radial-gradient(circle,#ff4d5a,#a3121b);box-shadow:0 0 18px rgba(255,77,90,.6)}
 .off{position:fixed;inset:auto 0 0 0;background:#3a0d12;color:#ffb3b8;text-align:center;padding:8px;font-size:12px;display:none}
 </style></head><body data-s="idle">
-<header><div class="logo">A.T.O.M.O</div><div class="pill"><i></i><span id="st2">STANDING BY</span></div></header>
+<header><div class="logo">U.L.T.R.O.N</div><div class="pill"><i></i><span id="st2">STANDING BY</span></div></header>
 <div class="atom"><div class="n"></div><div class="o"></div><div class="o"></div><div class="o"></div></div>
 <div class="st" id="st">STANDING BY</div><div class="say" id="say">Tap 🎙 so the PC listens, or type below.</div>
 <div class="tabs"><button class="on" data-t="chat">Chat</button><button data-t="keys">Controls</button><button data-t="day">Daily</button><button id="holoBtn">🔺 Holo</button></div>
@@ -239,13 +239,13 @@ footer input{flex:1;min-width:0;background:var(--card);border:1px solid var(--li
 <div class="k" data-c="start focus mode for 25 minutes"><b>🎯</b>Focus 25</div><div class="k" data-c="make the robot dance"><b>🤖</b>Dance</div><div class="k" id="spk"><b>🗣</b>Phone voice: off</div>
 </div></main>
 <main id="day" hidden></main>
-<footer><button class="btn talk" id="talk">🎙</button><input id="cmd" placeholder="Ask Atomo… (or dictate)" enterkeyhint="send"><button class="btn" id="send">➤</button></footer>
+<footer><button class="btn talk" id="talk">🎙</button><input id="cmd" placeholder="Ask Ultron… (or dictate)" enterkeyhint="send"><button class="btn" id="send">➤</button></footer>
 <div class="off" id="off">Reconnecting to your PC…</div>
 <div id="holo" style="position:fixed;inset:0;background:#000;z-index:50;display:none"><canvas id="hcv" style="width:100%;height:100%;display:block"></canvas>
 <div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#333;font:12px system-ui">Place the hologram pyramid on the centre · tap to exit</div></div>
 <script>
 const K = new URLSearchParams(location.search).get("k") || "", $ = id => document.getElementById(id);
-const H = {"Content-Type": "application/json", "X-Atomo-Key": K};
+const H = {"Content-Type": "application/json", "X-Ultron-Key": K};
 const post = (u, b) => fetch(u, {method: "POST", headers: H, body: JSON.stringify(b)});
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const ST = {idle: "STANDING BY", followup: "LISTENING", listening: "LISTENING", thinking: "THINKING", action: "WORKING", speaking: "SPEAKING", error: "ALERT", choice: "CHOOSE"};
@@ -271,7 +271,7 @@ function on(e) {
   else if (e.type === "user") bub("u", e.text);
   else if (e.type === "reply" && e.text) { bub("j", e.text); if (speak && "speechSynthesis" in window) { const u = new SpeechSynthesisUtterance(e.text); speechSynthesis.speak(u); } }
   else if (e.type === "tool" && e.result == null) note("⚙ " + (e.label || e.name));
-  else if (e.type === "canvas") note("🧩 Created “" + (e.title || e.kind) + "” — open on the PC's Atomo Screen");
+  else if (e.type === "canvas") note("🧩 Created “" + (e.title || e.kind) + "” — open on the PC's Ultron Screen");
   else if (e.type === "everyday") { DAY = e; renderDay(); }
 }
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => { document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));

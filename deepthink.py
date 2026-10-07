@@ -1,4 +1,4 @@
-"""Deep Think: Atomo's answer to hard questions - several AI models solve it independently, then a judge
+"""Deep Think: Ultron's answer to hard questions - several AI models solve it independently, then a judge
 compares them, catches mistakes, checks the maths and writes one best answer.
 
 A panel of different models (Gemini and DeepSeek families) makes fewer mistakes than any one of them:
@@ -116,7 +116,7 @@ def deep_think(question: str, use_web: bool = False) -> str:
     ans = re.search(r"##\s*Answer\s*\n(.*?)(?:\n##\s|\Z)", text, re.S)
     conf = re.search(r"##\s*Confidence\s*\n(.*?)(?:\n##\s|\Z)", text, re.S)
     summary = (ans.group(1).strip() if ans else text[:600])[:900]
-    return (f"OK: {len(answers)} expert models answered and a judge verified them; the full answer is on the Atomo "
+    return (f"OK: {len(answers)} expert models answered and a judge verified them; the full answer is on the Ultron "
             f"Screen (not saved). Tell the user the answer in 1-3 short spoken sentences (no markdown, no tables): "
             f"{summary}\nConfidence: {conf.group(1).strip()[:200] if conf else 'not stated'}")
 

@@ -1,4 +1,4 @@
-"""Proactive care: Atomo speaks up on its own when it matters.
+"""Proactive care: Ultron speaks up on its own when it matters.
 
 - Break reminders: after ~50 minutes of continuous keyboard/mouse activity -> stand up, stretch, drink water.
 - Heavy load: CPU above 90% for 3 minutes -> says which app is responsible.

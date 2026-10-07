@@ -37,7 +37,7 @@ publish = lambda event: None
 
 SETUP_HELP = ("Google Home isn't connected yet. One-time setup: in the Google Cloud console create a project, "
               "enable the Google Assistant API, set up the OAuth consent screen with yourself as a test user, create "
-              "an OAuth client of type Desktop app, download it as google_client.json into the Atomo folder, then say "
+              "an OAuth client of type Desktop app, download it as google_client.json into the Ultron folder, then say "
               "'connect Google Home'. Full steps are in docs/smarthome.md.")
 
 
@@ -124,7 +124,7 @@ def _credentials(interactive=False):
     from google_auth_oauthlib.flow import InstalledAppFlow
     flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_FILE), SCOPES)
     creds = flow.run_local_server(port=0, open_browser=True, prompt="consent",
-                                  success_message="Atomo is connected to Google Home. You can close this tab.")
+                                  success_message="Ultron is connected to Google Home. You can close this tab.")
     TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
     return creds
 

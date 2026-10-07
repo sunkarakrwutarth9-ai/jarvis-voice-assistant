@@ -84,7 +84,7 @@ def study(source: str = "", topic: str = "", count: int = 15) -> str:
     _save(slug, deck)
     _cur.update(deck=slug, card=None, right=0, asked=0)
     tools.show_content("webpage", f"Flashcards: {name}"[:60], "html", _cards_page(name, deck["cards"]))
-    return (f"OK: made {len(cards)} flashcards on '{name}' (on the Atomo Screen). Ask the user if they want to be "
+    return (f"OK: made {len(cards)} flashcards on '{name}' (on the Ultron Screen). Ask the user if they want to be "
             f"quizzed now; if yes call quiz(action='next').")
 
 

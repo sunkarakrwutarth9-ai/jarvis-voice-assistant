@@ -1,4 +1,4 @@
-"""AI classroom: Atomo teaches a topic or a document as a live class - slides on the Atomo Screen, a voice
+"""AI classroom: Ultron teaches a topic or a document as a live class - slides on the Ultron Screen, a voice
 teacher explaining each one, whiteboard notes, a check question per slide, and a flashcard deck at the
 end so "quiz me" continues the lesson with spaced repetition.
 """
@@ -89,7 +89,7 @@ def teach(topic: str = "", source: str = "", slides: int = 8, level: str = "") -
     _class["run"] = True
     cid = tools.show_content("document", f"Class: {lesson['title']}"[:60], "md", _slide_md(lesson, 0), final=False)
     threading.Thread(target=_run, args=(lesson, cid), name="classroom", daemon=True).start()
-    return (f"OK: the class '{lesson['title']}' ({len(lesson['slides'])} slides) is starting on the Atomo Screen and I'm "
+    return (f"OK: the class '{lesson['title']}' ({len(lesson['slides'])} slides) is starting on the Ultron Screen and I'm "
             f"teaching it aloud now. Reply with ONE short line only (e.g. 'Class is starting, Sir.') - do not "
             f"explain the topic yourself.")
 
@@ -100,4 +100,4 @@ def stop_class() -> str:
     _class["run"] = False
     if hooks["stop"]:
         hooks["stop"]()
-    return "OK: class stopped. The slides stay on the Atomo Screen."
+    return "OK: class stopped. The slides stay on the Ultron Screen."

@@ -61,8 +61,8 @@ ME_MODE = os.environ.get("JARVIS_ME_MODE", "0") == "1"
 WAKE_THRESHOLD = float(os.environ.get("JARVIS_WAKE_THRESHOLD", "0.35"))
 FOLLOW_UP_SECONDS = 4.0
 
-WAKE_WORD = re.compile(r"\b(jarvis|jarvi|jervis|jarvish|travis|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo)\b|జార్విస్|జార్విస|जार्विस|जारविस|అటోమో|ఆటోమో|అటామో|ఏటమో|एटमो|ऐटमो|आटोमो|अटोमो|एटोमो", re.I)
-WAKE_PREFIX = re.compile(r"^\s*((hey|hi|ok|okay|o\.k\.|yo)[\s,]+)?(jarvis|jarvi|jervis|jarvish|travis|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo|అటోమో|ఆటోమో|एटमो|आटोमो|अटोमो)\b[\s,.!?]*", re.I)
+WAKE_WORD = re.compile(r"\b(jarvis|jarvi|jervis|jarvish|travis|ultron|ultran|ultra on|altron|alton|ultrun|ultr0n|ultroon|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo)\b|జార్విస్|జార్విస|जार्विस|जारविस|అల్ట్రాన్|ఆల్ట్రాన్|अल्ट्रॉन|अल्ट्रोन|అటోమో|ఆటోమో|అటామో|ఏటమో|एटमो|ऐटमो|आटोमो|अटोमो|एटोमो", re.I)
+WAKE_PREFIX = re.compile(r"^\s*((hey|hi|ok|okay|o\.k\.|yo)[\s,]+)?(jarvis|jarvi|jervis|jarvish|travis|ultron|ultran|ultra on|altron|alton|ultrun|ultr0n|ultroon|atomo|atomu|atom o|a tomo|atom oh|automo|attomo|atamo|adamo|అటోమో|ఆటోమో|एटमो|आटोमो|अटोमो|అల్ట్రాన్|अल्ट्रॉन)\b[\s,.!?]*", re.I)
 STOP_PHRASES = {"stop", "cancel", "never mind", "nevermind", "nothing", "shut up", "be quiet", "quiet",
                 # filler that shouldn't start another round
                 "ok", "okay", "ok ok", "okay okay", "k", "hmm", "hm", "mm", "fine", "good",
@@ -130,7 +130,7 @@ def get_api_key(gui=False) -> str:
         return key
     if gui:
         from PySide6.QtWidgets import QInputDialog, QLineEdit
-        key, ok = QInputDialog.getText(None, "Atomo - first-time setup", KEY_HELP[KEY_VAR][0],
+        key, ok = QInputDialog.getText(None, "Ultron - first-time setup", KEY_HELP[KEY_VAR][0],
                                        QLineEdit.Password)
         if not ok:
             sys.exit(0)
@@ -255,7 +255,7 @@ class Assistant(threading.Thread):
         """In conversation mode: listen for the next request without needing the wake word."""
         if self.active and time.monotonic() - self.last_heard > ACTIVE_IDLE_LIMIT:
             self.deactivate()
-            self._speak_standalone("I'll stand by, Sir. Say OK Atomo when you need me.", "speaking")
+            self._speak_standalone("I'll stand by, Sir. Say OK Ultron when you need me.", "speaking")
             return False
         if not self.active:
             return False
@@ -349,7 +349,18 @@ class Assistant(threading.Thread):
         if cancelled():
             return
         score = None if typed else self.listener.wake_score
-        if score is not None and score < WAKE_VERIFY_BELOW and not any(WAKE_WORD.search(t) for t in heard.values()):
+        borderline = score is not None and score < WAKE_VERIFY_BELOW and not any(WAKE_WORD.search(t) for t in heard.values())
+        if borderline and not heard and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.2:
+            # The wake model fired but the recognisers caught nothing: don't throw the command away - let Gemini
+            # listen to the recording (it stays silent if it was only noise).
+            log.info("borderline wake (%.2f) with no transcript: asking Gemini to listen", score)
+            self.active = True
+            heard = {}
+            borderline = False
+        if borderline and score >= 0.42 and heard:
+            log.info("accepted borderline wake (%.2f): %r", score, heard)      # a real command, clearly spoken
+            borderline = False
+        if borderline:
             log.info("ignored borderline wake (%.2f): %r", score, heard)
             self.deactivate()                         # it was a false wake: don't stay in conversation mode
             self.bridge.state.emit("idle", "", "", "")
@@ -381,7 +392,7 @@ class Assistant(threading.Thread):
         self.last_heard = time.monotonic()
         if any(DEACTIVATE.search(t) for t in heard.values()):
             self.deactivate()
-            self._speak_standalone("Deactivating, Sir. Say OK Atomo when you need me.", "speaking")
+            self._speak_standalone("Deactivating, Sir. Say OK Ultron when you need me.", "speaking")
             return
         # What to show on the island (English recogniser if it heard anything, else the first).
         text = heard.get("en-IN") or heard.get("en-US") or next(iter(heard.values()))
@@ -473,6 +484,11 @@ class Assistant(threading.Thread):
                 self.bridge.state.emit("idle", "", "", "")
                 self.listener.set_idle()
             return
+        if not (reply or "").strip() and not shown and not used_tools and not quiet_check and not cancelled():
+            reply = "Sorry Sir, my servers didn't answer in time. Please say that again."
+            self.speaker.say(reply)
+            shown.append(reply)
+            self.bridge.state.emit("speaking", "", reply, "")
         if quiet_check:
             self._pub({"type": "user", "text": "(voice)", "heard": heard})
         self._pub({"type": "reply", "text": reply or ("Done, Sir." if used_tools else ""),
@@ -699,7 +715,7 @@ def run_gui(args):
     tools.everyday.run_command = assistant.on_text      # scheduled tasks run like a typed command
 
     def mic_watch():
-        """Windows can mute the microphone (a key or a setting) - then Atomo hears nothing. Say so."""
+        """Windows can mute the microphone (a key or a setting) - then Ultron hears nothing. Say so."""
         import comtypes
         from ctypes import POINTER, cast
         from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -755,7 +771,7 @@ def run_gui(args):
         bridge.me.emit(on)
         set_key(str(ENV_FILE), "JARVIS_ME_MODE", "1" if on else "0")
         if announce:
-            assistant.events.put(("say", "Speaking in your voice now, Sir." if on else "Atomo voice restored, Sir.", None))
+            assistant.events.put(("say", "Speaking in your voice now, Sir." if on else "Ultron voice restored, Sir.", None))
         return f"OK: now speaking in {'the user' if on else 'the Jarvis'} voice."
 
     def cloner_ready(ok):
@@ -848,7 +864,7 @@ def run_gui(args):
     dash_shown = {"v": False}
 
     def _check_dashboard():
-        shown = hub.any_visible() and _front_title().startswith("A.T.O.M.O. Command Center")
+        shown = hub.any_visible() and _front_title().startswith("U.L.T.R.O.N. Command Center")
         if shown != dash_shown["v"]:
             dash_shown["v"] = shown
             island.set_dashboard_visible(shown)
@@ -974,7 +990,7 @@ def run_gui(args):
         else:
             import webbrowser
             webbrowser.open(url)
-        return "OK: opened the Atomo command center dashboard."
+        return "OK: opened the Ultron command center dashboard."
 
     tools.open_dashboard = open_dashboard
 
@@ -985,7 +1001,7 @@ def run_gui(args):
         if hub.listeners:                          # open but minimised / behind: bring it back
             try:
                 import pygetwindow as gw
-                for w in gw.getWindowsWithTitle("A.T.O.M.O. Command Center"):
+                for w in gw.getWindowsWithTitle("U.L.T.R.O.N. Command Center"):
                     if w.isMinimized:
                         w.restore()
                     w.maximize()
@@ -1003,7 +1019,7 @@ def run_gui(args):
 
     # ---- Jarvis Screen: creations open in their own window (on a second monitor when there is one),
     # so the command center is never covered.
-    SCREEN_TITLE = "A.T.O.M.O. Screen"
+    SCREEN_TITLE = "U.L.T.R.O.N. Screen"
 
     def open_screen():
         exe = tools._chrome_exe()
@@ -1047,6 +1063,7 @@ def run_gui(args):
             time.sleep(0.1)
 
     tools.ensure_screen = ensure_screen
+    hub.publish({"type": "orb_style", "name": tools._state("orb_style", "ultron")})   # every dashboard opens in it
 
     # ---- background services: notes audio, day timeline, proactive care, phone remote
     tools.notes_mod.system_audio = system_audio
@@ -1059,12 +1076,12 @@ def run_gui(args):
                            state=tools._state, save=tools._save_state)
     tools.phone.resume()
 
-    # ---- Telegram anywhere: the bot token is pasted by the user into Atomo's own dialog (never typed by the AI)
+    # ---- Telegram anywhere: the bot token is pasted by the user into Ultron's own dialog (never typed by the AI)
     secret_box = {"value": None, "done": threading.Event()}
 
     def _ask_secret(prompt):
         from PySide6.QtWidgets import QInputDialog, QLineEdit
-        text, ok = QInputDialog.getText(None, "Atomo - Telegram", prompt, QLineEdit.Password)
+        text, ok = QInputDialog.getText(None, "Ultron - Telegram", prompt, QLineEdit.Password)
         secret_box["value"] = text.strip() if ok else None
         secret_box["done"].set()
 
@@ -1183,12 +1200,12 @@ def run_gui(args):
     p.drawEllipse(20, 20, 24, 24)
     p.end()
     tray = QSystemTrayIcon(QIcon(pm))
-    tray.setToolTip("Atomo - say \"OK Atomo\" or \"Hey Jarvis\"")
+    tray.setToolTip("Ultron - say \"OK Ultron\" or \"Hey Jarvis\"")
     menu = QMenu()
-    for text, fn in (("Talk to Atomo", assistant.on_click),
+    for text, fn in (("Talk to Ultron", assistant.on_click),
                      ("Open command center", open_dashboard),
                      ("Toggle my voice and face", lambda: set_me(not me_pending["on"])),
-                     ("New conversation", brain.reset), ("Quit Atomo", quit_app)):
+                     ("New conversation", brain.reset), ("Quit Ultron", quit_app)):
         a = QAction(text, menu)
         a.triggered.connect(fn)
         menu.addAction(a)

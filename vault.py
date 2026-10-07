@@ -1,4 +1,4 @@
-"""Memory vault: Atomo's long-term memory as plain Markdown notes - an Obsidian-compatible vault on this PC.
+"""Memory vault: Ultron's long-term memory as plain Markdown notes - an Obsidian-compatible vault on this PC.
 
     vault/
       Me.md                  who the user is, preferences, routines
@@ -11,7 +11,7 @@
 
 How it learns: every exchange is journaled; every few minutes the new journal lines are distilled by the
 AI into lasting facts and filed into the right note. How it recalls: before each answer the notes most
-relevant to what the user just said are added to Atomo's context. Never uploaded, never committed.
+relevant to what the user just said are added to Ultron's context. Never uploaded, never committed.
 """
 
 import datetime
@@ -39,7 +39,7 @@ def init():
         (ROOT / d).mkdir(parents=True, exist_ok=True)
     me = ROOT / "Me.md"
     if not me.exists():
-        me.write_text("# Me\n\nWhat Atomo knows about you. Edit freely - Atomo reads this before answering.\n\n"
+        me.write_text("# Me\n\nWhat Ultron knows about you. Edit freely - Ultron reads this before answering.\n\n"
                       "## Preferences\n\n## Routines\n\n## Goals\n", encoding="utf-8")
     facts = ROOT / "Facts.md"
     if not facts.exists():
@@ -73,7 +73,7 @@ def journal(user_text, reply, tools_used=()):
         day.write_text(f"# {now:%A %d %B %Y}\n\n", encoding="utf-8")
     t = " ".join(str(user_text).split())[:300]
     r = " ".join(str(reply or "").split())[:300]
-    line = f"- **{now:%H:%M}** You: {t}" + (f" → Atomo: {r}" if r else "") + (f" _[{', '.join(tools_used)}]_" if tools_used else "")
+    line = f"- **{now:%H:%M}** You: {t}" + (f" → Ultron: {r}" if r else "") + (f" _[{', '.join(tools_used)}]_" if tools_used else "")
     with _lock:
         with day.open("a", encoding="utf-8") as f:
             f.write(line + "\n")

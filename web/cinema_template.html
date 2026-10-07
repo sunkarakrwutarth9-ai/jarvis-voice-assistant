@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A.T.O.M.O. Command Center</title>
+<title>U.L.T.R.O.N. Command Center</title>
 <style>
 :root{
   --bg:#03040a; --glass:rgba(14,18,30,.55); --stroke:rgba(140,200,255,.14); --text:#eef4ff; --sub:#8b97b5;
@@ -64,7 +64,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .net{padding:0 18px}.net canvas{width:100%;height:50px;display:block}
 .netrow{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:4px}.netrow b{color:var(--text)}
 .mem{padding:6px 18px 14px;font-size:12px;color:var(--sub)}
-/* Daily panel: reminders, lists, routines (the Alexa side of Atomo) */
+/* Daily panel: reminders, lists, routines (the Alexa side of Ultron) */
 .daily{flex:1;min-height:150px;display:flex;flex-direction:column}
 .dtabs{display:flex;gap:4px;padding:0 12px}
 .dtabs button{flex:1;border:0;background:var(--track);color:var(--sub);font:600 9px var(--hud);letter-spacing:.6px;
@@ -147,7 +147,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 body.amb .ambient{opacity:1}
 body.amb .app>header,body.amb .app>section.glass,body.amb .app .dock,body.amb .radial,body.amb .stage,body.amb #sats{opacity:0;transition:opacity 1.2s;pointer-events:none}
 .app>header,.app>section.glass,.app .dock,.radial,.stage{transition:opacity .6s}
-/* ---------- talking hologram (appears in the heart of the atom while Atomo speaks) */
+/* ---------- talking hologram (appears in the heart of the atom while Ultron speaks) */
 .holo{position:fixed;left:50%;top:calc(50% - 2vh);width:min(26vh,240px);height:min(26vh,240px);transform:translate(-50%,-50%);
   z-index:3;pointer-events:none;opacity:0;transition:opacity .45s;perspective:700px}
 .holo.on{opacity:1}
@@ -177,7 +177,7 @@ body.amb .holo{display:none}
   border:1px solid var(--stroke);font-size:12.5px;pointer-events:none;display:none}
 .mgraph .lg{position:absolute;left:24px;bottom:20px;z-index:2;display:flex;gap:14px;font-size:12px;color:var(--sub)}
 .mgraph .lg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
-/* a creation's card in the feed (the creation itself opens on the Atomo Screen) */
+/* a creation's card in the feed (the creation itself opens on the Ultron Screen) */
 .ccard{align-self:flex-start;max-width:92%;padding:10px 14px;border-radius:16px;background:rgba(127,230,255,.07);
   border:1px solid rgba(127,230,255,.35);font-size:13px;animation:pop .3s}
 .ccard b{display:block}.ccard small{color:var(--sub)}
@@ -264,14 +264,14 @@ body.amb .holo{display:none}
 <body>
 <canvas id="gl"></canvas>
 <div class="boot" id="boot">
-  <div class="logo">A.T.O.M.O</div>
+  <div class="logo">U.L.T.R.O.N</div>
   <div class="lines" id="bootLines"></div>
   <div class="bar"><i id="bootBar"></i></div>
 </div>
 
 <div class="app" id="app" data-state="idle" data-me="0" data-canvas="0">
   <header>
-    <div class="brand">A.T.O.M.O<small>NEURAL COMMAND CORE</small></div>
+    <div class="brand">U.L.T.R.O.N<small>NEURAL COMMAND CORE</small></div>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span><span class="hchip" id="modeChip" hidden></span></div>
     <div class="clock"><span id="time">--:--</span><small id="date"></small></div>
@@ -297,7 +297,7 @@ body.amb .holo{display:none}
   <section class="center">
     <div class="stage">
       <div class="st" id="st">STANDING BY</div>
-      <div class="tt" id="tt">Say “OK Atomo”</div>
+      <div class="tt" id="tt">Say “OK Ultron”</div>
       <div class="you" id="you"></div>
       <div class="say" id="say"></div>
       <div class="progress" id="prog"></div>
@@ -323,11 +323,11 @@ body.amb .holo{display:none}
   <section class="glass msgs">
     <div class="ph mtabs"><span class="mtab on" data-m="feed">TRANSMISSIONS</span><span class="mtab" data-m="log">MISSION LOG</span><span class="kbd" title="Command palette" style="margin-left:auto;cursor:pointer" id="palBtn">CTRL K</span></div>
     <div class="mlog" id="mlog" hidden></div>
-    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Atomo”, type below,<br>or turn on gestures ✋</div></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">No transmissions yet.<br>Say “OK Ultron”, type below,<br>or turn on gestures ✋</div></div>
   </section>
 
   <div class="dock">
-    <div class="glass cmdbar"><input id="cmd" placeholder="Command Atomo…   (Space to talk)" autocomplete="off">
+    <div class="glass cmdbar"><input id="cmd" placeholder="Command Ultron…   (Space to talk)" autocomplete="off">
       <button class="send" id="send"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l7 7-1.4 1.4L13 7.8V20h-2V7.8l-4.6 4.6L5 11z"/></svg></button></div>
     <div class="glass models" id="models"></div>
   </div>
@@ -354,8 +354,8 @@ body.amb .holo{display:none}
   <button class="hot" data-c="Explain this simply">Explain</button><button data-c="Summarize this in a few bullet points">Summarize</button>
   <button data-c="Translate this into Telugu and Hindi">Translate</button><button data-c="Fix any mistakes in this and show the corrected version">Fix</button>
   <button data-c="Reply to this message politely and briefly">Reply</button><button id="clipX">✕</button></div>
-<div class="pal" id="pal"><div class="palbox"><input id="palIn" placeholder="Search Atomo…  (commands, features, anything)" autocomplete="off">
-  <div class="pallist" id="palList"></div><div class="palhint"><span class="kbd">↑↓</span> choose · <span class="kbd">ENTER</span> run · <span class="kbd">ESC</span> close · type anything else and press Enter to ask Atomo</div></div></div>
+<div class="pal" id="pal"><div class="palbox"><input id="palIn" placeholder="Search Ultron…  (commands, features, anything)" autocomplete="off">
+  <div class="pallist" id="palList"></div><div class="palhint"><span class="kbd">↑↓</span> choose · <span class="kbd">ENTER</span> run · <span class="kbd">ESC</span> close · type anything else and press Enter to ask Ultron</div></div></div>
 <div class="gcam" id="gcam"><canvas id="gdraw"></canvas><div class="lbl" id="glbl">GESTURES ON</div></div>
 <div class="gcursor" id="gcursor"></div>
 <div class="gtoast" id="gtoast"></div>
@@ -420,7 +420,7 @@ function setState(s, title, body) {
   holoShow(s === "speaking");
   lastState = s; window.ORB.state = s; if (app.dataset.state !== s) app.dataset.state = s;
   $("st").textContent = $("st2").textContent = STATES[s] || s.toUpperCase();
-  const t = {idle: "Say “OK Atomo”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…"}[s];
+  const t = {idle: "Say “OK Ultron”", followup: "Go ahead, Sir", listening: "Listening…", thinking: "Thinking…"}[s];
   if (s === "speaking") { $("say").textContent = body; $("tt").textContent = ""; }
   else if (s === "action") $("tt").textContent = title;
   else if (s === "choice") $("tt").textContent = title || "Choose an option";
@@ -453,7 +453,7 @@ function onEvent(e) {
       c.textContent = e.label + (failed ? " · failed" : ""); $("feed").scrollTop = 1e9; break; }
     case "reply": if (e.text) bubble("j", e.text, e.ts); break;
     case "progress": $("prog").textContent = e.text; break;
-    // the orb reacts to YOUR voice all the time (boosted), and to Atomo's voice while it speaks
+    // the orb reacts to YOUR voice all the time (boosted), and to Ultron's voice while it speaks
     case "lv": window.ORB.level = Math.max(Math.min(1, e.mic * 4), e.speech); holoMouth(e.speech || 0); break;
     case "vitals": vitals(e); break;
     case "me": app.dataset.me = e.on ? "1" : "0"; $("me").classList.toggle("on", e.on); break;
@@ -464,10 +464,10 @@ function onEvent(e) {
     case "hand": if (gesturesOn) drawHand(e); window.ORB.hand = e.pts.length ? Object.assign(e, {t: performance.now()}) : null; break;
     case "gesture_fired": toast(FIRED[e.name] || e.name); break;
     case "gesture_error": setGestures(false); toast("Gesture control unavailable: " + e.text, 7000); break;
-    // creations open on the separate Atomo Screen; here they're a card (with "Show here" if wanted)
-    case "canvas_start": creationCard(e, "● Writing live on Atomo Screen…"); break;
+    // creations open on the separate Ultron Screen; here they're a card (with "Show here" if wanted)
+    case "canvas_start": creationCard(e, "● Writing live on Ultron Screen…"); break;
     case "canvas_chunk": break;
-    case "canvas": CREATED[e.id] = e; creationCard(e, e.file ? "Saved · " + e.file : "Ready on Atomo Screen · not saved"); break;
+    case "canvas": CREATED[e.id] = e; creationCard(e, e.file ? "Saved · " + e.file : "Ready on Ultron Screen · not saved"); break;
     case "canvas_output": if (app.dataset.canvas === "1") canvasOutput(e); break;
     case "canvas_cmd": if (app.dataset.canvas === "1") canvasCmd(e.action); break;
     case "canvas_error": creationCard(e, "⚠ " + e.text); break;
@@ -547,7 +547,7 @@ es.onopen = () => { $("offline").classList.remove("show"); reportView(); };
 es.onmessage = m => { const e = JSON.parse(m.data); onEvent(e); try { logEvent(e); } catch (_) {} };
 es.onerror = () => $("offline").classList.add("show");
 
-// =================== MISSION LOG: what Atomo is doing, step by step ===================
+// =================== MISSION LOG: what Ultron is doing, step by step ===================
 const LOG = {t0: 0, tools: {}};
 function mlog(cls, title, sub, dur) {
   const el = document.createElement("div"); el.className = "ml " + cls;
@@ -562,7 +562,7 @@ function logEvent(e) {
     const bad = String(e.result).startsWith("FAILED");
     if (t) { t.el.classList.toggle("err", bad); t.el.innerHTML = `<span class="dur">${d}</span><b>${bad ? "✖" : "✔"} ${esc(e.label || e.name)}</b><small>${esc(String(e.result).slice(0, 140))}</small>`; } }
   else if (e.type === "reply" && e.text) mlog("reply", "💬 " + e.text.slice(0, 110), (e.model ? "model " + e.model : "") + (e.secs ? " · total " + e.secs + "s" : ""));
-  else if (e.type === "canvas") mlog("reply", "🧩 Created: " + (e.title || e.kind), (e.content || "").split("\n").length + " lines → Atomo Screen");
+  else if (e.type === "canvas") mlog("reply", "🧩 Created: " + (e.title || e.kind), (e.content || "").split("\n").length + " lines → Ultron Screen");
 }
 document.querySelectorAll(".mtab").forEach(t => t.onclick = () => {
   document.querySelectorAll(".mtab").forEach(x => x.classList.toggle("on", x === t));
@@ -579,7 +579,7 @@ const PAL = [
   ["🎮", "Make a game…", "", () => fill("Make a game: ")],
   ["🌍", "Build a web page…", "", () => fill("Build a web page for ")],
   ["📝", "Write a document…", "", () => fill("Write ")],
-  ["🖥", "Open Atomo Screen", "creations window", () => post("/api/action", {action: "open_screen"})],
+  ["🖥", "Open Ultron Screen", "creations window", () => post("/api/action", {action: "open_screen"})],
   ["☀️", "Good morning briefing", "weather, news, reminders", () => ask("good morning, give me my briefing")],
   ["⏰", "Set a reminder…", "", () => fill("Remind me to ")],
   ["🛒", "Shopping list", "show / add", () => { dTab = "lists"; renderDaily(); closePal(); }],
@@ -590,7 +590,7 @@ const PAL = [
   ["✋", "Gestures on / off", "hand control", () => requestGestures(!gesturesOn)],
   ["🤖", "Make the robot dance", "", () => ask("make the robot dance")],
   ["👤", "Talking hologram on / off", "head in the atom while speaking", () => { HOLO_ON = !HOLO_ON; try { localStorage.setItem("atomoHolo", HOLO_ON ? "1" : "0"); } catch (e) {} toast("Hologram " + (HOLO_ON ? "on" : "off")); holoShow(HOLO_ON && lastState === "speaking"); }],
-  ["📱", "Phone remote", "control Atomo from your phone", () => ask("turn on the phone remote")],
+  ["📱", "Phone remote", "control Ultron from your phone", () => ask("turn on the phone remote")],
   ["🌐", "Interpreter…", "live translation", () => fill("Be my interpreter between Telugu and English")],
   ["🎙", "Take lecture / meeting notes", "live transcript + summary", () => ask("start taking notes")],
   ["👁", "Screen copilot", "spots errors on screen", () => ask("watch my screen")],
@@ -600,11 +600,11 @@ const PAL = [
   ["📋", "Use my clipboard", "explain / translate / fix", () => { closePal(); showClip(true); }],
   ["🔍", "What's on my screen?", "vision", () => ask("what's on my screen?")],
   ["📊", "System status", "", () => ask("system status")],
-  ["🗂", "Mission log", "what Atomo did", () => { document.querySelector('.mtab[data-m="log"]').click(); closePal(); }],
+  ["🗂", "Mission log", "what Ultron did", () => { document.querySelector('.mtab[data-m="log"]').click(); closePal(); }],
   ["🎨", "Switch theme", "cinema / iOS / Iron Man", () => ask("switch to the iOS theme")],
-  ["🧠", "Memory graph", "everything Atomo remembers", () => { closePal(); openMemoryGraph(); }],
+  ["🧠", "Memory graph", "everything Ultron remembers", () => { closePal(); openMemoryGraph(); }],
   ["✦", "Orb style & settings", "24 dot-sphere styles", () => { closePal(); window.ORB.openSettings && window.ORB.openSettings(); }],
-  ["🗣", "Talk in my voice / Atomo voice", "", () => post("/api/action", {action: "me"})],
+  ["🗣", "Talk in my voice / Ultron voice", "", () => post("/api/action", {action: "me"})],
   ["🔇", "Mute / unmute", "", () => post("/api/action", {action: "mute"})],
   ["♻️", "New conversation", "", () => $("newc").click()],
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
@@ -616,7 +616,7 @@ function renderPal() {
   const q = $("palIn").value.trim(); palItems = q ? PAL.filter(p => fuzzy(q, p[1] + " " + p[2])) : PAL;
   palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
   $("palList").innerHTML = palItems.map((p, i) => `<div class="pali ${i === palSel ? "on" : ""}" data-i="${i}"><span class="ic">${p[0]}</span>${esc(p[1])}<small>${esc(p[2])}</small></div>`).join("")
-    || `<div class="pali on"><span class="ic">↵</span>Ask Atomo: “${esc(q)}”</div>`;
+    || `<div class="pali on"><span class="ic">↵</span>Ask Ultron: “${esc(q)}”</div>`;
   $("palList").querySelectorAll(".pali[data-i]").forEach(el => el.onclick = () => runPal(+el.dataset.i));
 }
 function runPal(i) { const p = palItems[i]; if (p) { p[3](); if (!["Deep Think…"].includes(p[1]) && !p[1].endsWith("…")) closePal(); }
@@ -645,7 +645,7 @@ async function showClip(force) {
 }
 $("clip").querySelectorAll("[data-c]").forEach(b => b.onclick = () => { ask(b.dataset.c + ":\n\n" + clipText.slice(0, 3500)); $("clip").classList.remove("show"); });
 $("clipX").onclick = () => $("clip").classList.remove("show");
-addEventListener("focus", () => showClip(false));          // copied something, came back to Atomo -> offer actions
+addEventListener("focus", () => showClip(false));          // copied something, came back to Ultron -> offer actions
 showClip.last = null; post("/api/clipboard", {}).then(r => r.json()).then(d => showClip.last = (d.text || "").trim()).catch(() => {});
 
 // =================== FOCUS MODE ===================
@@ -684,7 +684,7 @@ setInterval(() => {
   if (document.body.classList.contains("amb")) { if (busy) ambient(false); else ambTick(); }
 }, 5000);
 
-// =================== MEMORY GRAPH: everything Atomo remembers, as a living web ===================
+// =================== MEMORY GRAPH: everything Ultron remembers, as a living web ===================
 const MG = {nodes: [], links: [], raf: 0, drag: null, hover: null, cam: {x: 0, y: 0, z: 1}};
 const MG_COL = {Me: "#f4ba42", People: "#ff5a63", Projects: "#7fe6ff", Facts: "#9b7bff", Agents: "#3ee08b"};
 async function openMemoryGraph() {
@@ -742,7 +742,7 @@ function creationCard(e, status) {
   if (!el) { el = document.createElement("div"); el.className = "ccard"; el.id = "cc-" + e.id; $("feed").appendChild(el); }
   const kind = (typeof KIND_LABEL !== "undefined" && KIND_LABEL[e.kind]) || "Creation";
   el.innerHTML = `<b>🧩 ${esc(kind)}${e.title ? " · " + esc(e.title) : ""}</b><small>${esc(status)}</small>` +
-    `<div class="row"><button class="hot" data-a="screen">Open Atomo Screen</button>` +
+    `<div class="row"><button class="hot" data-a="screen">Open Ultron Screen</button>` +
     (CREATED[e.id] ? `<button data-a="here">Show here</button>` : "") + `</div>`;
   el.querySelector('[data-a="screen"]').onclick = () => post("/api/action", {action: "open_screen"});
   const here = el.querySelector('[data-a="here"]'); if (here) here.onclick = () => canvasDone(CREATED[e.id]);
@@ -821,10 +821,10 @@ function showWeather(w) {
   $("wx").innerHTML = `${esc(w.text)}<small>${esc(w.place || w.cond || "")}</small>`; $("wx").title = w.cond || "";
 }
 
-// =================== GESTURES: tracked by Atomo itself (works in every app); this is the live HUD ===================
+// =================== GESTURES: tracked by Ultron itself (works in every app); this is the live HUD ===================
 let gesturesOn = false;
 function toast(t, ms = 1400) { const el = $("gtoast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), ms); }
-function setGestures(on) {                          // state reported by Atomo
+function setGestures(on) {                          // state reported by Ultron
   gesturesOn = on; $("gBtn").classList.toggle("on", on); $("gcam").classList.toggle("on", on);
   if (on) toast("✋ Gestures on in every app — ☝️ point: mouse · 🤏 pinch: click · ✋ talk · ✊ stop · 👍 yes · ✌️ full screen · 👋 swipe", 4000);
   else { toast("Gestures off"); $("gdraw").getContext("2d").clearRect(0, 0, 220, 165); }

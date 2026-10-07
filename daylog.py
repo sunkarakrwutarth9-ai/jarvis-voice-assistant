@@ -60,12 +60,12 @@ def _front():
         app = "Windows" if low != "lockapp" else "Locked"
     else:
         app = {"code": "VS Code", "winword": "Word", "excel": "Excel", "powerpnt": "PowerPoint", "whatsapp": "WhatsApp",
-               "spotify": "Spotify", "pythonw": "Atomo", "python": "Python", "windowsterminal": "Terminal",
+               "spotify": "Spotify", "pythonw": "Ultron", "python": "Python", "windowsterminal": "Terminal",
                "claude": "Claude", "teams": "Teams", "zoom": "Zoom", "vlc": "VLC"}.get(low, exe.capitalize())
     if PRIVATE.search(title):
         title = ""
-    if "A.T.O.M.O" in title:
-        app, title = "Atomo", "Command center"
+    if "U.L.T.R.O.N" in title:
+        app, title = "Ultron", "Command center"
     return app, title[:90]
 
 
@@ -209,4 +209,4 @@ li{{margin:5px 0}} .muted{{color:#8b97b5}}</style></head><body>
                + ", ".join(f"{a} {_fmt(s)}" for a, s in apps[:5])
                + f"; {len(blocks)} focus blocks" + (f" (longest: {max(blocks, key=lambda b: b[1] - b[0])[2]} {_fmt(max(b[1] - b[0] for b in blocks))})" if blocks else "")
                + (f"; top sites: {', '.join(s for s, _ in top_sites[:3])}" if top_sites else ""))
-    return f"OK: the day report for {d:%A %d %B} is on the Atomo Screen. Tell the user the highlights in 2-3 sentences: {summary}"
+    return f"OK: the day report for {d:%A %d %B} is on the Ultron Screen. Tell the user the highlights in 2-3 sentences: {summary}"

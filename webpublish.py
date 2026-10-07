@@ -35,7 +35,7 @@ def publish_website(name: str = "", confirm: bool = False) -> str:
     import tools
     c = tools.CREATIONS.get(tools._last_creation[0])
     if not c or c["lang"] != "html":
-        return "FAILED: there's no web page / game / 3D scene on the Atomo Screen to publish. Create one first."
+        return "FAILED: there's no web page / game / 3D scene on the Ultron Screen to publish. Create one first."
     gh = _gh()
     if not gh:
         return "FAILED: the GitHub CLI isn't installed (https://cli.github.com), so I can't publish."
@@ -62,13 +62,13 @@ def publish_website(name: str = "", confirm: bool = False) -> str:
             (site / "index.html").write_text(c["content"], encoding="utf-8")
             (site / ".nojekyll").write_text("", encoding="utf-8")
             _run(["git", "add", "-A"], cwd=site)
-            _run(["git", "-c", "user.name=Atomo", "-c", f"user.email={owner}@users.noreply.github.com",
-                  "commit", "-m", f"Publish {c['title']} with Atomo"], cwd=site)
+            _run(["git", "-c", "user.name=Ultron", "-c", f"user.email={owner}@users.noreply.github.com",
+                  "commit", "-m", f"Publish {c['title']} with Ultron"], cwd=site)
             if exists:
                 _run(["git", "push", "origin", "main"], cwd=site, timeout=120)
             else:
                 _run([gh, "repo", "create", f"{owner}/{slug}", "--public", "--source", str(site), "--push",
-                      "--description", f"{c['title']} - made with Atomo"], cwd=site, timeout=120)
+                      "--description", f"{c['title']} - made with Ultron"], cwd=site, timeout=120)
                 time.sleep(2)
                 _run([gh, "api", "-X", "POST", f"repos/{owner}/{slug}/pages",
                       "-f", "source[branch]=main", "-f", "source[path]=/"], timeout=60)

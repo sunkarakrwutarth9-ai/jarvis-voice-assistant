@@ -95,7 +95,7 @@ def _say_time(d: datetime.datetime):
 
 
 def schedule_task(command: str, at: str = "", in_minutes: float = 0, repeat: str = "") -> str:
-    """Run any Atomo command later / every day: 'every day at 7 give me my briefing', 'at 9 pm play lofi'."""
+    """Run any Ultron command later / every day: 'every day at 7 give me my briefing', 'at 9 pm play lofi'."""
     command = (command or "").strip()
     if not command:
         return "FAILED: what should I do at that time?"

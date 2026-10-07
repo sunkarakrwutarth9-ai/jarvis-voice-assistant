@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A.T.O.M.O. Command Center</title>
+<title>U.L.T.R.O.N. Command Center</title>
 <style>
 :root{
   --bg:#000; --glass:rgba(44,44,48,.52); --glass-hi:rgba(255,255,255,.10); --stroke:rgba(255,255,255,.09);
@@ -194,7 +194,7 @@ body{height:100%;color:var(--text);font-family:var(--font);overflow:hidden;backg
 <div class="app" id="app" data-state="idle" data-me="0">
   <div class="statusbar">
     <span id="time">--:--</span>
-    <div class="c">Atomo<small id="model">Gemini</small></div>
+    <div class="c">Ultron<small id="model">Gemini</small></div>
     <div class="r"><span id="link">●</span><span id="batPct">--%</span><div class="bat" id="bat"><i></i></div></div>
   </div>
 
@@ -217,7 +217,7 @@ body{height:100%;color:var(--text);font-family:var(--font);overflow:hidden;backg
     <div class="orb" id="orb"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
       <div class="shine"></div><div class="face" id="face"></div></div>
     <div class="state" id="st">Ready</div>
-    <div class="headline" id="tt">Say “OK Atomo”</div>
+    <div class="headline" id="tt">Say “OK Ultron”</div>
     <div class="you" id="you"></div>
     <div class="say" id="say"></div>
     <div class="progress" id="prog"></div>
@@ -241,7 +241,7 @@ body{height:100%;color:var(--text);font-family:var(--font);overflow:hidden;backg
 
   <section class="card msgs">
     <div class="title">Messages</div>
-    <div class="feed" id="feed"><div class="empty" id="empty">No messages yet.<br>Say “OK Atomo” or type below.</div></div>
+    <div class="feed" id="feed"><div class="empty" id="empty">No messages yet.<br>Say “OK Ultron” or type below.</div></div>
   </section>
 
   <div class="dock">
@@ -250,12 +250,12 @@ body{height:100%;color:var(--text);font-family:var(--font);overflow:hidden;backg
     <button class="tile" id="mute"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg><span>Mute</span></button>
     <button class="tile" id="newc"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Reset</button>
     <button class="tile" id="theme"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2"/></svg>Iron Man</button>
-    <div class="compose"><input id="cmd" placeholder="Message Atomo…" autocomplete="off">
+    <div class="compose"><input id="cmd" placeholder="Message Ultron…" autocomplete="off">
       <button class="send" id="send"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l7 7-1.4 1.4L13 7.8V20h-2V7.8l-4.6 4.6L5 11z"/></svg></button></div>
     <div class="card models" id="models"></div>
   </div>
 </div>
-<div class="offline" id="offline">Reconnecting to Atomo…</div>
+<div class="offline" id="offline">Reconnecting to Ultron…</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -270,7 +270,7 @@ let lastState = "idle";
 function setState(s, title, body) {
   lastState = s; if (app.dataset.state !== s) app.dataset.state = s;
   $("st").textContent = STATES[s] || s;
-  const t = {idle: "Say “OK Atomo”", followup: "Go ahead", listening: "Listening…", thinking: "Thinking…"}[s];
+  const t = {idle: "Say “OK Ultron”", followup: "Go ahead", listening: "Listening…", thinking: "Thinking…"}[s];
   if (s === "speaking") { $("say").textContent = body; $("tt").textContent = ""; }
   else if (s === "action") $("tt").textContent = title;
   else if (s === "choice") $("tt").textContent = title || "Choose an option";

@@ -1,8 +1,8 @@
-"""Meeting & lecture notes: Atomo listens to a class, a YouTube lecture or a meeting and writes notes.
+"""Meeting & lecture notes: Ultron listens to a class, a YouTube lecture or a meeting and writes notes.
 
 Sources: the PC's own sound (WASAPI loopback - YouTube, Zoom/Meet, online classes) and/or the microphone
 (a real classroom, the user's side of a meeting). Every ~40 s the audio is transcribed by Gemini and the
-live transcript streams onto the Atomo Screen. On stop: summary, key points, action items and a quiz.
+live transcript streams onto the Ultron Screen. On stop: summary, key points, action items and a quiz.
 Audio is only kept in memory while recording and never written to disk.
 """
 
@@ -155,7 +155,7 @@ def notes(action: str = "start", source: str = "both", title: str = "") -> str:
         rec.start()
         tools.publish({"type": "notes", "on": True, "title": title})
         return (f"OK: taking notes ({'PC sound and microphone' if rec.source == 'both' else rec.source}); the live "
-                f"transcript is on the Atomo Screen. Say 'stop notes' to get the summary.")
+                f"transcript is on the Ultron Screen. Say 'stop notes' to get the summary.")
     if action == "status":
         return f"OK: recording for {rec._elapsed()}, {len(rec.transcript)} parts so far." if rec else "OK: not recording."
     if not rec:
@@ -185,5 +185,5 @@ def notes(action: str = "start", source: str = "both", title: str = "") -> str:
            f"## Full transcript\n\n" + "\n\n".join(f"**{c}** {t}" for c, t in rec.transcript) + "\n")
     tools.show_content("document", f"Notes: {rec.title}"[:60], "md", doc, cid=rec.cid)
     first = notes_md.split("## Key points")[0].replace("## Summary", "").strip()[:600]
-    return ("OK: the notes are ready on the Atomo Screen (summary, key points, action items, quiz, transcript) and NOT "
+    return ("OK: the notes are ready on the Ultron Screen (summary, key points, action items, quiz, transcript) and NOT "
             f"saved yet - ask if the user wants to save them. Summary to mention briefly: {first}")

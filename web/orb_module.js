@@ -9,7 +9,7 @@ function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h
 addEventListener("resize", resize); resize();
 
 // ---------------------------------------------------------------- settings (remembered in this browser)
-const DEFAULTS = {style: "arc-sphere", dots: 3200, spin: 1, cycle: false, sats: false};
+const DEFAULTS = {style: "ultron", dots: 3200, spin: 1, cycle: false, sats: false};
 let SET = Object.assign({}, DEFAULTS);
 try { Object.assign(SET, JSON.parse(localStorage.getItem("atomoOrb") || "{}")); } catch (e) {}
 const saveSet = () => { try { localStorage.setItem("atomoOrb", JSON.stringify(SET)); } catch (e) {} };
@@ -53,11 +53,11 @@ const SHAPES = {
   gyro: (i) => { const ring = i % 5, a = R() * TAU, r = 1.65 - ring * .12, tilt = ring * Math.PI / 5;
     const x = Math.cos(a) * r, y = Math.sin(a) * r; return [x, y * Math.cos(tilt), y * Math.sin(tilt)]; },
 };
-const PAL = {arc: [0x7fe6ff, 0xf4ba42], iron: [0xe0262f, 0xf4ba42], matrix: [0x00ff6a, 0x0a8f3c], sunset: [0xff7a59, 0xff3d9a],
+const PAL = {ultron: [0xff1a2e, 0xff8a3d], arc: [0x7fe6ff, 0xf4ba42], iron: [0xe0262f, 0xf4ba42], matrix: [0x00ff6a, 0x0a8f3c], sunset: [0xff7a59, 0xff3d9a],
   ocean: [0x2fd4ff, 0x1f5bff], violet: [0x9b7bff, 0xff6fd8], ice: [0xffffff, 0x7fe6ff], fire: [0xff3b00, 0xffc400],
   gold: [0xf4ba42, 0xfff1c2], mono: [0xffffff, 0x8a94a8], rainbow: [0xffffff, 0xffffff]};
 const STYLES = [
-  ["arc-sphere", "Arc Sphere", "sphere", "arc"], ["iron-sphere", "Iron Sphere", "sphere", "iron"],
+  ["ultron", "Ultron Core", "sphere", "ultron"], ["arc-sphere", "Arc Sphere", "sphere", "arc"], ["iron-sphere", "Iron Sphere", "sphere", "iron"],
   ["galaxy", "Galaxy", "galaxy", "violet"], ["andromeda", "Andromeda", "galaxy", "ice"],
   ["torus", "Torus", "torus", "ocean"], ["dna", "DNA Helix", "helix", "matrix"], ["cube", "Data Cube", "cube", "arc"],
   ["heart", "Heart", "heart", "sunset"], ["wave", "Ocean Wave", "wave", "ocean"], ["saturn", "Saturn", "saturn", "gold"],
@@ -202,7 +202,7 @@ function frame(now) {
   const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000), st = window.ORB.state; last = now;
   level += ((window.ORB.level || 0) - level) * .15;
   spin += ((SPIN[st] ?? .1) - spin) * .04;
-  // colours: the style's palette, tinted by what Atomo is doing
+  // colours: the style's palette, tinted by what Ultron is doing
   tA.set(pal[0]); tB.set(pal[1]);
   if (STATE_COL[st]) { tA.lerp(cA.set(STATE_COL[st][0]), .6); tB.lerp(cB.set(STATE_COL[st][1]), .6); }
   uniforms.uA.value.lerp(tA, .06); uniforms.uB.value.lerp(tB, .06);

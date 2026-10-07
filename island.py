@@ -472,7 +472,7 @@ class Island(QWidget):
             return
         self._paint_reactor(p, QPointF(pill.left() + 22, cy), 9, small=True)
         p.setOpacity(self.content_alpha)
-        label = "LISTENING" if followup else "A.T.O.M.O"
+        label = "LISTENING" if followup else "U.L.T.R.O.N"
         status = "MUTED" if self.muted else ("YOU" if self.me_mode else "ONLINE")
         if followup:
             status = "GO AHEAD"
@@ -562,10 +562,10 @@ class Island(QWidget):
         rect = self._content_rect(pill)
         dots = "." * (int(self._phase * 3) % 4) if self.state in ("thinking", "action") else ""
         p.drawText(QRectF(rect.left(), pill.top() + 7, rect.width(), 12), Qt.AlignLeft | Qt.AlignVCenter,
-                   f"A.T.O.M.O  //  {header}{dots}")
+                   f"U.L.T.R.O.N  //  {header}{dots}")
         # thin gold rule under the header
         fm = QFontMetricsF(self.f_header)
-        x = rect.left() + fm.horizontalAdvance(f"A.T.O.M.O  //  {header}...") + 8
+        x = rect.left() + fm.horizontalAdvance(f"U.L.T.R.O.N  //  {header}...") + 8
         line = QLinearGradient(QPointF(x, 0), QPointF(rect.right(), 0))
         line.setColorAt(0, QColor(GOLD.red(), GOLD.green(), GOLD.blue(), 120))
         line.setColorAt(1, QColor(GOLD.red(), GOLD.green(), GOLD.blue(), 0))
@@ -833,7 +833,7 @@ class Island(QWidget):
         f = QFont("Segoe UI Variable Display Semibold", 10)
         p.setFont(f)
         p.setPen(self._fg())
-        label = "Listening…" if self.state == "followup" else "Atomo"
+        label = "Listening…" if self.state == "followup" else "Ultron"
         p.drawText(QRectF(pill.left() + 36, pill.top(), pill.width() - 40, pill.height()), Qt.AlignVCenter | Qt.AlignLeft, label)
         status = "Muted" if self.muted else ("Your voice" if self.me_mode else "Ready")
         if self.state == "followup":
@@ -985,8 +985,8 @@ class Island(QWidget):
             "QMenu::item{padding:6px 18px;border-radius:6px}QMenu::item:selected{background:#5a0c12;color:#f4ba42}"
             "QMenu::separator{height:1px;background:#5a4220;margin:4px 8px}")
         items = [
-            ("Talk to Atomo", self.clicked.emit),
-            ("Use Atomo voice" if self.me_mode else "Use my voice and face", self.avatar_clicked.emit),
+            ("Talk to Ultron", self.clicked.emit),
+            ("Use Ultron voice" if self.me_mode else "Use my voice and face", self.avatar_clicked.emit),
             ("Unmute voice" if self.muted else "Mute voice", self._toggle_mute),
             ("New conversation", self.new_chat.emit),
         ]
@@ -995,7 +995,7 @@ class Island(QWidget):
             a.triggered.connect(fn)
             m.addAction(a)
         m.addSeparator()
-        q = QAction("Quit Atomo", m)
+        q = QAction("Quit Ultron", m)
         q.triggered.connect(self.quit_requested.emit)
         m.addAction(q)
         m.exec(pos)

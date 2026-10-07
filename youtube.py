@@ -131,6 +131,30 @@ class YouTube:
     open_url = None    # set by tools: opens a URL in the user's Chrome (used when Playwright is unavailable)
 
     def play(self, query: str) -> str:
+        """Play the top result; if the Jarvis window was closed mid-way, reopen it once, else use normal Chrome."""
+        for attempt in range(2):
+            try:
+                return self._play(query)
+            except PlaywrightError as e:
+                log_msg = str(e)
+                self._page = None
+                try:
+                    if self._ctx is not None:
+                        self._ctx.close()
+                except Exception:
+                    pass
+                self._ctx = None
+                if attempt == 1 and self.open_url:
+                    try:
+                        vid, title = self._search_top(query)
+                    except Exception:
+                        vid, title = None, None
+                    self.open_url(f"https://www.youtube.com/watch?v={vid}" if vid else
+                                  "https://www.youtube.com/results?search_query=" + quote_plus(query))
+                    return f"OK: now playing '{title or query}' on YouTube (in Chrome)."
+        return f"FAILED: YouTube didn't open ({log_msg[:80]})."
+
+    def _play(self, query: str) -> str:
         try:
             video_id, title = self._search_top(query)
         except Exception:
@@ -165,6 +189,8 @@ class YouTube:
         return f"OK: now playing '{title or shown or query}' on YouTube."
 
     def control(self, action: str) -> str:
+        action = {"stop": "pause", "resume": "play", "skip": "next_video", "next": "next_video",
+                  "louder": "volume_up", "quieter": "volume_down"}.get(action, action)
         # Only use the Jarvis window if it's already open on a video - never launch a browser just to check.
         page = self._page
         if page is None or page.is_closed() or not self._alive() or "youtube.com/watch" not in page.url:
