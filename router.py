@@ -40,6 +40,11 @@ GROUPS = [
     (r"chrome|browser|account|sign ?in|profile|youtube", {"open_browser", "youtube_sign_in", "youtube_control"}),
     (r"break|care|proactive|remind me to (stand|drink)", {"proactive"}),
     (r"code|program|script|python|java|run it", {"write_code", "run_creation", "open_in_editor"}),
+    (r"interview|get to know|know me|about me|question", {"interview"}),
+    (r"skill|learn (this|how)|the way i|my style|from now on", {"save_skill", "list_skills", "delete_skill"}),
+    (r"calendar|meeting|event|appointment|agenda|schedule|task|tomorrow|today", {
+        "calendar_agenda", "calendar_add", "tasks_list", "task_add", "connect_google_calendar"}),
+    (r"brain|claude|chatgpt|openai|gpt|ollama|local model|open.?source|model", {"connect_brain", "brain_status"}),
 ]
 
 

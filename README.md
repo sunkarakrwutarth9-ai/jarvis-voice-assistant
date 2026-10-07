@@ -72,6 +72,12 @@ reacting to your voice), system vitals, the conversation log and the **canvas**
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
 
+**The 9-step JARVIS recipe — all in one install**
+- **🎤 It interviews you** — "interview me": 15 questions about your life, work, routine, people and goals, all filed into memory
+- **🧩 Skills** — teach it how to do tasks *your* way ("learn this as a skill…"); starter skills: reel scripts, email replies, study plans, day planning
+- **🧠 Choose your brain** — Gemini + DeepSeek built in; "connect Claude" / "connect ChatGPT" (paste your key) or free local open-source models via Ollama — the fastest healthy model answers
+- **📅 Google Calendar + Tasks** — "what's on my calendar", "add a meeting tomorrow at 5", "add a task" (one-time sign-in)
+
 **Ideas from the best JARVIS reels — built in**
 - **🌍 Publish websites live** — "build a website for my shop and put it online": a real link (`https://<you>.github.io/<name>/`, free GitHub Pages). Always asks first — it's public
 - **🎓 AI classroom** — "teach me photosynthesis" / "teach me this PDF": slides on the Ultron Screen, Ultron explains each one aloud, whiteboard notes, then "quiz me" on what was taught

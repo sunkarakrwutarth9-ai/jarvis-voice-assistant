@@ -1266,6 +1266,8 @@ def briefing() -> str:
     extra = everyday.prompt_context()
     if extra:
         parts.append(extra)
+    if gworkspace.connected():
+        parts.append("Calendar today: " + gworkspace.calendar_agenda(1).replace("OK: ", ""))
     report = team.morning_report()
     if report:
         parts.append("Overnight team report (mention the 2-3 most useful points): " + report[:2500])
@@ -1403,6 +1405,22 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("interview", "Get-to-know-you interview: Ultron asks about the user's life, work, routine, people, goals and preferences one question at a time and saves the answers to memory. action 'start' (also resumes), 'answer' (pass the user's reply in answer), 'skip', 'stop', 'restart'.",
+        {"action": {"type": "string", "enum": ["start", "answer", "skip", "stop", "restart"]}, "answer": {"type": "string"}}, ["action"]),
+    _fn("save_skill", "Teach Ultron a reusable skill - how to do a task the user's way (e.g. 'Instagram caption style', 'customer reply', 'weekly review'). instructions = clear numbered steps; when = trigger words.",
+        {"name": {"type": "string"}, "instructions": {"type": "string"}, "when": {"type": "string"}}, ["name", "instructions"]),
+    _fn("list_skills", "List the skills Ultron has learned."),
+    _fn("delete_skill", "Forget a skill.", {"name": {"type": "string"}}, ["name"]),
+    _fn("connect_google_calendar", "One-time Google sign-in for Calendar + Tasks."),
+    _fn("calendar_agenda", "What's on the user's Google Calendar today / in the next N days.", {"days": {"type": "integer"}}),
+    _fn("calendar_add", "Add an event to Google Calendar. start = 'YYYY-MM-DD HH:MM' local time (compute from today's date).",
+        {"title": {"type": "string"}, "start": {"type": "string"}, "duration_minutes": {"type": "integer"},
+         "description": {"type": "string"}}, ["title", "start"]),
+    _fn("tasks_list", "List open Google Tasks."),
+    _fn("task_add", "Add a Google Task (due = 'YYYY-MM-DD', optional).", {"title": {"type": "string"}, "due": {"type": "string"}}, ["title"]),
+    _fn("connect_brain", "Add another AI brain to Ultron: 'claude' (Anthropic), 'openai' (ChatGPT) or 'local' (free open-source models via Ollama). Opens a secure box for the user to paste the key.",
+        {"provider": {"type": "string", "enum": ["claude", "openai", "local"]}}, ["provider"]),
+    _fn("brain_status", "Which AI brains/models Ultron is using, fastest first."),
     _fn("watch", "VIDEO vision - watch a few seconds and understand what happens over time (movement, gestures, actions, who is there, what changes), not just a still photo. source 'camera' ('watch me', 'what am I doing', 'how is my posture', 'who is here'), 'screen' ('watch my screen for 10 seconds', 'what is this video playing'), or a video file path ('summarise this video'). Prefer this over look for anything involving motion or people.",
         {"source": {"type": "string", "description": "camera | screen | path to a video file"},
          "seconds": {"type": "number", "description": "2-20, default 4"}, "question": {"type": "string"}}),
@@ -1605,6 +1623,10 @@ import gmail  # noqa: E402  (Gmail assistant - drafts only)
 import webpublish  # noqa: E402  (publish creations live - GitHub Pages)
 import classroom  # noqa: E402  (AI classroom)
 import videovision  # noqa: E402  (watch short videos: camera, screen, files)
+import interview as interview_mod  # noqa: E402  (get-to-know-you interview)
+import skills  # noqa: E402  (reusable task know-how)
+import gworkspace  # noqa: E402  (Google Calendar + Tasks)
+import brains  # noqa: E402  (Claude / ChatGPT / local models)
 
 
 def show_memory_graph() -> str:
@@ -1629,7 +1651,12 @@ FUNCS = {
     "connect_telegram": telegrambot.connect_telegram, "ask_agent": team.ask_agent, "overnight_shift": team.overnight_shift,
     "connect_gmail": gmail.connect_gmail, "email_triage": gmail.email_triage, "email_search": gmail.email_search,
     "email_draft": gmail.email_draft, "publish_website": webpublish.publish_website,
-    "show_memory_graph": show_memory_graph, "watch": videovision.watch, "teach": classroom.teach, "stop_class": classroom.stop_class,
+    "show_memory_graph": show_memory_graph, "watch": videovision.watch,
+    "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
+    "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
+    "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
+    "tasks_list": gworkspace.tasks_list, "task_add": gworkspace.task_add,
+    "connect_brain": brains.connect_brain, "brain_status": brains.brain_status, "teach": classroom.teach, "stop_class": classroom.stop_class,
     "deep_think": deepthink.deep_think, "calculate": deepthink.calculate,
     "robot": robot, "focus_mode": focus_mode, "interpreter": interpreter, "smart_home": smart_home, "connect_google_home": connect_google_home,
     "set_reminder": everyday.set_reminder, "schedule_task": everyday.schedule_task, "orb_style": orb_style, "list_reminders": everyday.list_reminders,
@@ -1737,6 +1764,12 @@ def describe(name: str, args: dict):
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
         "publish_website": lambda: "Publishing to the web" if a.get("confirm") else "Preparing to publish",
+        "interview": lambda: "Interview" if a.get("action") != "answer" else "Noting your answer",
+        "save_skill": lambda: f"Learning skill · {a.get('name', '')}", "list_skills": lambda: "My skills",
+        "delete_skill": lambda: "Forgetting skill", "connect_google_calendar": lambda: "Connecting Google Calendar",
+        "calendar_agenda": lambda: "Checking your calendar", "calendar_add": lambda: f"Adding to calendar · {a.get('title', '')}",
+        "tasks_list": lambda: "Your tasks", "task_add": lambda: f"New task · {a.get('title', '')}",
+        "connect_brain": lambda: f"Connecting {a.get('provider', '')} brain", "brain_status": lambda: "Brain status",
         "watch": lambda: {"screen": "Watching the screen", "camera": "Watching through the camera"}.get(a.get("source", "camera"), "Watching the video"),
         "show_memory_graph": lambda: "Memory graph", "teach": lambda: f"Class · {a.get('topic') or 'your document'}",
         "stop_class": lambda: "Ending the class",

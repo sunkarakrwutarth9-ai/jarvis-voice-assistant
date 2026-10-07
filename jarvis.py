@@ -686,7 +686,8 @@ def run_gui(args):
     bridge.level.connect(island.set_level)
     bridge.me.connect(island.set_me_mode)
 
-    brain = Brain(get_api_key(gui=True), MODEL, BASE_URL, BACKUP_MODELS, EXTRA_PROVIDERS)
+    import brains
+    brain = Brain(get_api_key(gui=True), MODEL, BASE_URL, BACKUP_MODELS, EXTRA_PROVIDERS + brains.configured())
     # Rank the models by live speed now, and refresh the ranking every 10 minutes.
     live = {}
 
@@ -1081,7 +1082,7 @@ def run_gui(args):
 
     def _ask_secret(prompt):
         from PySide6.QtWidgets import QInputDialog, QLineEdit
-        text, ok = QInputDialog.getText(None, "Ultron - Telegram", prompt, QLineEdit.Password)
+        text, ok = QInputDialog.getText(None, "Ultron - secure key", prompt, QLineEdit.Password)
         secret_box["value"] = text.strip() if ok else None
         secret_box["done"].set()
 
@@ -1093,6 +1094,13 @@ def run_gui(args):
         secret_box["done"].wait(600)
         return secret_box["value"]
 
+    def ask_secret_any(prompt):
+        secret_box["done"].clear()
+        bridge.ask_secret.emit(prompt)
+        secret_box["done"].wait(600)
+        return secret_box["value"]
+
+    tools.brains.hooks.update(brain=brain, ask_secret=ask_secret_any)
     tools.telegrambot.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
                                  state=tools._state, save=tools._save_state, ask_token=ask_token)
     threading.Thread(target=tools.telegrambot.resume, name="telegram-start", daemon=True).start()
