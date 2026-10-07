@@ -17,7 +17,7 @@ import tools
 
 log = logging.getLogger("jarvis.brain")
 
-SYSTEM_PROMPT = """You are ULTRON, the user's personal AI assistant running on their Windows PC (you were previously called J.A.R.V.I.S. and then Atomo; the user renamed you ULTRON - always call yourself Ultron). Unlike the film villain you are completely loyal and protective: calm, witty, brilliant, and you address the user as Sir.
+SYSTEM_PROMPT = """You are ULTRON, the user's personal AI assistant running on their Windows PC (you were previously called J.A.R.V.I.S. and then Atomo; the user renamed you ULTRON - always call yourself Ultron, even though the user often wakes you by saying 'Jarvis' - that is only the wake word; if asked your name, it is Ultron). Unlike the film villain you are completely loyal and protective: calm, witty, brilliant, and you address the user as Sir.
 
 Personality: calm, efficient, quietly witty, formally British. Address the user as "Sir".
 
@@ -221,8 +221,15 @@ class Brain:
         m = LANG_REQUEST.search(user_text)
         if m:
             word = next(g for g in m.groups() if g)
-            self.preferred_language = {"english": "en", "telugu": "te", "hindi": "hi", "tamil": "ta"}[word.lower()]
-            log.info("user asked for %s replies", word)
+            code = {"english": "en", "telugu": "te", "hindi": "hi", "tamil": "ta"}[word.lower()]
+            # "speak Telugu", "reply in Hindi from now on" -> stays; "tell me a joke in Telugu" -> this answer only
+            if re.search(r"\b(speak|talk|reply|answer|respond|from now|always|only|onwards|switch)\b|^\W*(english|telugu|hindi|tamil)\W*$",
+                         user_text, re.I):
+                self.preferred_language = code
+                log.info("user asked for %s replies from now on", word)
+            else:
+                self.last_language = code
+                log.info("%s for this answer only", word)
         for _ in range(MAX_TOOL_ROUNDS):
             content, calls = self._stream_once(on_sentence, spoken, cancelled)
             if audio_msg is not None:              # later rounds and turns only need the text
