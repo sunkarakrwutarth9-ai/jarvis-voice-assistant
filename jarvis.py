@@ -293,6 +293,10 @@ class Assistant(threading.Thread):
 
     def notify(self, text):
         self.events.put(("notify", text, None))
+        try:
+            __import__("tools").telegrambot.push(text)        # away from the PC? it reaches your phone too
+        except Exception:
+            pass
 
     # ---------------------------------------------------------------- thread
     def run(self):
@@ -458,6 +462,10 @@ class Assistant(threading.Thread):
             self._speak_standalone(msg, "error")
             return
         log.info("JARVIS: %s", reply)
+        try:
+            __import__("tools").vault.journal(text if text != "…" else "(voice)", reply, used_tools)
+        except Exception:
+            log.exception("journal failed")
         if (("NOREPLY" in (reply or "") or (quiet_check and UNHEARD.search(reply or "")))
                 and not shown and not used_tools):
             log.info("unclear recording was not a request - still listening")
@@ -647,6 +655,7 @@ def run_gui(args):
         theme = Signal(str)
         appearance = Signal(str)
         robot = Signal(str)
+        ask_secret = Signal(str)
         quit = Signal()
 
     bridge = Bridge()
@@ -1042,12 +1051,41 @@ def run_gui(args):
     # ---- background services: notes audio, day timeline, proactive care, phone remote
     tools.notes_mod.system_audio = system_audio
     tools.daylog.start()
+    tools.vault.start()
     tools.care.hooks.update(say=assistant.notify, briefing=lambda: assistant.on_text("good morning, give me my briefing"),
                             state=tools._state, save=tools._save_state)
     tools.care.start(tools._state("care", {}))
     tools.phone.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
                            state=tools._state, save=tools._save_state)
     tools.phone.resume()
+
+    # ---- Telegram anywhere: the bot token is pasted by the user into Atomo's own dialog (never typed by the AI)
+    secret_box = {"value": None, "done": threading.Event()}
+
+    def _ask_secret(prompt):
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+        text, ok = QInputDialog.getText(None, "Atomo - Telegram", prompt, QLineEdit.Password)
+        secret_box["value"] = text.strip() if ok else None
+        secret_box["done"].set()
+
+    bridge.ask_secret.connect(_ask_secret)
+
+    def ask_token():
+        secret_box["done"].clear()
+        bridge.ask_secret.emit("Paste the bot token from @BotFather (Telegram).\nIt is stored only on this PC, in .env.")
+        secret_box["done"].wait(600)
+        return secret_box["value"]
+
+    tools.telegrambot.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
+                                 state=tools._state, save=tools._save_state, ask_token=ask_token)
+    threading.Thread(target=tools.telegrambot.resume, name="telegram-start", daemon=True).start()
+
+    # ---- the Stark team speaks in their own voices
+    def team_say(text, voice):
+        bridge.state.emit("speaking", "", text, "")
+        speaker.say(text, voice)
+
+    tools.team.hooks["say"] = team_say
 
     # ---- the command center's Daily panel (reminders, lists, routines) + weather
     hub.everyday = lambda: dict(tools.everyday.snapshot(), devices=tools.smarthome.devices(),

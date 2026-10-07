@@ -1266,6 +1266,9 @@ def briefing() -> str:
     extra = everyday.prompt_context()
     if extra:
         parts.append(extra)
+    report = team.morning_report()
+    if report:
+        parts.append("Overnight team report (mention the 2-3 most useful points): " + report[:2500])
     facts = memories()
     if facts:
         parts.append("Remembered: " + "; ".join(m["fact"] for m in facts[-8:]))
@@ -1400,6 +1403,26 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("connect_telegram", "Set up or re-pair the user's private Telegram bot so they can talk to Atomo from anywhere (text, voice notes, photos, files). new_pairing=true to pair a different Telegram account.",
+        {"new_pairing": {"type": "boolean"}}),
+    _fn("ask_agent", "Delegate to a specialist on the Stark AI team; she answers in her own voice and puts a full report on the Atomo Screen. agent: 'friday' = F.R.I.D.A.Y. (research, news, comparisons, explanations with sources), 'edith' = E.D.I.T.H. (PC security & system audit: health, startup apps, network connections, disk, battery), 'karen' = KAREN (schedule, reminders, lists, planning the day). Use when the user names one of them, or for in-depth work in their area.",
+        {"agent": {"type": "string", "enum": ["friday", "edith", "karen"]}, "task": {"type": "string"}}, ["agent", "task"]),
+    _fn("overnight_shift", "Run the team's overnight shift now: F.R.I.D.A.Y. briefs on the user's interests, E.D.I.T.H. checks the PC, KAREN plans tomorrow, and (if connected) the inbox is triaged; the result is the morning report in the vault. Usually scheduled nightly with schedule_task('run the overnight shift', at='02:00', repeat='daily').",
+        {"interests": {"type": "string"}}),
+    _fn("connect_gmail", "One-time Gmail sign-in (browser) so Atomo can triage email and write reply drafts."),
+    _fn("email_triage", "Sort and summarise the unread inbox (last 7 days): Important / Reply needed / Updates / Receipts / Newsletters / Promotions, labelled in Gmail, phishing flagged. 'check my email', 'sort my inbox', 'anything important in my mail'.",
+        {"max_emails": {"type": "integer"}}),
+    _fn("email_search", "Find emails with a Gmail search query (e.g. 'from:amazon newer_than:3d', 'subject:exam') and summarise them.",
+        {"query": {"type": "string"}}, ["query"]),
+    _fn("email_draft", "Write a reply DRAFT (never sent) to the latest email matching 'about' (sender name/address, subject or words) following the user's instructions; the user reviews and sends it from Gmail.",
+        {"about": {"type": "string"}, "instructions": {"type": "string"}}, ["about"]),
+    _fn("remember_note", "Save something to the long-term memory vault, filed in the right note: note='Me' (the user's preferences/routines/goals), 'People/<Name>', 'Projects/<Name>' or 'Facts'. Use when the user tells you something worth remembering about their life ('my sister Priya lives in Pune', 'I'm preparing for GATE in February').",
+        {"fact": {"type": "string"}, "note": {"type": "string"}}, ["fact"]),
+    _fn("recall", "Search the long-term memory vault and the journal of past conversations: 'what do you know about Priya', 'what did I tell you about my project', 'when is my exam'.",
+        {"query": {"type": "string"}}, ["query"]),
+    _fn("journal", "Read the automatic journal of what the user asked and Atomo did on a day ('today', 'yesterday' or 'YYYY-MM-DD'): 'what did we talk about yesterday'.",
+        {"day": {"type": "string"}}),
+    _fn("open_vault", "Open the memory vault (Obsidian-compatible Markdown notes) so the user can browse or edit what Atomo remembers."),
     _fn("schedule_task", "Personal-assistant scheduling: make Atomo DO something at a time or on a schedule - any command it understands, e.g. 'every day at 7 am give me my briefing', 'at 9 pm play lofi music on YouTube', 'in 30 minutes turn off the AC', 'weekdays at 10 start focus mode', 'tomorrow 8 am open Gmail'. For a plain spoken reminder use set_reminder instead.",
         {"command": {"type": "string", "description": "the command to run, phrased as the user would say it to Atomo"},
          "at": {"type": "string", "description": "24-hour 'HH:MM' or 'YYYY-MM-DD HH:MM'"}, "in_minutes": {"type": "number"},
@@ -1565,6 +1588,10 @@ import daylog  # noqa: E402  (day timeline)
 import tutor  # noqa: E402  (flashcards + voice quiz)
 import care  # noqa: E402  (proactive care)
 import phone  # noqa: E402  (phone remote)
+import vault  # noqa: E402  (long-term memory vault)
+import telegrambot  # noqa: E402  (Telegram anywhere)
+import team  # noqa: E402  (the Stark AI team)
+import gmail  # noqa: E402  (Gmail assistant - drafts only)
 
 
 def smart_home(command: str, device: str = "") -> str:
@@ -1577,7 +1604,11 @@ def connect_google_home() -> str:
 FUNCS = {
     "take_notes": notes_mod.notes, "screen_copilot": copilot.screen_copilot, "my_day": daylog.my_day,
     "day_tracking": daylog.set_tracking, "study": tutor.study, "quiz": tutor.quiz, "proactive": care.proactive,
-    "phone_remote": phone.phone_remote,
+    "phone_remote": phone.phone_remote, "recall": vault.recall, "remember_note": vault.remember_note,
+    "open_vault": vault.open_vault, "journal": vault.journal_for,
+    "connect_telegram": telegrambot.connect_telegram, "ask_agent": team.ask_agent, "overnight_shift": team.overnight_shift,
+    "connect_gmail": gmail.connect_gmail, "email_triage": gmail.email_triage, "email_search": gmail.email_search,
+    "email_draft": gmail.email_draft,
     "deep_think": deepthink.deep_think, "calculate": deepthink.calculate,
     "robot": robot, "focus_mode": focus_mode, "interpreter": interpreter, "smart_home": smart_home, "connect_google_home": connect_google_home,
     "set_reminder": everyday.set_reminder, "schedule_task": everyday.schedule_task, "orb_style": orb_style, "list_reminders": everyday.list_reminders,
@@ -1684,6 +1715,12 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "connect_telegram": lambda: "Connecting Telegram",
+        "ask_agent": lambda: {"friday": "F.R.I.D.A.Y. researching", "edith": "E.D.I.T.H. scanning", "karen": "KAREN planning"}.get(a.get("agent"), "Team"),
+        "overnight_shift": lambda: "Overnight shift running", "connect_gmail": lambda: "Connecting Gmail",
+        "email_triage": lambda: "Sorting your inbox", "email_search": lambda: "Searching email", "email_draft": lambda: "Drafting a reply",
+        "remember_note": lambda: "Saving to memory vault", "recall": lambda: "Searching memory",
+        "journal": lambda: "Reading the journal", "open_vault": lambda: "Opening memory vault",
         "take_notes": lambda: {"start": "Taking notes", "stop": "Writing up the notes"}.get(a.get("action"), "Notes"),
         "screen_copilot": lambda: "Screen copilot on" if a.get("on", True) else "Screen copilot off",
         "my_day": lambda: "Your day timeline",
@@ -1737,4 +1774,17 @@ def run_tool(name: str, raw_args: str):
         return args, f"FAILED: {type(e).__name__}: {e}"
 
 
+_remember_list = FUNCS["remember"]
+
+
+def _remember_both(fact: str, *a, **k):
+    out = _remember_list(fact, *a, **k)
+    try:
+        vault.remember_note(fact, "Facts")
+    except Exception:
+        pass
+    return out
+
+
+FUNCS["remember"] = _remember_both
 YT.open_url = _open_url      # YouTube in the user's Chrome when browser automation is unavailable

@@ -72,6 +72,13 @@ reacting to your voice), system vitals, the conversation log and the **canvas**
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
 
+**Beyond the JARVIS builds on social media**
+- **🛰 Stark AI team** — F.R.I.D.A.Y. (research, live web), E.D.I.T.H. (security & system audit), KAREN (schedule & planning): each with her own job, memory and voice. "Edith, scan my PC" · "Friday, research…" · "Karen, plan my day"
+- **🌙 Overnight shift** — "every night at 2 AM run the overnight shift": the team researches your interests, audits the PC, plans tomorrow and triages email; the morning briefing reads you the report
+- **🧠 Memory vault** — Obsidian-compatible notes (Me, People, Projects, Facts, daily Journal) that Atomo keeps learning from your conversations and reads before every answer. "What do you know about Priya?" · "open my vault"
+- **✈️ Telegram anywhere** — your private bot: text, voice notes in any language, photos ("what's this?"), files, /screen; alerts reach your phone when you're away. Pair once with a code shown on the PC — strangers are blocked. Setup: message @BotFather → /newbot, then say "connect Telegram" and paste the token
+- **📬 Gmail assistant** — sorts and labels your inbox, flags phishing, summarises, writes reply **drafts** (never sends). Emails are treated as untrusted text. Setup: [`docs/gmail.md`](docs/gmail.md)
+
 **Personal-assistant superpowers**
 - **Schedules anything** — "every day at 7 AM give me my briefing", "at 9 PM play lofi", "in 30 min turn off the AC": Atomo *does* it then
 - **📱 Phone remote** — "connect my phone": scan the QR code on the same Wi-Fi; chat, controls, lists and replies on your phone (secret-key protected, local network only)

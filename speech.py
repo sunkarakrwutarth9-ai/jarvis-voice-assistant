@@ -138,14 +138,14 @@ class Speaker:
             from voiceclone import REF_WAV
             self.cloner.target = self.cloner._embedding_of_files([REF_WAV])
 
-    def say(self, text: str):
+    def say(self, text: str, voice: str = None):
         # never read markdown aloud ("asterisk asterisk"): drop emphasis marks, headings, bullets, code ticks
         text = re.sub(r"\*\*|__|`+|^#+\s*|^\s*[-*•]\s+", "", text.strip(), flags=re.M).replace("*", "").strip()
         if not text or self.muted:
             return
         with self._lock:
             self._pending += 1
-        self._text_q.put((self._gen, text))
+        self._text_q.put((self._gen, text, voice))
 
     def stop(self):
         with self._lock:
@@ -233,11 +233,11 @@ class Speaker:
     def _synth_worker(self):
         self._loop = asyncio.new_event_loop()
         while True:
-            gen, text = self._text_q.get()
+            gen, text, forced = self._text_q.get()
             if gen != self._gen:
                 continue
-            me = self.me_mode and self.cloner is not None
-            voice = self._voice_for(text, me)
+            me = self.me_mode and self.cloner is not None and not forced
+            voice = forced or self._voice_for(text, me)          # agents (F.R.I.D.A.Y. ...) have their own voice
             try:
                 sr = self.cloner.sr if me else 24000
                 audio = self._render(text, voice, sr, "+0%" if me else self.rate)
