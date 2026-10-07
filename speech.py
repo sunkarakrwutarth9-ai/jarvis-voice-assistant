@@ -10,6 +10,7 @@
 import asyncio
 import io
 import logging
+import re
 import queue
 import threading
 import time
@@ -138,7 +139,8 @@ class Speaker:
             self.cloner.target = self.cloner._embedding_of_files([REF_WAV])
 
     def say(self, text: str):
-        text = text.strip()
+        # never read markdown aloud ("asterisk asterisk"): drop emphasis marks, headings, bullets, code ticks
+        text = re.sub(r"\*\*|__|`+|^#+\s*|^\s*[-*•]\s+", "", text.strip(), flags=re.M).replace("*", "").strip()
         if not text or self.muted:
             return
         with self._lock:

@@ -20,6 +20,7 @@ class SystemAudio:
         self._level = 0.0
         self._bass = 0.0
         self._t = 0.0
+        self.sinks = []          # callables(data, rate, channels) that want the raw audio (notes)
         self.ok = False
         threading.Thread(target=self._run, daemon=True, name="loopback").start()
 
@@ -47,6 +48,11 @@ class SystemAudio:
                     hz = rate / len(mono)
                     self._bass = float(spec[max(1, int(40 / hz)): int(160 / hz) + 1].mean()) / len(mono) * 4
                 self._t = time.monotonic()
+                for sink in list(self.sinks):
+                    try:
+                        sink(data, rate, ch)
+                    except Exception:
+                        log.exception("system-audio sink failed")
                 return (None, pyaudio.paContinue)
 
             # Callback mode: a loopback stream delivers nothing while the PC is silent, so a blocking read would hang.

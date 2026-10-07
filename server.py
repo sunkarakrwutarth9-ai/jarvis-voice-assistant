@@ -12,6 +12,7 @@ POSTs need the custom header X-Jarvis: 1, which other websites can't send withou
 """
 
 import json
+import re
 import logging
 import queue
 import threading
@@ -96,6 +97,8 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "orb_style":
+            self.snapshot["orb_style"] = event.get("name", "")
         elif kind == "focus":
             self.snapshot["focus"] = {"minutes": event.get("minutes", 0), "start": event.get("start", 0)}
         elif kind == "weather":
@@ -155,6 +158,12 @@ class _Handler(BaseHTTPRequestHandler):
             if not page.exists():
                 page = HERE / "dashboard.html"
             self._send(200, page.read_bytes(), "text/html; charset=utf-8")
+        elif re.fullmatch(r"/avatar/p\d\d\.jpg", self.path):          # talking-photo frames for the hologram
+            pic = HERE / "assets" / "avatar_photo" / self.path.rsplit("/", 1)[1]
+            if pic.exists():
+                self._send(200, pic.read_bytes(), "image/jpeg")
+            else:
+                self.send_error(404)
         elif self.path == "/avatar.jpg":
             pic = HERE / "assets" / "avatar_photo" / "p00.jpg"
             if pic.exists():

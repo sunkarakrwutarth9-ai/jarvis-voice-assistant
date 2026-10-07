@@ -55,6 +55,14 @@ Acting:
 - Anything the user wants you to make, write or generate - code in any language, a website, an app, a game, a chart, a drawing or logo, slides, anything 3D (a 3D globe, solar system, atom, 3D model), an animation, a simulation, a music or sound app, an essay, a letter, notes, a plan, a story, a table - means create, with the right kind and the full request including every detail. It appears live on the canvas screen in the command center. Never type generated content with type_text and never read it aloud; just say it's ready.
 - Hard questions - tricky maths or logic, puzzles, proofs, careful analysis, important decisions, comparisons, "think deeply", "are you sure?", "double-check that", anything where being wrong matters - use deep_think (an expert panel of several AI models plus a judge; use_web=true when current facts matter). Then speak the short answer it gives you.
 - Any non-trivial arithmetic, percentages, EMI/interest, unit or date maths, statistics: compute it exactly with calculate (Python) instead of doing it in your head.
+- You are also the user's personal assistant: "do X at <time>", "every morning/day/weekday at <time> do X", "in N minutes do X" -> schedule_task with the command phrased naturally (you will receive and execute it at that time). Plain "remind me" -> set_reminder.
+- "Change the orb / sphere style to X", "make it a galaxy" -> orb_style.
+- Interpreter: "be my interpreter between X and Y", "translate my conversation" -> interpreter(on=true, language_a, language_b).
+- Notes: "take notes", "record this lecture/meeting/class" -> take_notes(action="start"); "stop notes" / "the class is over" -> take_notes(action="stop").
+- "Watch my screen", "help me while I code", "keep an eye on errors" -> screen_copilot(on=true); "stop watching" -> on=false.
+- "What did I do today", "my screen time", "how long was I on YouTube" -> my_day.
+- Studying: "make flashcards / help me study X / from my PDF" -> study; "quiz me" -> quiz(action="next"). While a quiz is running, the user's reply to a question IS their answer: call quiz(action="answer", answer=<what they said>) unless they ask to stop (quiz(action="stop")).
+- "Connect my phone", "phone remote" -> phone_remote(on=true). "Stop break reminders" etc. -> proactive.
 - "Focus mode", "pomodoro", "I need to concentrate for N minutes" -> focus_mode.
 - Smart home (AC, lights, fans, plugs, TV - anything in the user's Google Home): use smart_home with an English command, e.g. "AC on" -> smart_home("turn on the AC", device="AC"); "make it cooler" about the AC -> "decrease the AC temperature by 2 degrees". If it says Google Home isn't connected, explain the one-time setup briefly and offer connect_google_home.
 - A robot dances in the screen corner by itself whenever music plays. "Dance", "make the robot dance" -> robot dance; "hide/stop the robot" -> robot off; "move the robot left/right" -> robot left/right.
@@ -177,12 +185,14 @@ class Brain:
         import deepthink
         deepthink.generate_on = self.generate_on
         deepthink.model_pool = self.health.ranked
+        tools.transcribe_audio = self.transcribe_audio
         tools.best_models = lambda: [m for m in self.health.ranked() if ":" not in m] or [model]
 
     def reset(self):
         self.history.clear()
 
     def ask(self, user_text, on_sentence, on_tool_start, on_tool_end, cancelled=lambda: False, audio_wav_b64=None) -> str:
+        tools.last_user_text = user_text or ""        # the save guard checks the user really agreed
         """Stream a reply. Complete sentences go to on_sentence as soon as they're written.
 
         audio_wav_b64: the user's actual recording. Gemini listens to it directly (far better than the
@@ -283,11 +293,13 @@ class Brain:
                       "lock_pc", "press_keys", "type_text", "scroll", "open_folder", "click_on_screen",
                       "voice_mode", "open_browser", "window_control", "show_dashboard", "remember", "forget",
                       "open_file", "set_theme", "write_code", "create", "canvas_control", "save_creation",
-                      "revise_creation", "research", "explain_file", "gestures"}
+                      "revise_creation", "research", "explain_file", "gestures", "schedule_task", "set_reminder",
+                      "list_add", "list_remove", "list_clear", "save_routine", "delete_routine", "cancel_reminder",
+                      "orb_style", "focus_mode", "robot"}
     # Slow ones get their confirmation spoken while they run.
     SAY_BEFORE = {"open_app", "open_website", "web_search", "youtube_play", "open_folder", "close_app", "open_browser",
                   "show_dashboard", "write_code", "create", "revise_creation", "research", "explain_file",
-                  "deep_think"}
+                  "deep_think", "study", "take_notes", "my_day", "phone_remote"}
     # Slow actions that also get a "finished" line once they're done.
     ANNOUNCE_DONE = {"write_code", "create", "revise_creation", "research", "explain_file"}
 
@@ -334,6 +346,13 @@ class Brain:
                 "canvas_control": {"fullscreen": "Full screen, Sir.", "exit_fullscreen": "Back to the small screen, Sir.",
                                    "close": "Closed, Sir.", "run": "Running it now, Sir.",
                                    "open_in_vscode": "Opened in VS Code, Sir."}.get(args.get("action"), "Done, Sir."),
+                "schedule_task": "Scheduled, Sir. I'll take care of it.",
+                "set_reminder": "Alarm set, Sir." if args.get("alarm") else "Reminder set, Sir.",
+                "list_add": f"Added to your {args.get('list_name') or 'to-do'} list, Sir.",
+                "list_remove": "Done, Sir.", "list_clear": "List cleared, Sir.", "cancel_reminder": "Cancelled, Sir.",
+                "save_routine": "Routine saved, Sir.", "delete_routine": "Routine deleted, Sir.",
+                "orb_style": "Style changed, Sir.", "focus_mode": "Focus mode on, Sir. I'll tell you when time's up." if args.get("on", True) else "Focus mode off, Sir.",
+                "robot": "Done, Sir.",
                 "set_theme": "Theme switched, Sir.", "open_file": "Opening it now, Sir.",
                 "lock_pc": "Locking now, Sir.", "voice_mode": "Done, Sir."}.get(name, "Done, Sir.")
 
@@ -415,6 +434,24 @@ class Brain:
             raise
         self.health.ok(model, min(time.monotonic() - t, 10))
         return r.choices[0].message.content or ""
+
+    def transcribe_audio(self, wav_b64, prompt):
+        """Let Gemini listen to a WAV clip (notes, interpreter). Tries the healthiest Gemini models."""
+        if not self.accepts_audio:
+            raise RuntimeError("audio understanding needs a Gemini key")
+        last = None
+        for model in [m for m in self.health.ranked() if ":" not in m][:3]:
+            try:
+                r = self.client.with_options(timeout=httpx.Timeout(60.0, connect=6.0)).chat.completions.create(
+                    model=model, max_tokens=4000, messages=[{"role": "user", "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "input_audio", "input_audio": {"data": wav_b64, "format": "wav"}}]}])
+                self.health.ok(model, 3)
+                return r.choices[0].message.content or ""
+            except Exception as e:
+                self.health.fail(model, weight=12 if "429" in str(e) or "quota" in str(e).lower() else 1)
+                last = e
+        raise last or RuntimeError("no model could transcribe")
 
     def _route(self, model_key):
         """(client, model name) for a pool entry like 'gemini-3.6-flash' or 'xpl:deepseek-v4.1-flash'."""

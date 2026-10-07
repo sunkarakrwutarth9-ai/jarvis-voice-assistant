@@ -991,6 +991,30 @@ def _canvas_generate(kind, title, fixed_ext, lang, prompt, note=""):
             f"NOT saved yet. Ask the user whether to save it, and only call save_creation if they agree.")
 
 
+def show_content(kind, title, lang, content, cid=None, final=True):
+    """Put ready-made content (notes, reports, flashcards) on the Atomo Screen - no model call.
+    Call with final=False repeatedly to stream updates into the same tab, then final=True."""
+    cid = cid or f"c{int(time.time() * 1000) % 10_000_000}"
+    if cid not in CREATIONS:
+        ensure_screen()
+        publish({"type": "canvas_start", "id": cid, "kind": kind, "title": title, "lang": lang})
+        CREATIONS[cid] = {"kind": kind, "title": title, "lang": lang, "content": content, "file": None}
+    CREATIONS[cid].update(content=content, title=title)
+    _last_creation[0] = cid
+    if final:
+        publish({"type": "canvas", "id": cid, "kind": kind, "title": title, "lang": lang,
+                 "content": content[:400000], "file": None, "runnable": False})
+    else:
+        publish({"type": "canvas_chunk", "id": cid, "text": content})
+    return cid
+
+
+last_user_text = ""
+CONSENT = re.compile(r"\b(yes|yeah|yep|yup|sure|ok(ay)?|please|save|keep|store|download|haan|ha|han|avunu|sare|cheyyi|"
+                     r"theek|kar do|rakh)\b|అవును|సేవ్|సరే|హా|हाँ|हां|सेव|ठीक|रख", re.I)
+transcribe_audio = None   # set by brain: transcribe_audio(wav_b64, prompt) -> text (Gemini listens to the audio)
+
+
 def revise_creation(change: str) -> str:
     """Apply a change to the creation on the canvas ("make the button blue") - shown live as a new version."""
     c = CREATIONS.get(_last_creation[0])
@@ -1158,6 +1182,21 @@ def news_headlines(n=8):
 robot_command = None  # set by jarvis.py: controls the dancing robot
 
 
+set_interpreter = None   # set by jarvis.py
+
+
+def interpreter(on: bool = True, language_a: str = "Telugu", language_b: str = "English") -> str:
+    """Live interpreter mode."""
+    if set_interpreter is None:
+        return "FAILED: the interpreter is not available."
+    if not on:
+        set_interpreter(None, None)
+        return "OK: interpreter off."
+    set_interpreter(language_a.strip().title(), language_b.strip().title())
+    return (f"OK: interpreter on between {language_a} and {language_b}: everything said in one is spoken in the other "
+            f"(no wake word needed). Say 'stop interpreter' to end. Tell the user this in ONE short sentence.")
+
+
 def focus_mode(minutes: int = 25, on: bool = True) -> str:
     """Pomodoro-style focus session: a countdown ring around the atom, announced when it ends."""
     if not on:
@@ -1173,6 +1212,15 @@ def focus_mode(minutes: int = 25, on: bool = True) -> str:
     t.start()
     _timers.append(t)
     return f"OK: focus mode on for {minutes} minutes; the ring around the atom counts down."
+
+
+def orb_style(name: str) -> str:
+    """Change the command center's dot-sphere style."""
+    publish({"type": "orb_style", "name": name})
+    _save_state("orb_style", name)
+    return (f"OK: orb style set to '{name}'. Styles: Arc Sphere, Iron Sphere, Galaxy, Andromeda, Torus, DNA Helix, Data Cube, "
+            "Heart, Ocean Wave, Saturn, Quantum Knot, Vortex, Lotus, Nautilus, Coil, Diamond, Infinity, Möbius, Solar Flare, "
+            "Nebula, Crown, Gyroscope, Rainbow Sphere, Matrix Sphere, Moonlight.")
 
 
 def robot(action: str) -> str:
@@ -1227,6 +1275,11 @@ def briefing() -> str:
 
 def save_creation(name: str = "", cid=None) -> str:
     """Save a creation to Documents\\Jarvis Code - only after the user agreed."""
+    # Consent guard: the model may only save when the user's latest words say so ("yes", "save it", "haan", ...).
+    # Buttons in the dashboard pass cid directly and are the user's own click.
+    if cid is None and not CONSENT.search(last_user_text or ""):
+        return ("FAILED: not saved - the user has not agreed. Ask them first whether to save it, and only save after "
+                "they say yes.")
     cid = cid or _last_creation[0]
     c = CREATIONS.get(cid)
     if not c:
@@ -1347,6 +1400,31 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("schedule_task", "Personal-assistant scheduling: make Atomo DO something at a time or on a schedule - any command it understands, e.g. 'every day at 7 am give me my briefing', 'at 9 pm play lofi music on YouTube', 'in 30 minutes turn off the AC', 'weekdays at 10 start focus mode', 'tomorrow 8 am open Gmail'. For a plain spoken reminder use set_reminder instead.",
+        {"command": {"type": "string", "description": "the command to run, phrased as the user would say it to Atomo"},
+         "at": {"type": "string", "description": "24-hour 'HH:MM' or 'YYYY-MM-DD HH:MM'"}, "in_minutes": {"type": "number"},
+         "repeat": {"type": "string", "enum": ["", "daily", "weekdays", "weekends", "weekly"]}}, ["command"]),
+    _fn("orb_style", "Change the command center's 3D dot-sphere style: Arc Sphere, Iron Sphere, Galaxy, Andromeda, Torus, DNA Helix, Data Cube, Heart, Ocean Wave, Saturn, Quantum Knot, Vortex, Lotus, Nautilus, Coil, Diamond, Infinity, Möbius, Solar Flare, Nebula, Crown, Gyroscope, Rainbow Sphere, Matrix Sphere, Moonlight.",
+        {"name": {"type": "string"}}, ["name"]),
+    _fn("take_notes", "Meeting / lecture notes: action 'start' records the PC's sound (YouTube, online class, Zoom) and/or the microphone (a real class) and writes a live transcript on the Atomo Screen; action 'stop' writes a summary, key points, action items and a quiz. 'take notes', 'start notes for this lecture', 'stop notes'.",
+        {"action": {"type": "string", "enum": ["start", "stop", "status"]},
+         "source": {"type": "string", "enum": ["both", "speakers", "mic"], "description": "speakers = what the PC plays; mic = the room; both (default)"},
+         "title": {"type": "string"}}, ["action"]),
+    _fn("screen_copilot", "Screen copilot: while on, Atomo glances at the screen when it changes and speaks up only to help with errors, failed builds, bugs or problems. 'watch my screen', 'help me while I code', 'stop watching'. Only when the user asks.",
+        {"on": {"type": "boolean"}, "minutes": {"type": "integer", "description": "how long (default 60)"}}, ["on"]),
+    _fn("my_day", "The user's private day timeline: which apps and sites they used today (or 'yesterday' / 'YYYY-MM-DD'), active time, focus blocks - shown as a visual report on the Atomo Screen. 'what did I do today', 'how much time did I spend on YouTube', 'my screen time'.",
+        {"day": {"type": "string"}}),
+    _fn("day_tracking", "Pause (on=false) or resume (on=true) the private day timeline recording.", {"on": {"type": "boolean"}}, ["on"]),
+    _fn("study", "Study tutor: make flashcards from a document (source = file path or name, e.g. a PDF) or a topic, shown on the Atomo Screen. 'make flashcards from my biology PDF', 'help me study the French revolution'.",
+        {"source": {"type": "string"}, "topic": {"type": "string"}, "count": {"type": "integer"}}),
+    _fn("quiz", "Voice quiz with spaced repetition on the latest (or named) flashcard deck. action 'next' asks a question; 'answer' grades the user's spoken answer (pass it in answer) and asks the next; 'stop' ends with the score.",
+        {"action": {"type": "string", "enum": ["next", "answer", "stop"]}, "answer": {"type": "string"}, "deck": {"type": "string"}}, ["action"]),
+    _fn("proactive", "Turn Atomo's proactive care on/off: kind 'breaks' (stand-up / water reminders after 50 min), 'load' (CPU overload warnings), 'morning' (automatic morning briefing) or 'all'.",
+        {"kind": {"type": "string", "enum": ["all", "breaks", "load", "morning"]}, "on": {"type": "boolean"}}, ["on"]),
+    _fn("phone_remote", "Phone remote: on=true shows a QR code; the user scans it with a phone on the same Wi-Fi to control Atomo from the phone. on=false disables it. 'connect my phone', 'control from my phone'.",
+        {"on": {"type": "boolean"}}, ["on"]),
+    _fn("interpreter", "Live interpreter: after this, everything spoken in language_a is said aloud in language_b and vice versa, so two people can talk (no wake word needed). 'be my interpreter between Telugu and English', 'translate my conversation with ... into Hindi'. on=false to stop.",
+        {"on": {"type": "boolean"}, "language_a": {"type": "string"}, "language_b": {"type": "string"}}),
     _fn("focus_mode", "Start (or stop with on=false) a focus / Pomodoro session: a countdown ring around the atom in the command center and a spoken alert at the end. 'focus mode', 'start a pomodoro', 'I need to study for 50 minutes'.",
         {"minutes": {"type": "integer"}, "on": {"type": "boolean"}}),
     _fn("deep_think", "Expert-panel reasoning for hard questions: several different AI models solve it independently, then a judge compares them, fixes mistakes and writes one verified answer on the Atomo Screen. Use for tricky maths/logic, puzzles, proofs, careful analysis, comparisons, important decisions, or when the user says 'think deeply', 'are you sure', 'double-check'. Takes 15-60 s.",
@@ -1481,6 +1559,12 @@ TOOLS = [
 import everyday  # noqa: E402  (reminders, alarms, lists, routines)
 import smarthome  # noqa: E402  (Google Home devices)
 import deepthink  # noqa: E402  (expert panel + exact computation)
+import notes as notes_mod  # noqa: E402  (meeting & lecture notes)
+import copilot  # noqa: E402  (screen copilot)
+import daylog  # noqa: E402  (day timeline)
+import tutor  # noqa: E402  (flashcards + voice quiz)
+import care  # noqa: E402  (proactive care)
+import phone  # noqa: E402  (phone remote)
 
 
 def smart_home(command: str, device: str = "") -> str:
@@ -1491,9 +1575,12 @@ def connect_google_home() -> str:
     return smarthome.connect()
 
 FUNCS = {
+    "take_notes": notes_mod.notes, "screen_copilot": copilot.screen_copilot, "my_day": daylog.my_day,
+    "day_tracking": daylog.set_tracking, "study": tutor.study, "quiz": tutor.quiz, "proactive": care.proactive,
+    "phone_remote": phone.phone_remote,
     "deep_think": deepthink.deep_think, "calculate": deepthink.calculate,
-    "robot": robot, "focus_mode": focus_mode, "smart_home": smart_home, "connect_google_home": connect_google_home,
-    "set_reminder": everyday.set_reminder, "list_reminders": everyday.list_reminders,
+    "robot": robot, "focus_mode": focus_mode, "interpreter": interpreter, "smart_home": smart_home, "connect_google_home": connect_google_home,
+    "set_reminder": everyday.set_reminder, "schedule_task": everyday.schedule_task, "orb_style": orb_style, "list_reminders": everyday.list_reminders,
     "cancel_reminder": everyday.cancel_reminder, "list_add": everyday.list_add, "list_remove": everyday.list_remove,
     "list_show": everyday.list_show, "list_clear": everyday.list_clear, "save_routine": everyday.save_routine,
     "run_routine": everyday.run_routine, "delete_routine": everyday.delete_routine,
@@ -1597,12 +1684,23 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "take_notes": lambda: {"start": "Taking notes", "stop": "Writing up the notes"}.get(a.get("action"), "Notes"),
+        "screen_copilot": lambda: "Screen copilot on" if a.get("on", True) else "Screen copilot off",
+        "my_day": lambda: "Your day timeline",
+        "day_tracking": lambda: "Day tracking " + ("on" if a.get("on") else "paused"),
+        "study": lambda: "Making flashcards",
+        "quiz": lambda: {"answer": "Checking your answer", "stop": "Ending the quiz"}.get(a.get("action"), "Quiz"),
+        "proactive": lambda: "Proactive care " + ("on" if a.get("on") else "off"),
+        "phone_remote": lambda: "Phone remote on" if a.get("on", True) else "Phone remote off",
+        "interpreter": lambda: f"Interpreter · {a.get('language_a', '')} ⇄ {a.get('language_b', '')}" if a.get("on", True) else "Interpreter off",
         "focus_mode": lambda: f"Focus · {a.get('minutes', 25)} min" if a.get("on", True) else "Ending focus",
         "deep_think": lambda: "Deep Think · expert panel",
         "calculate": lambda: "Calculating",
         "smart_home": lambda: f"Home · {a.get('command', '')}",
         "connect_google_home": lambda: "Connecting Google Home",
         "robot": lambda: {"dance": "Robot dancing", "off": "Robot off", "on": "Robot on"}.get(a.get("action"), "Moving the robot"),
+        "schedule_task": lambda: f"Scheduled · {a.get('at') or ('in ' + str(a.get('in_minutes', '')) + ' min')}",
+        "orb_style": lambda: f"Orb style · {a.get('name', '')}",
         "set_reminder": lambda: ("Alarm · " if a.get("alarm") else "Reminder · ") + (a.get("at") or f"in {a.get('in_minutes', '')} min"),
         "list_reminders": lambda: "Checking reminders",
         "cancel_reminder": lambda: "Cancelling reminder",

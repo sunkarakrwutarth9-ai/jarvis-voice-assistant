@@ -75,7 +75,7 @@ DEACTIVATE = re.compile(r"\b(de-?activate|deactivated|go to sleep|sleep mode|sto
                         re.I)
 # Replies meaning "I couldn't make that out" - in conversation mode they're dropped silently (it was noise).
 UNHEARD = re.compile(r"(did ?n.?t|did not|could ?n.?t|could not|unable to|can.?t) (quite )?(catch|hear|make out|understand)"
-                     r"|(repeat that|speak again|say (that|it) again|no (clear )?speech)", re.I)
+                     r"|\b(repeat that|speak again|say (that|it) again|no (clear )?speech)", re.I)
 ACTIVE_IDLE_LIMIT = 10 * 60        # conversation mode ends by itself after 10 minutes of silence
 
 log = logging.getLogger("jarvis")
@@ -201,6 +201,7 @@ class Assistant(threading.Thread):
         self.explicit_wake = False       # current recording was started by the wake word or a click
         self.hub = None                  # dashboard event hub (server.Hub), if running
         self.active = False              # conversation mode: keep listening after every reply until "deactivate"
+        self.interp = None               # interpreter mode: (language A, language B)
         self.awaiting_answer = False     # Jarvis's last reply was a question
         self.last_heard = 0.0            # when the user last said something in conversation mode
         self.pending_pick = None         # callback(value) -> result string, for a clicked option
@@ -352,6 +353,9 @@ class Assistant(threading.Thread):
             return
         heard = {lang: WAKE_PREFIX.sub("", t).strip() for lang, t in heard.items()}
         heard = {lang: t for lang, t in heard.items() if t}
+        if self.interp and not typed:
+            self._interpret(heard, audio, cancelled)
+            return
         explicit = self.explicit_wake
         if not heard and explicit and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.2:
             # The recognisers caught nothing, but the user did call Jarvis: let Gemini listen to the audio.
@@ -545,6 +549,54 @@ class Assistant(threading.Thread):
         else:
             self.speaker.wait(cancelled)
 
+    INTERP_STOP = re.compile(r"\b(stop|end|exit|close|quit)\b.{0,20}\b(interpret|translat)|\binterpreter (off|stop)\b|"
+                             r"^\s*(deactivate|stop|atomo stop)\s*$|ఆపు|बंद करो|रुको", re.I)
+
+    def _interpret(self, heard, audio, cancelled):
+        """Interpreter mode: whatever is said in one language is spoken aloud in the other."""
+        import tools
+        a, b = self.interp
+        if any(self.INTERP_STOP.search(t) for t in heard.values()):
+            self.interp = None
+            self._pub({"type": "interp", "on": False})
+            self._speak_standalone("Interpreter off, Sir.", "speaking")
+            return
+        if not heard and len(audio) < 16000 * 2 * 0.8:
+            if not self._keep_listening():
+                self.bridge.state.emit("idle", "", "", "")
+                self.listener.set_idle()
+            return
+        self.bridge.state.emit("thinking", "Interpreting", " | ".join(heard.values())[:120], "")
+        prompt = (f"You are a live spoken interpreter between {a} and {b}. Listen to the recording "
+                  f"(speech-recogniser guesses, may be wrong: {heard or 'none'}). If the speaker used {a}, translate "
+                  f"into {b}; if they used {b}, translate into {a}. Natural spoken style; keep names and numbers. "
+                  f"Write the translation in the native script of its language. Reply with ONLY the translation. "
+                  f"If there is no clear speech, reply exactly: NOREPLY")
+        try:
+            out = tools.transcribe_audio(self._wav_b64(audio), prompt).strip()
+        except Exception as e:
+            log.warning("interpreter failed: %s", e)
+            out = ""
+        if cancelled():
+            return
+        if not out or "NOREPLY" in out:
+            if not self._keep_listening():
+                self.bridge.state.emit("idle", "", "", "")
+                self.listener.set_idle()
+            return
+        said = next(iter(heard.values()), "(voice)")
+        log.info("interpreter: %r -> %r", said, out)
+        self._pub({"type": "user", "text": "🌐 " + said, "heard": heard})
+        self._pub({"type": "reply", "text": "🌐 " + out, "model": "interpreter", "secs": 0})
+        self.last_heard = time.monotonic()
+        self._speak_standalone(out, "speaking")
+
+    def set_interpreter(self, a, b):
+        self.interp = (a, b) if a and b else None
+        self._pub({"type": "interp", "on": bool(self.interp), "a": a, "b": b})
+        if self.interp:
+            self.activate()                     # keep listening without the wake word
+
     def _speak_standalone(self, text, state):
         turn = self.turn
         self.bridge.state.emit(state, "Connection problem" if state == "error" else "", text, "")
@@ -626,6 +678,7 @@ def run_gui(args):
     island.speech_level = speaker.level
     assistant = Assistant(brain, speaker, bridge)
     tools.notify = assistant.notify
+    tools.set_interpreter = assistant.set_interpreter
     tools.everyday.notify = assistant.notify
 
     def ring_alarm():
@@ -634,6 +687,39 @@ def run_gui(args):
             time.sleep(0.7)
 
     tools.everyday.alarm = ring_alarm
+    tools.everyday.run_command = assistant.on_text      # scheduled tasks run like a typed command
+
+    def mic_watch():
+        """Windows can mute the microphone (a key or a setting) - then Atomo hears nothing. Say so."""
+        import comtypes
+        from ctypes import POINTER, cast
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+        comtypes.CoInitialize()
+        # COM objects must be released on the thread that made them: create the endpoint ONCE and keep every
+        # object alive in this (never-ending) thread, so the garbage collector never frees one from another thread.
+        keep, vol, was = [], None, None
+        while True:
+            try:
+                if vol is None:
+                    mic = AudioUtilities.GetMicrophone()
+                    vol = cast(mic.Activate(IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None), POINTER(IAudioEndpointVolume))
+                    keep += [mic, vol]
+                muted, level = bool(vol.GetMute()), vol.GetMasterVolumeLevelScalar()
+                if muted != was:
+                    hub.publish({"type": "mic", "muted": muted, "level": round(level * 100)})
+                    if muted:
+                        log.warning("the microphone is muted in Windows")
+                        assistant.notify("Sir, your microphone is muted in Windows, so I can't hear you. "
+                                         "Unmute it in Settings, Sound, Input.")
+                    elif was:
+                        assistant.notify("Microphone is back on, Sir. I can hear you now.")
+                    was = muted
+            except Exception as e:
+                log.debug("mic check failed: %s", e)
+                vol = None                          # e.g. the mic was unplugged: find it again next time
+            time.sleep(15)
+
+    threading.Thread(target=mic_watch, name="micwatch", daemon=True).start()
     tools.everyday.start()
 
     def show_choice(title, options, on_pick):
@@ -952,6 +1038,16 @@ def run_gui(args):
             time.sleep(0.1)
 
     tools.ensure_screen = ensure_screen
+
+    # ---- background services: notes audio, day timeline, proactive care, phone remote
+    tools.notes_mod.system_audio = system_audio
+    tools.daylog.start()
+    tools.care.hooks.update(say=assistant.notify, briefing=lambda: assistant.on_text("good morning, give me my briefing"),
+                            state=tools._state, save=tools._save_state)
+    tools.care.start(tools._state("care", {}))
+    tools.phone.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
+                           state=tools._state, save=tools._save_state)
+    tools.phone.resume()
 
     # ---- the command center's Daily panel (reminders, lists, routines) + weather
     hub.everyday = lambda: dict(tools.everyday.snapshot(), devices=tools.smarthome.devices(),

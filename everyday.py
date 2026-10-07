@@ -20,6 +20,7 @@ _lock = threading.Lock()
 
 notify = lambda text: log.info("reminder: %s", text)       # set by jarvis.py (speaks + shows on the island)
 alarm = None                                               # optional hook: ring an alarm sound
+run_command = None                                         # set by jarvis.py: execute a scheduled command
 publish = lambda event: None                               # command-center events
 
 
@@ -93,7 +94,16 @@ def _say_time(d: datetime.datetime):
     return f"{d:%I:%M %p}".lstrip("0") + f" {day}"
 
 
-def set_reminder(text: str, at: str = "", in_minutes: float = 0, repeat: str = "", alarm: bool = False) -> str:
+def schedule_task(command: str, at: str = "", in_minutes: float = 0, repeat: str = "") -> str:
+    """Run any Atomo command later / every day: 'every day at 7 give me my briefing', 'at 9 pm play lofi'."""
+    command = (command or "").strip()
+    if not command:
+        return "FAILED: what should I do at that time?"
+    out = set_reminder(command, at, in_minutes, repeat, False, command=command)
+    return out.replace("OK: Reminder set", "OK: Task scheduled", 1)
+
+
+def set_reminder(text: str, at: str = "", in_minutes: float = 0, repeat: str = "", alarm: bool = False, command: str = "") -> str:
     """Reminder / alarm at a clock time ('18:30', '7 am', '2026-10-07 09:00') or in N minutes."""
     now = datetime.datetime.now()
     due = _parse_when(at, in_minutes, now)
@@ -106,7 +116,7 @@ def set_reminder(text: str, at: str = "", in_minutes: float = 0, repeat: str = "
     with _lock:
         items = _load(REMINDERS, [])
         items.append({"id": int(time.time() * 1000), "text": (text or "Alarm").strip(), "due": due.isoformat(timespec="seconds"),
-                      "repeat": repeat, "alarm": bool(alarm)})
+                      "repeat": repeat, "alarm": bool(alarm), "command": command})
         _save(REMINDERS, items)
     what = "Alarm" if alarm else "Reminder"
     return f"OK: {what} set for {_say_time(due)}" + (f", repeating {repeat}" if repeat else "") + f": {text}."
@@ -117,7 +127,7 @@ def list_reminders() -> str:
     if not items:
         return "OK: no reminders or alarms are set."
     return "OK: " + "; ".join(
-        f"{'alarm' if r['alarm'] else 'reminder'} {_say_time(datetime.datetime.fromisoformat(r['due']))}"
+        f"{'task' if r.get('command') else 'alarm' if r['alarm'] else 'reminder'} {_say_time(datetime.datetime.fromisoformat(r['due']))}"
         + (f" ({r['repeat']})" if r["repeat"] else "") + f": {r['text']}" for r in items)
 
 
@@ -150,6 +160,10 @@ def all_words(words, r):
 
 
 def _ring(r):
+    if r.get("command") and run_command:
+        log.info("scheduled task: %s", r["command"])
+        run_command(r["command"])
+        return
     if r["alarm"] and alarm:
         try:
             alarm()

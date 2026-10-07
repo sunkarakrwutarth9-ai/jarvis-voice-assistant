@@ -18,7 +18,8 @@ def between(text, start, end):
 
 css = between(ios, "/* ---------- creation canvas", ".offline{position:fixed;inset:0;display:none;")
 js = between(ios, "// ================= creation canvas =================", "const post = (url")
-out = tpl.replace("/*__CANVAS_CSS__*/", css).replace("/*__CANVAS_JS__*/", js)
+orb = (ROOT / "web" / "orb_module.js").read_text(encoding="utf-8")
+out = tpl.replace("/*__CANVAS_CSS__*/", css).replace("/*__CANVAS_JS__*/", js).replace("/*__ORB_JS__*/", orb)
 (ROOT / "dashboard_cinema.html").write_text(out, encoding="utf-8")
 scr = (ROOT / "web" / "screen_template.html").read_text(encoding="utf-8")
 (ROOT / "screen.html").write_text(scr.replace("/*__CANVAS_CSS__*/", css).replace("/*__CANVAS_JS__*/", js), encoding="utf-8")

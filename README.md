@@ -67,17 +67,30 @@ Speak **Telugu or Hindi** any time — Atomo answers in the language you use.
 
 ## 🖥️ The command center — <http://localhost:7777>
 
-Say **"open command center"**. A full-screen dashboard with a living 3D **atom** (a glowing nucleus with
-electrons racing around it, reacting to your voice), system vitals, the conversation log and the **canvas**
+Say **"open command center"**. A full-screen dashboard with a living 3D **dot sphere** (25 morphing styles,
+reacting to your voice), system vitals, the conversation log and the **canvas**
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
+
+**Personal-assistant superpowers**
+- **Schedules anything** — "every day at 7 AM give me my briefing", "at 9 PM play lofi", "in 30 min turn off the AC": Atomo *does* it then
+- **📱 Phone remote** — "connect my phone": scan the QR code on the same Wi-Fi; chat, controls, lists and replies on your phone (secret-key protected, local network only)
+- **🌐 Live interpreter** — "be my interpreter between Telugu and English": everything said is spoken back in the other language
+- **🎙 Meeting & lecture notes** — "take notes": live transcript of the PC sound and/or your mic, then summary, key points, action items and a quiz
+- **👁 Screen copilot** — "watch my screen": speaks up only when it sees an error or a bug (never on password/bank/payment windows)
+- **📈 Your day** — "what did I do today?": private on-PC timeline of apps and sites, focus blocks and totals
+- **📚 Study tutor** — "make flashcards from my PDF", then "quiz me": voice quizzes with spaced repetition
+- **💚 Proactive care** — break reminders after 50 minutes, CPU-overload warnings, an automatic morning briefing
+- **👤 Talking hologram** — a holographic head in the heart of the orb lip-syncs while Atomo speaks
+- **✦ 25 orb styles** — the 3D dot sphere morphs into a galaxy, DNA helix, Saturn, heart, vortex… (STYLE button or "change the orb to galaxy")
+- Atomo warns you if Windows has your **microphone muted**, and never saves anything unless you say yes
 
 **Power features in the command center**
 - **Ctrl+K command palette** — search and run anything Atomo can do
 - **Deep Think** — "think deeply…": several AI models solve it independently, a judge verifies one answer
 - **Exact maths** — calculations run as real Python, never guessed
 - **Mission log** — a live timeline of every step: tool, result, model and time taken
-- **Process satellites** — your heaviest apps orbit the atom as labelled moons
+- **App satellites** (optional, in orb Settings) — your heaviest apps orbit the orb as labelled moons
 - **Clipboard AI** — copy any text, come back: Explain · Summarize · Translate · Fix · Reply
 - **Focus mode** — "focus for 25 minutes": a countdown ring around the atom
 - **Ambient mode** — after 2 idle minutes it becomes a smart-display clock with weather and your next alarm
