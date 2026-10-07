@@ -224,3 +224,31 @@ def journal_for(day: str = "today") -> str:
     if not p.exists():
         return f"OK: no journal for {d:%A %d %B}."
     return f"OK: journal for {d:%A %d %B}:\n" + p.read_text(encoding="utf-8")[-5000:]
+
+
+# ------------------------------------------------------------------ the memory graph (command center view)
+def graph(max_facts=12):
+    """Nodes = notes + their facts; links = note->fact and note<->note when one mentions the other."""
+    init()
+    nodes, links, notes = [], [], []
+    for p in sorted(_notes()):
+        rel = p.relative_to(ROOT).with_suffix("").as_posix()
+        if rel.startswith("Reports/"):
+            continue
+        group = rel.split("/")[0] if "/" in rel else rel
+        try:
+            body = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        facts = [re.sub(r"\s*_\(.*?\)_\s*$", "", l[2:]).strip() for l in body.splitlines() if l.startswith("- ")]
+        notes.append((rel, p.stem, body))
+        nodes.append({"id": rel, "label": p.stem, "group": group, "kind": "note", "size": 6 + min(len(facts), 12)})
+        for i, f in enumerate(facts[-max_facts:]):
+            fid = f"{rel}#{i}"
+            nodes.append({"id": fid, "label": f[:140], "group": group, "kind": "fact", "size": 2.5})
+            links.append({"s": rel, "t": fid})
+    for rel, stem, _ in notes:
+        for rel2, _, body2 in notes:
+            if rel != rel2 and len(stem) > 2 and re.search(r"\b" + re.escape(stem) + r"\b", body2, re.I):
+                links.append({"s": rel2, "t": rel, "x": 1})
+    return {"nodes": nodes, "links": links}

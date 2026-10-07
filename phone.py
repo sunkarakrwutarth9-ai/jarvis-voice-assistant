@@ -187,7 +187,7 @@ PAGE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>Atomo</title><style>
 :root{--arc:#7fe6ff;--gold:#f4ba42;--red:#e0262f;--sub:#8b97b5;--card:#0d1222;--line:#1d2742}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#05070f;color:#eef4ff;font:15px -apple-system,"Segoe UI",Roboto,system-ui,sans-serif}
+html,body{height:100%;overflow-x:hidden;background:#05070f;color:#eef4ff;font:15px -apple-system,"Segoe UI",Roboto,system-ui,sans-serif}
 body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 header{display:flex;align-items:center;gap:12px;padding:14px 16px 6px}
 .logo{font:600 15px Bahnschrift,"Segoe UI";letter-spacing:6px;color:var(--arc)}
@@ -207,7 +207,7 @@ body[data-s="speaking"] .atom .n{background:radial-gradient(circle,#fff,#f4ba42 
 .st{text-align:center;font:600 12px Bahnschrift,sans-serif;letter-spacing:4px;color:var(--arc);margin-top:4px}
 .say{text-align:center;padding:4px 20px 8px;color:#cfd8f0;min-height:22px;font-size:14px}
 .tabs{display:flex;gap:6px;padding:0 12px}
-.tabs button{flex:1;border:0;border-radius:12px;padding:9px;background:var(--card);color:var(--sub);font:600 12px system-ui}
+.tabs button{flex:1;min-width:0;border:0;border-radius:12px;padding:9px;background:var(--card);color:var(--sub);font:600 12px system-ui}
 .tabs button.on{background:rgba(127,230,255,.15);color:var(--arc)}
 main{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
 .b{max-width:85%;padding:9px 13px;border-radius:16px;margin:5px 0;line-height:1.35;word-wrap:break-word}
@@ -221,7 +221,7 @@ main{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
 .r{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:7px 0}
 .r small{color:var(--sub);display:block}.h{font:600 11px Bahnschrift;letter-spacing:3px;color:var(--arc);margin:14px 4px 4px}
 footer{display:flex;gap:8px;padding:10px 12px 12px;align-items:center}
-footer input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:13px 16px;color:#fff;font:16px system-ui;outline:none}
+footer input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:13px 16px;color:#fff;font:16px system-ui;outline:none}
 .btn{border:0;border-radius:50%;width:48px;height:48px;font-size:20px;color:#fff;background:linear-gradient(135deg,#e0262f,#f08a24 55%,#f4ba42);flex:0 0 auto}
 .btn.talk{width:56px;height:56px;background:radial-gradient(circle,#ff4d5a,#a3121b);box-shadow:0 0 18px rgba(255,77,90,.6)}
 .off{position:fixed;inset:auto 0 0 0;background:#3a0d12;color:#ffb3b8;text-align:center;padding:8px;font-size:12px;display:none}
@@ -229,7 +229,7 @@ footer input{flex:1;background:var(--card);border:1px solid var(--line);border-r
 <header><div class="logo">A.T.O.M.O</div><div class="pill"><i></i><span id="st2">STANDING BY</span></div></header>
 <div class="atom"><div class="n"></div><div class="o"></div><div class="o"></div><div class="o"></div></div>
 <div class="st" id="st">STANDING BY</div><div class="say" id="say">Tap 🎙 so the PC listens, or type below.</div>
-<div class="tabs"><button class="on" data-t="chat">Chat</button><button data-t="keys">Controls</button><button data-t="day">Daily</button></div>
+<div class="tabs"><button class="on" data-t="chat">Chat</button><button data-t="keys">Controls</button><button data-t="day">Daily</button><button id="holoBtn">🔺 Holo</button></div>
 <main id="chat"></main>
 <main id="keys" hidden><div class="grid">
 <div class="k" data-c="pause or play the music"><b>⏯</b>Play / pause</div><div class="k" data-c="next song"><b>⏭</b>Next</div><div class="k" data-c="what's playing"><b>🎵</b>Now playing</div>
@@ -241,6 +241,8 @@ footer input{flex:1;background:var(--card);border:1px solid var(--line);border-r
 <main id="day" hidden></main>
 <footer><button class="btn talk" id="talk">🎙</button><input id="cmd" placeholder="Ask Atomo… (or dictate)" enterkeyhint="send"><button class="btn" id="send">➤</button></footer>
 <div class="off" id="off">Reconnecting to your PC…</div>
+<div id="holo" style="position:fixed;inset:0;background:#000;z-index:50;display:none"><canvas id="hcv" style="width:100%;height:100%;display:block"></canvas>
+<div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#333;font:12px system-ui">Place the hologram pyramid on the centre · tap to exit</div></div>
 <script>
 const K = new URLSearchParams(location.search).get("k") || "", $ = id => document.getElementById(id);
 const H = {"Content-Type": "application/json", "X-Atomo-Key": K};
@@ -282,6 +284,38 @@ function send() { const t = $("cmd").value.trim(); if (!t) return; $("cmd").valu
 $("send").onclick = send; $("cmd").onkeydown = e => { if (e.key === "Enter") send(); };
 $("talk").onclick = () => post("/api/action", {action: "talk"});
 fetch("/api/state", {headers: H}).then(r => r.json()).then(s => { setS(s.state, s.title, s.body); (s.history || []).forEach(on); DAY = s.everyday || {}; renderDay(); });
+// ---- hologram pyramid mode: 4 mirrored views of the dot sphere around the centre
+const HP = []; for (let i = 0; i < 700; i++) { const y = 1 - i / 699 * 2, r = Math.sqrt(1 - y * y), t = i * 2.399963; HP.push([Math.cos(t) * r, y, Math.sin(t) * r, Math.random()]); }
+let holoRaf = 0, holoLv = 0;
+function holoFrame() {
+  const cv = $("hcv"), d = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+  if (cv.width !== W * d) { cv.width = W * d; cv.height = H * d; }
+  const x = cv.getContext("2d"); x.setTransform(d, 0, 0, d, 0, 0); x.fillStyle = "#000"; x.fillRect(0, 0, W, H);
+  const s = document.body.dataset.s, t = performance.now() / 1000;
+  const target = s === "speaking" ? .8 : s === "listening" || s === "followup" ? .5 : s === "thinking" || s === "action" ? .35 : .05;
+  holoLv += (target - holoLv) * .08;
+  const col = s === "listening" || s === "followup" ? [255, 77, 90] : s === "thinking" || s === "action" ? [155, 123, 255] : s === "speaking" ? [244, 186, 66] : [127, 230, 255];
+  const R = Math.min(W, H) * .16, size = R * 2.6;
+  const off = holoFrame.off || (holoFrame.off = document.createElement("canvas"));
+  if (off.width !== Math.round(size)) off.width = off.height = Math.round(size);
+  const o = off.getContext("2d"); o.clearRect(0, 0, off.width, off.height);
+  const ry = t * (.6 + holoLv * 2), cy = Math.cos(ry), sy = Math.sin(ry), puls = 1 + holoLv * .25 * Math.sin(t * 9);
+  for (const [px, py, pz, sd] of HP) {
+    const X = px * cy - pz * sy, Z = px * sy + pz * cy, k = 2.6 / (3.2 - Z), rr = R * puls * (1 + .05 * Math.sin(t * 3 + sd * 9));
+    const a = .25 + .75 * (Z + 1) / 2;
+    o.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a.toFixed(2)})`;
+    o.beginPath(); o.arc(size / 2 + X * rr * k, size / 2 + py * rr * k, .6 + (Z + 1) * .55, 0, 7); o.fill();
+  }
+  const gap = size * .72;                                        // distance of each view from the centre
+  [[0, gap, 0], [0, -gap, Math.PI], [-gap, 0, Math.PI / 2], [gap, 0, -Math.PI / 2]].forEach(([dx, dy, rot]) => {
+    x.save(); x.translate(W / 2 + dx, H / 2 + dy); x.rotate(rot); x.drawImage(off, -size / 2, -size / 2); x.restore(); });
+  holoRaf = requestAnimationFrame(holoFrame);
+}
+$("holoBtn").onclick = async () => { $("holo").style.display = "block"; holoFrame();
+  try { await document.documentElement.requestFullscreen(); } catch (e) {}
+  try { window._wl = await navigator.wakeLock.request("screen"); } catch (e) {} };
+$("holo").onclick = () => { $("holo").style.display = "none"; cancelAnimationFrame(holoRaf);
+  try { document.exitFullscreen(); } catch (e) {} try { window._wl && window._wl.release(); } catch (e) {} };
 const es = new EventSource("/events?k=" + encodeURIComponent(K));
 es.onmessage = m => on(JSON.parse(m.data)); es.onerror = () => $("off").style.display = "block"; es.onopen = () => $("off").style.display = "none";
 </script></body></html>"""

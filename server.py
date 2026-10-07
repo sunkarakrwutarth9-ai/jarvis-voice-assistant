@@ -172,6 +172,13 @@ class _Handler(BaseHTTPRequestHandler):
                 self.send_error(404)
         elif self.path == "/screen":
             self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/vault_graph":
+            try:
+                import vault
+                g = vault.graph()
+            except Exception:
+                g = {"nodes": [], "links": []}
+            self._send(200, json.dumps(g, ensure_ascii=False).encode())
         elif self.path == "/api/everyday":
             self._send(200, json.dumps(self.hub.everyday(), ensure_ascii=False).encode())
         elif self.path == "/api/state":

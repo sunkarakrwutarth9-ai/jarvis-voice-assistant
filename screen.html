@@ -230,6 +230,7 @@ function canvasStart(e) {
 }
 let chunkPending = null;
 function canvasChunk(e) {                       // repaint at most once per animation frame
+  if (!creations[e.id] && e.kind) canvasStart(e);  // joined late (e.g. opened mid-class): pick it up now
   chunkPending = e; if (canvasChunk.raf) return;
   canvasChunk.raf = requestAnimationFrame(() => {
     canvasChunk.raf = 0; const ev = chunkPending, c = creations[ev.id]; if (!c || ev.id !== cur) return;

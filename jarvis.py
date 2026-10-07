@@ -1086,6 +1086,7 @@ def run_gui(args):
         speaker.say(text, voice)
 
     tools.team.hooks["say"] = team_say
+    tools.classroom.hooks.update(say=speaker.say, busy=speaker.busy, stop=speaker.stop)
 
     # ---- the command center's Daily panel (reminders, lists, routines) + weather
     hub.everyday = lambda: dict(tools.everyday.snapshot(), devices=tools.smarthome.devices(),

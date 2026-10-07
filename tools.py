@@ -1005,7 +1005,7 @@ def show_content(kind, title, lang, content, cid=None, final=True):
         publish({"type": "canvas", "id": cid, "kind": kind, "title": title, "lang": lang,
                  "content": content[:400000], "file": None, "runnable": False})
     else:
-        publish({"type": "canvas_chunk", "id": cid, "text": content})
+        publish({"type": "canvas_chunk", "id": cid, "text": content, "kind": kind, "title": title, "lang": lang})
     return cid
 
 
@@ -1403,6 +1403,13 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("publish_website", "Publish the web page / game / 3D scene currently on the Atomo Screen live on the internet (free GitHub Pages, the user's GitHub account). It is PUBLIC: first call WITHOUT confirm to get the address, tell the user it will be public at that link and ask; only after they say yes call again with confirm=true. Same name again = update the live site.",
+        {"name": {"type": "string", "description": "short site name used in the link"}, "confirm": {"type": "boolean"}}),
+    _fn("show_memory_graph", "Open the memory graph: an interactive glowing web of everything Atomo remembers (people, projects, facts, links). 'show my memory', 'memory graph', 'what do you remember about me - visually'."),
+    _fn("teach", "AI classroom: teach a topic or a document as a live class - slides on the Atomo Screen, Atomo explains each slide aloud, whiteboard notes, a check question per slide, then a flashcard deck for 'quiz me'. 'teach me photosynthesis', 'take a class on this PDF', 'explain Newton's laws like a teacher'.",
+        {"topic": {"type": "string"}, "source": {"type": "string", "description": "file path of a PDF/doc to teach from"},
+         "slides": {"type": "integer"}, "level": {"type": "string", "description": "e.g. class 10, beginner, engineering"}}),
+    _fn("stop_class", "Stop the class that is being taught."),
     _fn("connect_telegram", "Set up or re-pair the user's private Telegram bot so they can talk to Atomo from anywhere (text, voice notes, photos, files). new_pairing=true to pair a different Telegram account.",
         {"new_pairing": {"type": "boolean"}}),
     _fn("ask_agent", "Delegate to a specialist on the Stark AI team; she answers in her own voice and puts a full report on the Atomo Screen. agent: 'friday' = F.R.I.D.A.Y. (research, news, comparisons, explanations with sources), 'edith' = E.D.I.T.H. (PC security & system audit: health, startup apps, network connections, disk, battery), 'karen' = KAREN (schedule, reminders, lists, planning the day). Use when the user names one of them, or for in-depth work in their area.",
@@ -1592,6 +1599,15 @@ import vault  # noqa: E402  (long-term memory vault)
 import telegrambot  # noqa: E402  (Telegram anywhere)
 import team  # noqa: E402  (the Stark AI team)
 import gmail  # noqa: E402  (Gmail assistant - drafts only)
+import webpublish  # noqa: E402  (publish creations live - GitHub Pages)
+import classroom  # noqa: E402  (AI classroom)
+
+
+def show_memory_graph() -> str:
+    ensure_dashboard()
+    time.sleep(0.5)
+    publish({"type": "memory_graph"})
+    return "OK: the memory graph is open in the command center (drag to explore, hover to read)."
 
 
 def smart_home(command: str, device: str = "") -> str:
@@ -1608,7 +1624,8 @@ FUNCS = {
     "open_vault": vault.open_vault, "journal": vault.journal_for,
     "connect_telegram": telegrambot.connect_telegram, "ask_agent": team.ask_agent, "overnight_shift": team.overnight_shift,
     "connect_gmail": gmail.connect_gmail, "email_triage": gmail.email_triage, "email_search": gmail.email_search,
-    "email_draft": gmail.email_draft,
+    "email_draft": gmail.email_draft, "publish_website": webpublish.publish_website,
+    "show_memory_graph": show_memory_graph, "teach": classroom.teach, "stop_class": classroom.stop_class,
     "deep_think": deepthink.deep_think, "calculate": deepthink.calculate,
     "robot": robot, "focus_mode": focus_mode, "interpreter": interpreter, "smart_home": smart_home, "connect_google_home": connect_google_home,
     "set_reminder": everyday.set_reminder, "schedule_task": everyday.schedule_task, "orb_style": orb_style, "list_reminders": everyday.list_reminders,
@@ -1715,6 +1732,9 @@ def describe(name: str, args: dict):
         "forget": lambda: "Forgetting",
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
+        "publish_website": lambda: "Publishing to the web" if a.get("confirm") else "Preparing to publish",
+        "show_memory_graph": lambda: "Memory graph", "teach": lambda: f"Class · {a.get('topic') or 'your document'}",
+        "stop_class": lambda: "Ending the class",
         "connect_telegram": lambda: "Connecting Telegram",
         "ask_agent": lambda: {"friday": "F.R.I.D.A.Y. researching", "edith": "E.D.I.T.H. scanning", "karen": "KAREN planning"}.get(a.get("agent"), "Team"),
         "overnight_shift": lambda: "Overnight shift running", "connect_gmail": lambda: "Connecting Gmail",

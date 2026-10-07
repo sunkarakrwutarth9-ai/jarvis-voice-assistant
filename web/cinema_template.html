@@ -165,6 +165,18 @@ body.amb .holo{display:none}
 @keyframes holoScan{to{background-position:0 60px}}
 .holo.glitch .face{animation:holoTurn 7s ease-in-out infinite,glitch .25s steps(2) 1}
 @keyframes glitch{50%{transform:translateX(3px) skewX(4deg);filter:hue-rotate(40deg)}}
+/* ---------- memory graph */
+.mgraph{position:fixed;inset:0;z-index:84;display:none;background:radial-gradient(ellipse at center,rgba(8,14,30,.96),rgba(2,3,8,.98))}
+.mgraph.show{display:block}
+.mgraph canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+.mgraph .hd{position:absolute;left:24px;top:18px;font:600 14px var(--hud);letter-spacing:6px;color:var(--arc);z-index:2}
+.mgraph .hd small{display:block;font:500 11px var(--font);letter-spacing:0;color:var(--sub);margin-top:6px}
+.mgraph .x{position:absolute;right:22px;top:16px;z-index:2;border:1px solid var(--stroke);background:var(--glass);color:var(--text);
+  border-radius:10px;padding:6px 12px;cursor:pointer;font:600 12px var(--font)}
+.mgraph .tip{position:absolute;z-index:3;max-width:320px;padding:9px 12px;border-radius:12px;background:rgba(10,14,26,.95);
+  border:1px solid var(--stroke);font-size:12.5px;pointer-events:none;display:none}
+.mgraph .lg{position:absolute;left:24px;bottom:20px;z-index:2;display:flex;gap:14px;font-size:12px;color:var(--sub)}
+.mgraph .lg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 /* a creation's card in the feed (the creation itself opens on the Atomo Screen) */
 .ccard{align-self:flex-start;max-width:92%;padding:10px 14px;border-radius:16px;background:rgba(127,230,255,.07);
   border:1px solid rgba(127,230,255,.35);font-size:13px;animation:pop .3s}
@@ -331,6 +343,8 @@ body.amb .holo{display:none}
 </div>
 
 <div id="sats"></div>
+<div class="mgraph" id="mgraph"><div class="hd">🧠 MEMORY GRAPH<small id="mgInfo"></small></div><button class="x" id="mgX">✕ Close</button>
+  <canvas id="mgCv"></canvas><div class="tip" id="mgTip"></div><div class="lg" id="mgLg"></div></div>
 <div class="holo" id="holo"><div class="face" id="holoFace"></div><div class="scan"></div><div class="ring"></div><div class="beam"></div></div>
 <div class="focus" id="focus"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="none" stroke="rgba(244,186,66,.12)" stroke-width="2"/>
   <circle id="focusArc" cx="100" cy="100" r="94" fill="none" stroke="#f4ba42" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="590.6" stroke-dashoffset="0" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 4px #f4ba42)"/></svg>
@@ -463,6 +477,7 @@ function onEvent(e) {
     case "everyday_focus": dTab = e.tab; curList = e.list || curList; renderDaily(); break;
     case "weather": showWeather(e); break;
     case "focus": setFocus(e); break;
+    case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
     case "notes": MODES.notes = e.on ? "🎙 NOTES" : ""; showModes(); break;
     case "interp": MODES.interp = e.on ? `🌐 ${e.a} ⇄ ${e.b}` : ""; showModes(); break;
@@ -587,6 +602,7 @@ const PAL = [
   ["📊", "System status", "", () => ask("system status")],
   ["🗂", "Mission log", "what Atomo did", () => { document.querySelector('.mtab[data-m="log"]').click(); closePal(); }],
   ["🎨", "Switch theme", "cinema / iOS / Iron Man", () => ask("switch to the iOS theme")],
+  ["🧠", "Memory graph", "everything Atomo remembers", () => { closePal(); openMemoryGraph(); }],
   ["✦", "Orb style & settings", "24 dot-sphere styles", () => { closePal(); window.ORB.openSettings && window.ORB.openSettings(); }],
   ["🗣", "Talk in my voice / Atomo voice", "", () => post("/api/action", {action: "me"})],
   ["🔇", "Mute / unmute", "", () => post("/api/action", {action: "mute"})],
@@ -667,6 +683,56 @@ setInterval(() => {
   if (!document.body.classList.contains("amb") && Date.now() - lastActive > 120000) ambient(true);
   if (document.body.classList.contains("amb")) { if (busy) ambient(false); else ambTick(); }
 }, 5000);
+
+// =================== MEMORY GRAPH: everything Atomo remembers, as a living web ===================
+const MG = {nodes: [], links: [], raf: 0, drag: null, hover: null, cam: {x: 0, y: 0, z: 1}};
+const MG_COL = {Me: "#f4ba42", People: "#ff5a63", Projects: "#7fe6ff", Facts: "#9b7bff", Agents: "#3ee08b"};
+async function openMemoryGraph() {
+  const g = await (await fetch("/api/vault_graph")).json();
+  const W = innerWidth, H = innerHeight, byId = {};
+  MG.nodes = g.nodes.map((n, i) => { const a = i * 2.4, r = n.kind === "note" ? 120 : 260;
+    return byId[n.id] = Object.assign(n, {x: W / 2 + Math.cos(a) * r * Math.random(), y: H / 2 + Math.sin(a) * r * Math.random(), vx: 0, vy: 0}); });
+  MG.links = g.links.map(l => ({s: byId[l.s], t: byId[l.t], x: l.x})).filter(l => l.s && l.t);
+  const notes = MG.nodes.filter(n => n.kind === "note").length, facts = MG.nodes.length - notes;
+  $("mgInfo").textContent = `${notes} notes · ${facts} memories · ${MG.links.filter(l => l.x).length} connections · drag to explore`;
+  $("mgLg").innerHTML = Object.entries(MG_COL).map(([k, c]) => `<span><i style="background:${c}"></i>${k}</span>`).join("");
+  $("mgraph").classList.add("show"); cancelAnimationFrame(MG.raf); mgLoop();
+}
+function mgLoop() {
+  const cv = $("mgCv"), dpr = Math.min(devicePixelRatio, 1.5), W = innerWidth, H = innerHeight;
+  if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+  const x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const N = MG.nodes, t = performance.now() / 1000;
+  // forces: repulsion, springs, gentle pull to the centre
+  for (let i = 0; i < N.length; i++) for (let j = i + 1; j < N.length; j++) {
+    const a = N[i], b = N[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 30, f = (a.kind === "note" && b.kind === "note" ? 9000 : 1400) / d2;
+    a.vx += dx * f / 60; a.vy += dy * f / 60; b.vx -= dx * f / 60; b.vy -= dy * f / 60; }
+  for (const l of MG.links) { const dx = l.t.x - l.s.x, dy = l.t.y - l.s.y, d = Math.hypot(dx, dy) || 1, k = ((d - (l.x ? 190 : 70)) / d) * .02;
+    l.s.vx += dx * k; l.s.vy += dy * k; l.t.vx -= dx * k; l.t.vy -= dy * k; }
+  for (const n of N) { if (n === MG.drag) continue; n.vx += (W / 2 - n.x) * .0009; n.vy += (H / 2 - n.y) * .0009;
+    n.vx *= .86; n.vy *= .86; n.x += n.vx; n.y += n.vy; }
+  x.clearRect(0, 0, W, H);
+  for (const l of MG.links) { x.strokeStyle = l.x ? "rgba(244,186,66,.55)" : "rgba(127,230,255,.16)"; x.lineWidth = l.x ? 1.6 : 1;
+    x.beginPath(); x.moveTo(l.s.x, l.s.y); x.lineTo(l.t.x, l.t.y); x.stroke(); }
+  for (const n of N) {
+    const c = MG_COL[n.group] || "#8aa0c8", r = n.size * (n === MG.hover ? 1.5 : 1) * (n.kind === "note" ? 1 + Math.sin(t * 2 + n.x * .01) * .06 : 1);
+    const g = x.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 3); g.addColorStop(0, c); g.addColorStop(.35, c + "aa"); g.addColorStop(1, c + "00");
+    x.fillStyle = g; x.beginPath(); x.arc(n.x, n.y, r * 3, 0, 7); x.fill();
+    x.fillStyle = "#fff"; x.beginPath(); x.arc(n.x, n.y, r * .45, 0, 7); x.fill();
+    if (n.kind === "note") { x.fillStyle = "#eef4ff"; x.font = "600 12px Bahnschrift, Segoe UI"; x.textAlign = "center"; x.fillText(n.label, n.x, n.y + r * 3 + 12); }
+  }
+  MG.raf = requestAnimationFrame(mgLoop);
+}
+(() => { const cv = $("mgCv"), pick = e => MG.nodes.reduce((b, n) => { const d = Math.hypot(n.x - e.clientX, n.y - e.clientY); return d < n.size * 3 + 4 && (!b || d < b.d) ? {n, d} : b; }, null);
+  cv.onmousedown = e => { const p = pick(e); if (p) { MG.drag = p.n; cv.style.cursor = "grabbing"; } };
+  cv.onmousemove = e => { if (MG.drag) { MG.drag.x = e.clientX; MG.drag.y = e.clientY; MG.drag.vx = MG.drag.vy = 0; }
+    const p = pick(e); MG.hover = p && p.n; const tip = $("mgTip");
+    if (p) { tip.style.display = "block"; tip.style.left = e.clientX + 14 + "px"; tip.style.top = e.clientY + 10 + "px";
+      tip.innerHTML = `<b>${esc(p.n.kind === "note" ? p.n.id : p.n.group)}</b><br>${esc(p.n.label)}`; } else tip.style.display = "none"; };
+  addEventListener("mouseup", () => { MG.drag = null; cv.style.cursor = "grab"; });
+  $("mgX").onclick = () => { $("mgraph").classList.remove("show"); cancelAnimationFrame(MG.raf); };
+  addEventListener("keydown", e => { if (e.key === "Escape" && $("mgraph").classList.contains("show")) $("mgX").click(); });
+})();
 
 // =================== CREATION CARDS ===================
 const CREATED = {};

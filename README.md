@@ -72,6 +72,12 @@ reacting to your voice), system vitals, the conversation log and the **canvas**
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
 
+**Ideas from the best JARVIS reels — built in**
+- **🌍 Publish websites live** — "build a website for my shop and put it online": a real link (`https://<you>.github.io/<name>/`, free GitHub Pages). Always asks first — it's public
+- **🎓 AI classroom** — "teach me photosynthesis" / "teach me this PDF": slides on the Atomo Screen, Atomo explains each one aloud, whiteboard notes, then "quiz me" on what was taught
+- **🧠 Memory graph** — a glowing, draggable web of everything Atomo remembers about you (Ctrl+K → Memory graph)
+- **🔺 Phone hologram** — phone remote → Holo: four mirrored orbs for a plastic hologram pyramid, so Atomo floats in the air and pulses as it listens and speaks
+
 **Beyond the JARVIS builds on social media**
 - **🛰 Stark AI team** — F.R.I.D.A.Y. (research, live web), E.D.I.T.H. (security & system audit), KAREN (schedule & planning): each with her own job, memory and voice. "Edith, scan my PC" · "Friday, research…" · "Karen, plan my day"
 - **🌙 Overnight shift** — "every night at 2 AM run the overnight shift": the team researches your interests, audits the PC, plans tomorrow and triages email; the morning briefing reads you the report
