@@ -8,6 +8,7 @@ Modes:
 
 import collections
 import logging
+import os
 import threading
 import time
 
@@ -324,5 +325,45 @@ def transcribe(audio: bytes, languages=("en-IN", "te-IN", "hi-IN")) -> dict:
         except sr.UnknownValueError:
             return lang, ""
 
-    results = dict(_pool.map(one, languages))   # RequestError (offline) propagates
+    jobs = [_pool.submit(one, lang) for lang in languages]
+    whisper = _pool.submit(_groq_whisper, audio) if os.environ.get("GROQ_API_KEY") else None
+    results, errors = {}, []
+    for j in jobs:
+        try:
+            lang, text = j.result()
+            results[lang] = text
+        except Exception as e:
+            errors.append(e)
+    if whisper is not None:
+        try:
+            w = whisper.result(timeout=8)
+            if w:
+                results["whisper"] = w
+        except Exception as e:
+            log.info("groq whisper failed: %s", str(e)[:100])
+    if errors and not any(results.values()):
+        raise errors[0]                          # offline: let the caller say so
     return {lang: text for lang, text in results.items() if text}
+
+
+def _groq_whisper(audio: bytes) -> str:
+    """Groq's Whisper large-v3 turbo: understands English, Telugu, Hindi and mixed speech in ~0.3 s."""
+    import io
+    import wave
+    import httpx
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(RATE)
+        w.writeframes(audio)
+    r = httpx.post("https://api.groq.com/openai/v1/audio/transcriptions",
+                   headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"},
+                   files={"file": ("speech.wav", buf.getvalue(), "audio/wav")},
+                   data={"model": "whisper-large-v3-turbo", "response_format": "json", "temperature": "0"}, timeout=8)
+    r.raise_for_status()
+    text = (r.json().get("text") or "").strip()
+    # Whisper invents these on silence / noise
+    if text.lower().strip(" .!") in ("", "thank you", "thanks for watching", "you", "bye", "thank you for watching"):
+        return ""
+    return text

@@ -13,6 +13,9 @@ from pathlib import Path
 
 log = logging.getLogger("jarvis.brains")
 CATALOG = {
+    "groq": {"name": "Groq (ultra-fast open models)", "url": "https://api.groq.com/openai/v1", "env": "GROQ_API_KEY",
+             "models_env": "JARVIS_GROQ_MODELS", "models": "qwen/qwen3.8-27b,openai/gpt-oss-120b",
+             "get_key": "https://console.groq.com/keys"},
     "claude": {"name": "Claude (Anthropic)", "url": "https://api.anthropic.com/v1/", "env": "ANTHROPIC_API_KEY",
                "models_env": "JARVIS_CLAUDE_MODELS", "models": "claude-sonnet-5-5,claude-haiku-4-5-20251001",
                "get_key": "https://console.anthropic.com/settings/keys"},
@@ -47,7 +50,7 @@ def configured():
 
 def connect_brain(provider: str) -> str:
     p = (provider or "").lower()
-    p = "claude" if "claude" in p or "anthropic" in p else "openai" if "gpt" in p or "openai" in p or "chat" in p else \
+    p = "groq" if "groq" in p or "grok" in p else "claude" if "claude" in p or "anthropic" in p else "openai" if "gpt" in p or "openai" in p or "chat" in p else \
         "local" if any(w in p for w in ("local", "ollama", "open", "llama", "free")) else p
     brain = hooks["brain"]
     if p == "local":

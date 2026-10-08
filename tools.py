@@ -975,7 +975,14 @@ def create(kind: str, request: str, language: str = "", title: str = "") -> str:
     if kind == "code" and lang in ("html", "web", "website"):
         kind, fixed_ext, spec = "webpage", *KINDS["webpage"]
     fence = "markdown" if fixed_ext == "md" else ("html" if fixed_ext == "html" else (lang or "<language>"))
-    prompt = (f"Create {spec}.\n\nThe user's request:\n{request}\n\n"
+    photos = ""
+    if kind in ("webpage", "presentation"):
+        try:
+            import images
+            photos = images.for_prompt(title or request[:80], 6)
+        except Exception:
+            photos = ""
+    prompt = (f"Create {spec}.\n\nThe user's request:\n{request}\n{photos}\n"
               + (f"Use {language}.\n" if language and kind == "code" else "")
               + f"Reply with ONLY one fenced block that starts with ```{fence} - no text before or after it.")
     return _canvas_generate(kind, title or request[:60], fixed_ext, lang, prompt)
@@ -1428,6 +1435,12 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("architect_departments", "Design Ultron's command layer: an organisation of AI departments (e.g. Growth, Socials, Study, Finance, Tasks) that fits the user's life/business, each with mission, KPIs, skills and routines, shown as an org chart. 'architect my departments', 'build my AI company', 'set up departments for my business'. about = anything the user described.",
+        {"about": {"type": "string"}, "count": {"type": "integer"}}),
+    _fn("activate_departments", "Schedule the departments' routines (daily/weekly tasks). Only after the user agrees."),
+    _fn("list_departments", "List the user's AI departments."),
+    _fn("ask_department", "Have one department do a task: 'ask the Growth department to plan this week's posts', 'Finance, track my spending'.",
+        {"department": {"type": "string"}, "task": {"type": "string"}}, ["department", "task"]),
     _fn("ultron_power", "Switch ULTRON ITSELF off (on=false: stops talking, the class, interpreter, copilot; silent until woken with the wake word) or on. Use for 'shut down', 'turn off', 'go to sleep', 'be quiet', 'stop everything' - anything that does NOT clearly name the computer/PC/laptop. minutes = snooze length (auto-wakes).",
         {"on": {"type": "boolean"}, "minutes": {"type": "number"}}, ["on"]),
     _fn("interview", "Get-to-know-you interview: Ultron asks about the user's life, work, routine, people, goals and preferences one question at a time and saves the answers to memory. action 'start' (also resumes), 'answer' (pass the user's reply in answer), 'skip', 'stop', 'restart'.",
@@ -1652,6 +1665,7 @@ import interview as interview_mod  # noqa: E402  (get-to-know-you interview)
 import skills  # noqa: E402  (reusable task know-how)
 import gworkspace  # noqa: E402  (Google Calendar + Tasks)
 import brains  # noqa: E402  (Claude / ChatGPT / local models)
+import departments  # noqa: E402  (command layer: self-designed departments)
 
 
 def show_memory_graph() -> str:
@@ -1677,6 +1691,8 @@ FUNCS = {
     "connect_gmail": gmail.connect_gmail, "email_triage": gmail.email_triage, "email_search": gmail.email_search,
     "email_draft": gmail.email_draft, "publish_website": webpublish.publish_website,
     "show_memory_graph": show_memory_graph, "watch": videovision.watch,
+    "architect_departments": departments.architect, "activate_departments": departments.activate_departments,
+    "list_departments": departments.list_departments, "ask_department": departments.ask_department,
     "ultron_power": ultron_power, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
@@ -1789,6 +1805,8 @@ def describe(name: str, args: dict):
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
         "publish_website": lambda: "Publishing to the web" if a.get("confirm") else "Preparing to publish",
+        "architect_departments": lambda: "Architecting departments", "activate_departments": lambda: "Activating departments",
+        "list_departments": lambda: "Your departments", "ask_department": lambda: f"{a.get('department', '')} department working",
         "interview": lambda: "Interview" if a.get("action") != "answer" else "Noting your answer",
         "save_skill": lambda: f"Learning skill · {a.get('name', '')}", "list_skills": lambda: "My skills",
         "delete_skill": lambda: "Forgetting skill", "connect_google_calendar": lambda: "Connecting Google Calendar",

@@ -14,6 +14,13 @@ If Err.Number = 0 Then If http.Status = 200 Then running = True
 On Error GoTo 0
 
 If running And WScript.Arguments.Count = 0 Then
+  On Error Resume Next
+  Set p = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+  p.Open "POST", "http://127.0.0.1:7777/api/action", False
+  p.setRequestHeader "Content-Type", "application/json"
+  p.setRequestHeader "X-Jarvis", "1"
+  p.Send "{""action"":""ultron_power"",""on"":true}"
+  On Error GoTo 0
   sh.Run "http://localhost:7777", 1, False
   WScript.Quit
 End If

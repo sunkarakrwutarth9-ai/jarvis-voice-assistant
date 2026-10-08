@@ -252,6 +252,7 @@ class Assistant(threading.Thread):
                 self._off_timer.daemon = True
                 self._off_timer.start()
             self._pub({"type": "power_state", "on": False, "minutes": minutes})
+            self.bridge.island_on.emit(False)
             log.info("ULTRON OFF%s", f" for {minutes:g} min" if minutes else "")
             if announce:
                 self.speaker.say(f"Going offline for {minutes:g} minutes, Sir." if minutes else "Going offline, Sir.")
@@ -259,6 +260,9 @@ class Assistant(threading.Thread):
             return
         was_off, self.off = self.off, False
         self._pub({"type": "power_state", "on": True})
+        self.bridge.island_on.emit(True)
+        if self.listener is not None:
+            self.listener.set_idle()
         log.info("ULTRON ON")
         if was_off and announce:
             missed, self._missed = self._missed, []
@@ -268,8 +272,7 @@ class Assistant(threading.Thread):
     def on_wake(self):
         """Wake word heard (listener thread) - interrupt whatever is happening."""
         if self.off:
-            self.power(True, announce=False)            # "Hey Jarvis" wakes Ultron back up
-            self._pub({"type": "power_state", "on": True})
+            return                                      # completely off: ignore "Hey Jarvis" too
         self.turn += 1
         self.explicit_wake = True
         self.activate()
@@ -281,6 +284,8 @@ class Assistant(threading.Thread):
 
     def on_keyword(self, audio, text):
         """Backup wake (listener thread): speech recognition heard 'Jarvis' in a burst of speech."""
+        if self.off:
+            return
         rest = WAKE_PREFIX.sub("", text).strip()
         if len(rest.split()) >= 2:
             # "OK Jarvis, open YouTube" in one breath: the command is already in this audio - run it.
@@ -326,6 +331,8 @@ class Assistant(threading.Thread):
         return True
 
     def on_click(self):
+        if self.off:
+            return
         if self.listener is not None and self.listener.mode == "record":
             self.turn += 1                       # clicking while listening cancels (and ends conversation mode)
             self.deactivate()
@@ -340,6 +347,8 @@ class Assistant(threading.Thread):
 
     def on_utterance(self, audio):
         self.ducker.restore()
+        if self.off:
+            return
         self.events.put(("utterance", audio, self.turn))
 
     def on_timeout(self):
@@ -596,7 +605,7 @@ class Assistant(threading.Thread):
     def on_text(self, text):
         """A command typed on the dashboard (server thread)."""
         if self.off:
-            self.power(True, announce=False)
+            return                                      # completely off: only the power button wakes it
         self.turn += 1
         self.explicit_wake = True
         self.speaker.stop()
@@ -746,6 +755,7 @@ def run_gui(args):
         appearance = Signal(str)
         robot = Signal(str)
         ask_secret = Signal(str)
+        island_on = Signal(bool)
         quit = Signal()
 
     bridge = Bridge()
@@ -939,7 +949,19 @@ def run_gui(args):
 
     dash_shown = {"v": False}
 
+    def _set_island(on):
+        if on:
+            dash_shown["v"] = None                     # let the next check decide show/hide
+            island.set_dashboard_visible(False)
+        else:
+            island.set_dashboard_visible(True)         # hides it and stops drawing
+        dancer.set_enabled(on and tools._state("robot", True))
+
+    bridge.island_on.connect(_set_island)
+
     def _check_dashboard():
+        if assistant.off:
+            return                                     # completely off: the island stays hidden
         shown = hub.any_visible() and _front_title().startswith("U.L.T.R.O.N. Command Center")
         if shown != dash_shown["v"]:
             dash_shown["v"] = shown
@@ -1304,7 +1326,8 @@ def run_gui(args):
     tray = QSystemTrayIcon(QIcon(pm))
     tray.setToolTip("Ultron - say \"OK Ultron\" or \"Hey Jarvis\"")
     menu = QMenu()
-    for text, fn in (("Talk to Ultron", assistant.on_click),
+    for text, fn in (("Turn Ultron on / off", lambda: assistant.power(assistant.off)),
+                     ("Talk to Ultron", assistant.on_click),
                      ("Open command center", open_dashboard),
                      ("Toggle my voice and face", lambda: set_me(not me_pending["on"])),
                      ("New conversation", brain.reset), ("Quit Ultron", quit_app)):

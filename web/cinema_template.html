@@ -380,7 +380,7 @@ body.uoff .offbanner{display:block}
   <button data-p="sleep"><b>☾</b>Sleep</button><button data-p="lock"><b>🔒</b>Lock</button>
   <button data-p="quit"><b>✕</b>Quit Ultron</button><button data-p="cancel"><b>⊘</b>Cancel shutdown</button>
   <button class="x" id="pwrX">Close</button></div></div></div>
-<div class="offbanner" id="offBanner"><b>ULTRON OFFLINE</b><small id="offSub">Press ⏻ or say “Hey Jarvis” to wake me</small></div>
+<div class="offbanner" id="offBanner"><b>ULTRON OFFLINE</b><small id="offSub">Completely off · press ⏻ to switch me on</small></div>
 <div class="pwrcount" id="pwrCount"><span id="pwrTxt">Shutting down in 10 s</span><button id="pwrCancel">CANCEL</button></div>
 <div class="mgraph" id="mgraph"><div class="hd">🧠 MEMORY GRAPH<small id="mgInfo"></small></div><button class="x" id="mgX">✕ Close</button>
   <canvas id="mgCv"></canvas><div class="tip" id="mgTip"></div><div class="lg" id="mgLg"></div></div>
@@ -800,7 +800,7 @@ let ULTRON_ON = true;
 function setUltron(on, minutes) {
   ULTRON_ON = on; document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
   $("pwrBtn").title = on ? "Switch Ultron off" : "Switch Ultron on";
-  $("offSub").textContent = minutes ? `Back in ${minutes} min · press ⏻ or say “Hey Jarvis”` : "Press ⏻ or say “Hey Jarvis” to wake me";
+  $("offSub").textContent = minutes ? `Back in ${minutes} min · or press ⏻` : "Completely off · press ⏻ to switch me on";
 }
 $("pwrBtn").onclick = () => post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
 $("pwrX").onclick = () => $("pwr").classList.remove("show");

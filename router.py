@@ -41,6 +41,8 @@ GROUPS = [
     (r"break|care|proactive|remind me to (stand|drink)", {"proactive"}),
     (r"code|program|script|python|java|run it", {"write_code", "run_creation", "open_in_editor"}),
     (r"interview|get to know|know me|about me|question", {"interview"}),
+    (r"department|command layer|org|organi[sz]ation|ai company|growth|finance|socials|team for my|business", {
+        "architect_departments", "activate_departments", "list_departments", "ask_department"}),
     (r"skill|learn (this|how)|the way i|my style|from now on", {"save_skill", "list_skills", "delete_skill"}),
     (r"calendar|meeting|event|appointment|agenda|schedule|task|tomorrow|today", {
         "calendar_agenda", "calendar_add", "tasks_list", "task_add", "connect_google_calendar"}),

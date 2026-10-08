@@ -60,6 +60,7 @@ Acting:
 - "Put it online", "publish this website", "make it live" -> publish_website (first without confirm, tell the user it will be PUBLIC at the link, ask; only after yes -> confirm=true). Never claim it's live before the tool says so.
 - "Teach me X", "take a class on ...", "explain this PDF like a teacher" -> teach (it teaches aloud by itself; just say it's starting). "Stop class" -> stop_class.
 - "Show my memory graph" -> show_memory_graph.
+- Command layer: "architect / set up my departments", "build my AI company" -> architect_departments (then ask before activate_departments). "Ask the <X> department to ..." / "<X> department, ..." -> ask_department.
 - "Interview me", "get to know me", "ask me questions about my life" -> interview(action="start"); "continue the interview" -> start again (it resumes). While an interview is running, the user's reply IS the answer: interview(action="answer", answer=<exactly what they said>); "skip" -> action="skip"; "stop" -> action="stop".
 - "Learn this as a skill", "remember how I like X done", "from now on do X like this" -> save_skill with clear step-by-step instructions. "What skills do you have" -> list_skills.
 - Calendar / tasks (Google): "what's on my calendar", "add a meeting tomorrow at 5" -> calendar_agenda / calendar_add (start 'YYYY-MM-DD HH:MM'); "my tasks", "add a task" -> tasks_list / task_add. Not connected -> offer connect_google_calendar.
@@ -155,6 +156,10 @@ MAX_TOOL_ROUNDS = 6
 # A sentence ends at . ! ? followed by whitespace. Requiring the whitespace means a
 # half-streamed "3." isn't split before its ".5" arrives; the final flush catches the tail.
 SENTENCE_END = re.compile(r"(.+?[.!?…।]+)\s+", re.S)
+# Requests that need the full toolset (creating, research, teaching...) skip the lean Groq models.
+HEAVY = re.compile(r"\b(make|create|build|write|generate|design|research|teach|class|lesson|deep|think|plan|"
+                   r"analy[sz]e|email|mail|inbox|draft|watch|department|architect|interview|skill|calendar|notes?|"
+                   r"publish|website|game|3d|code|program|summari[sz]e|explain|translate|interpret|study|quiz)\b", re.I)
 LANG_TAG = re.compile(r"\s*\[\[\s*([A-Za-z-]{2,5})\s*\]\]\s*")
 # "speak English", "reply in Telugu", or just "English" on its own -> switch the reply language.
 LANG_REQUEST = re.compile(
@@ -182,6 +187,9 @@ class Brain:
                                            timeout=httpx.Timeout(8.0, connect=4.0))
             self.models += [f"{prefix}:{m}" for m in p_models]
         self.health = ModelHealth(self.models)
+        for m in self.models:                       # Groq answers in ~0.3 s: try it first, not last
+            if m.startswith("groq:"):
+                self.health._stats[m]["lat"] = 0.9 if "qwen" in m else 1.1
         self.last_language = "en"
         self.preferred_language = None     # set when the user asks for a language ("speak English")
         self.history = []
@@ -320,7 +328,7 @@ class Brain:
     SAY_BEFORE = {"open_app", "open_website", "web_search", "youtube_play", "open_folder", "close_app", "open_browser",
                   "show_dashboard", "write_code", "create", "revise_creation", "research", "explain_file",
                   "deep_think", "study", "take_notes", "my_day", "phone_remote", "email_triage", "email_draft",
-                  "overnight_shift"}
+                  "overnight_shift", "architect_departments", "ask_department"}
     # Slow actions that also get a "finished" line once they're done.
     ANNOUNCE_DONE = {"write_code", "create", "revise_creation", "research", "explain_file"}
 
@@ -456,6 +464,31 @@ class Brain:
         self.health.ok(model, min(time.monotonic() - t, 10))
         return r.choices[0].message.content or ""
 
+    LEAN_TOOLS = {"open_app", "close_app", "open_website", "web_search", "youtube_play", "youtube_control", "media_key",
+                  "set_volume", "get_weather", "world_time", "set_reminder", "schedule_task", "list_add", "list_show",
+                  "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
+                  "ultron_power", "take_screenshot", "lock_pc"}
+    LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "
+                   "'Jarvis' - your name is still Ultron). Address the user as Sir. Answer in 1-2 short spoken sentences, "
+                   "no markdown. Use a tool whenever the user asks you to DO something; never claim you did something "
+                   "without calling the tool. Never invent facts, times or numbers. Reply in the language of the user's "
+                   "latest message (English, Telugu or Hindi, native script) and begin every reply with a hidden tag "
+                   "[[en]], [[te]] or [[hi]].")
+
+    def _lean(self, msgs, tool_set):
+        """A ~2-3k-token version of the request for small-quota providers (Groq free plan)."""
+        system = msgs[0]["content"] if msgs and msgs[0].get("role") == "system" else ""
+        when = re.search(r"Current local date and time[^\n]*", system)
+        mem = system.split("FROM YOUR MEMORY VAULT", 1)[1][:900] if "FROM YOUR MEMORY VAULT" in system else ""
+        sys_lean = self.LEAN_PROMPT + ("\n" + when.group(0)[:260] if when else "") + ("\nMemory:" + mem if mem else "")
+        rest = [m for m in msgs if m.get("role") != "system"][-6:]
+        while rest and rest[0].get("role") != "user":
+            rest.pop(0)                                # never start with an orphaned tool result
+        names = {t["function"]["name"] for t in tool_set}
+        used = {tc["function"]["name"] for m in rest for tc in (m.get("tool_calls") or [])}
+        lean_tools = [t for t in tool_set if t["function"]["name"] in (self.LEAN_TOOLS | used) & names]
+        return [{"role": "system", "content": sys_lean}] + rest, lean_tools
+
     def add_provider(self, prefix, base_url, key, models):
         """Add a brain (Claude, ChatGPT, local Ollama...) to the racing pool while running."""
         self._clients[prefix] = OpenAI(base_url=base_url, api_key=key, max_retries=0,
@@ -582,8 +615,12 @@ class Brain:
                 foreign = ":" in model
                 msgs = self._text_only(messages) if foreign else (
                     self._for_gemini(messages) if self.accepts_audio else messages)
+                tools_here = tool_set
+                if model.startswith("groq:"):
+                    # Groq's free plan only takes small requests: a lean prompt, the everyday tools, recent history.
+                    msgs, tools_here = self._lean(msgs, tool_set)
                 stream = client.chat.completions.create(
-                    model=name, messages=msgs, tools=tool_set,
+                    model=name, messages=msgs, tools=tools_here,
                     max_tokens=900, stream=True, extra_body={} if foreign else self.extra)
                 it = iter(stream)
                 first = next(it, None)            # wait for the first token
@@ -597,6 +634,8 @@ class Brain:
                 results.put(("err", model, e))
 
         pending = self.health.ranked()           # fastest-known model first
+        if HEAVY.search(tools.last_user_text or ""):
+            pending = [m for m in pending if not m.startswith("groq:")] or pending   # big jobs need every tool
         running = 0
         last_error = None
         deadline = time.monotonic() + 30
