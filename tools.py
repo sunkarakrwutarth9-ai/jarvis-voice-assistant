@@ -556,15 +556,29 @@ def sleep_pc() -> str:
     return "OK: going to sleep in 3 seconds."
 
 
-def power_off(action: str) -> str:
+turn_unclear = False      # set by jarvis.py when this turn came from a recording nobody could make out
+RISKY = {"power_off", "sleep_pc", "lock_pc", "close_app", "window_control"}
+
+
+def power_off(action: str, seconds: int = 10) -> str:
     if action == "cancel":
         r = subprocess.run(["shutdown", "/a"], capture_output=True, text=True)
+        publish({"type": "power", "action": "cancel"})
         return "OK: shutdown cancelled." if r.returncode == 0 else "OK: no shutdown was scheduled."
     flag = {"shutdown": "/s", "restart": "/r"}.get(action)
     if flag is None:
         return f"FAILED: unknown power action '{action}'."
-    subprocess.run(["shutdown", flag, "/t", "60"], capture_output=True)
-    return f"OK: {action} scheduled in 60 seconds. Say 'cancel shutdown' to stop it."
+    seconds = max(5, min(int(seconds or 10), 600))
+    try:
+        save_chats_now()
+    except Exception:
+        pass
+    subprocess.run(["shutdown", flag, "/t", str(seconds)], capture_output=True)
+    publish({"type": "power", "action": action, "seconds": seconds, "at": time.time()})
+    return f"OK: {action} in {seconds} seconds (chats saved). Say 'cancel shutdown' or press Cancel to stop it."
+
+
+save_chats_now = lambda: None      # set by jarvis.py
 
 
 # --------------------------------------------------------------------------- #
@@ -1603,8 +1617,8 @@ TOOLS = [
     _fn("show_desktop", "Minimise all windows / show the desktop (toggles)."),
     _fn("lock_pc", "Lock the PC immediately."),
     _fn("sleep_pc", "Put the PC to sleep."),
-    _fn("power_off", "Shut down or restart the PC with a 60-second delay, or cancel a pending shutdown. Only when the user clearly asks.",
-        {"action": {"type": "string", "enum": ["shutdown", "restart", "cancel"]}}, ["action"]),
+    _fn("power_off", "Shut down or restart the PC (after a short countdown, default 10 s), or cancel a pending one. When the user clearly asks to shut down / restart, do it right away - do NOT ask 'are you sure'.",
+        {"action": {"type": "string", "enum": ["shutdown", "restart", "cancel"]}, "seconds": {"type": "integer"}}, ["action"]),
 ]
 
 import everyday  # noqa: E402  (reminders, alarms, lists, routines)
@@ -1818,6 +1832,10 @@ def describe(name: str, args: dict):
 
 def run_tool(name: str, raw_args: str):
     """Run a tool; returns (args_dict, result_string). Never raises."""
+    if turn_unclear and name in RISKY:
+        # never shut down / restart / sleep / lock / close things (or cancel them) on a guess from unclear audio
+        return {}, ("FAILED: I couldn't hear the user clearly, so I must not do this. Ask them to repeat the "
+                    "command clearly.")
     func = FUNCS.get(name)
     try:
         args = json.loads(raw_args or "{}")

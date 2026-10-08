@@ -39,6 +39,7 @@ class Hub:
         self._views = {}             # dashboard tab id -> is it visible (not minimised / hidden)?
         self._screens = set()        # open "Jarvis Screen" windows (creations), tracked apart from the dashboard
         self.everyday = lambda: {}   # set by the app: reminders, lists, routines for the Daily panel
+        self.on_event = lambda event: None   # set by the app: saves chats
         self.on_visibility = lambda any_visible: None
         self.history = []            # recent conversation events, replayed to new tabs
         self.snapshot = {"state": "idle", "title": "", "body": "", "me": False, "muted": False, "ranking": [],
@@ -88,6 +89,10 @@ class Hub:
 
     def publish(self, event: dict):
         event.setdefault("ts", time.time())
+        try:
+            self.on_event(event)
+        except Exception:
+            pass
         kind = event.get("type")
         if kind == "state":
             self.snapshot.update({k: event.get(k, "") for k in ("state", "title", "body")})
@@ -179,6 +184,11 @@ class _Handler(BaseHTTPRequestHandler):
             except Exception:
                 g = {"nodes": [], "links": []}
             self._send(200, json.dumps(g, ensure_ascii=False).encode())
+        elif self.path.startswith("/api/chats"):
+            import chats
+            day = self.path.partition("day=")[2][:10]
+            body = chats.day(day) if day else chats.days()
+            self._send(200, json.dumps(body, ensure_ascii=False).encode())
         elif self.path == "/api/everyday":
             self._send(200, json.dumps(self.hub.everyday(), ensure_ascii=False).encode())
         elif self.path == "/api/state":
@@ -230,7 +240,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:4000])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/clipboard":

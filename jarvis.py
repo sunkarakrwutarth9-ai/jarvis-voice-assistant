@@ -420,6 +420,7 @@ class Assistant(threading.Thread):
 
         self.bridge.state.emit("thinking", "Thinking", f"“{text}”", "")
         quiet_check = "audio-only" in heard and not explicit     # may turn out to be noise: don't show it yet
+        __import__("tools").turn_unclear = "audio-only" in heard
         if not quiet_check:
             self._pub({"type": "user", "text": text if text != "…" else "(voice)", "heard": heard})
         shown = []
@@ -931,6 +932,17 @@ def run_gui(args):
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
             return
+        if action == "power":
+            op = data.get("op")
+            if op in ("shutdown", "restart", "cancel"):
+                threading.Thread(target=tools.power_off, args=(op, 10), daemon=True).start()
+            elif op == "sleep":
+                threading.Thread(target=tools.sleep_pc, daemon=True).start()
+            elif op == "lock":
+                tools.lock_pc()
+            elif op == "quit":
+                bridge.quit.emit()
+            return
         if action == "open_screen":
             threading.Thread(target=tools.ensure_screen, daemon=True).start()
             return
@@ -1064,6 +1076,11 @@ def run_gui(args):
             time.sleep(0.1)
 
     tools.ensure_screen = ensure_screen
+    import chats
+    hub.on_event = chats.record                        # every conversation line is saved to chats/
+    tools.save_chats_now = chats.flush
+    hub.history.extend(chats.recent(40))              # yesterday's / earlier chat shows up after a restart
+    brain.history.extend(chats.brain_turns(8))         # and Ultron remembers the last few exchanges
     hub.publish({"type": "orb_style", "name": tools._state("orb_style", "ultron")})   # every dashboard opens in it
 
     # ---- background services: notes audio, day timeline, proactive care, phone remote
