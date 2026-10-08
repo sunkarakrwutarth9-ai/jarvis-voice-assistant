@@ -103,6 +103,8 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "ui_theme":
+            self.snapshot["ui_theme"] = event.get("id", "")
         elif kind == "power_state":
             self.snapshot["ultron_on"] = bool(event.get("on"))
         elif kind == "orb_style":
@@ -178,6 +180,10 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send(200, pic.read_bytes(), "image/jpeg")
             else:
                 self.send_error(404)
+        elif self.path == "/themes.js":
+            self._send(200, (HERE / "web" / "themes.js").read_bytes(), "text/javascript; charset=utf-8")
+        elif self.path == "/api/ui_theme":
+            self._send(200, json.dumps({"id": self.snapshot_theme()}).encode())
         elif self.path == "/study":
             self._send(200, (HERE / "study.html").read_bytes(), "text/html; charset=utf-8")
         elif self.path == "/api/study":
@@ -235,6 +241,9 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def snapshot_theme(self):
+        return self.hub.snapshot.get("ui_theme") or "ironman-13"
+
     def do_POST(self):
         if not self._host_ok():
             return
@@ -251,7 +260,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:4000])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/clipboard":

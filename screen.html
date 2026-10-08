@@ -91,6 +91,8 @@ html,body{height:100%;background:radial-gradient(ellipse at 50% 0%,#0b1426 0%,va
 .cbar{border-bottom-color:var(--stroke)}
 .seg button.on{background:rgba(255,255,255,.12)}
 </style>
+<script src="/themes.js"></script>
+<script>addEventListener("DOMContentLoaded",()=>ULTRON_THEME.init("screen"))</script>
 </head>
 <body>
 <div class="app" id="app" data-canvas="0">
@@ -275,6 +277,7 @@ function onEvent(e) {
     case "canvas": canvasDone(e); break;
     case "canvas_output": canvasOutput(e); break;
     case "canvas_cmd": canvasCmd(e.action); break;
+    case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "canvas_error": $("cStatus").textContent = "⚠ " + e.text; break;
     case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
   }

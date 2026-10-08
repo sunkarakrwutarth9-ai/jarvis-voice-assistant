@@ -130,6 +130,15 @@ bring your hand closer to zoom, make a fist to collapse the electrons, open your
 
 ---
 
+## 🎨 200 UI themes
+
+Every screen can be restyled: the command center, Study Mode (`/study`), the Ultron Screen (`/screen`), the phone page and the island.
+There are 10 categories with 20 themes each: Apple Clean, Iron Man HUD, Neon Cyberpunk, Glassmorphism, Space, Nature, Retro, Minimal, Luxury and Indian Festive.
+
+- Click **🎨** in the top bar, or press Ctrl+K and choose "Themes (200)". The gallery lets you hover to preview and click to apply.
+- Or ask by voice: *"change the theme to Diwali"*, *"make it neon cyberpunk"*, *"Apple light theme"*.
+- Your choice is saved, and every open screen switches live.
+
 ## 🧑 Your own voice and face (optional)
 
 Record a 10–20 s selfie video of yourself talking, then run:

@@ -290,6 +290,8 @@ body.uoff .offbanner{display:block}
 .cbar{border-bottom-color:var(--stroke)}
 .seg button.on{background:rgba(255,255,255,.12)}
 </style>
+<script src="/themes.js"></script>
+<script>addEventListener("DOMContentLoaded",()=>ULTRON_THEME.init("cinema"))</script>
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -304,6 +306,7 @@ body.uoff .offbanner{display:block}
     <div class="brand">U.L.T.R.O.N<small>NEURAL COMMAND CORE</small></div>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span><span class="hchip" id="modeChip" hidden></span></div>
+    <button class="pwrbtn" id="themeBtn" title="Themes" style="border-color:var(--stroke);color:var(--text)" onclick="ULTRON_THEME.openGallery()">🎨</button>
     <button class="pwrbtn on" id="pwrBtn" title="Ultron on / off">⏻</button>
     <div class="clock"><span id="time">--:--</span><small id="date"></small></div>
   </header>
@@ -518,6 +521,7 @@ function onEvent(e) {
     case "focus": setFocus(e); break;
     case "power": powerEvent(e); break;
     case "power_state": setUltron(e.on, e.minutes); break;
+    case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
     case "notes": MODES.notes = e.on ? "🎙 NOTES" : ""; showModes(); break;
@@ -668,6 +672,7 @@ const PAL = [
   ["♻️", "New conversation", "", () => $("newc").click()],
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
   ["🔒", "Lock the PC", "", () => ask("lock the PC")],
+  ["🎨", "Themes (200)", "change the whole look", () => { closePal(); ULTRON_THEME.openGallery(); }],
   ["📚", "Study Mode", "classes · flashcards · focus", () => { closePal(); ask("open study mode"); }],
   ["⏻", "PC power", "shut down · restart · sleep · lock", () => { closePal(); $("pwr").classList.add("show"); }],
   ["⏼", "Switch Ultron off / on", "silent until woken", () => { closePal(); $("pwrBtn").click(); }],

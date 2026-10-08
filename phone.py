@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlparse
 
 log = logging.getLogger("jarvis.phone")
 PORT = 7778
-FORWARD = {"state", "user", "reply", "tool", "everyday", "weather", "focus", "canvas", "notes", "interp", "copilot"}
+FORWARD = {"state", "user", "reply", "tool", "everyday", "weather", "focus", "canvas", "notes", "interp", "copilot", "ui_theme"}
 ctx = {"hub": None, "on_command": None, "on_action": None, "state": None, "save": None}
 _srv = {"server": None, "token": None}
 
@@ -71,6 +71,13 @@ class _H(BaseHTTPRequestHandler):
             return
         path = urlparse(self.path).path
         hub = ctx["hub"]
+        if path == "/themes.js":
+            from pathlib import Path as _P
+            self._send(200, (_P(__file__).resolve().parent / "web" / "themes.js").read_bytes(), "text/javascript")
+            return
+        if path == "/api/ui_theme":
+            self._send(200, json.dumps({"id": hub.snapshot.get("ui_theme") or "ironman-13"}).encode())
+            return
         if path == "/":
             self._send(200, PAGE.encode("utf-8"), "text/html; charset=utf-8")
         elif path == "/api/state":
@@ -184,7 +191,8 @@ def resume():
 PAGE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#05070f"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>Ultron</title><style>
+<title>Ultron</title><script>window.UTHEME_KEY=new URLSearchParams(location.search).get("k")||"";</script>
+<script src="/themes.js?k=" id="thjs"></script><style>
 :root{--arc:#7fe6ff;--gold:#f4ba42;--red:#e0262f;--sub:#8b97b5;--card:#0d1222;--line:#1d2742}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow-x:hidden;background:#05070f;color:#eef4ff;font:15px -apple-system,"Segoe UI",Roboto,system-ui,sans-serif}
@@ -317,5 +325,6 @@ $("holoBtn").onclick = async () => { $("holo").style.display = "block"; holoFram
 $("holo").onclick = () => { $("holo").style.display = "none"; cancelAnimationFrame(holoRaf);
   try { document.exitFullscreen(); } catch (e) {} try { window._wl && window._wl.release(); } catch (e) {} };
 const es = new EventSource("/events?k=" + encodeURIComponent(K));
-es.onmessage = m => on(JSON.parse(m.data)); es.onerror = () => $("off").style.display = "block"; es.onopen = () => $("off").style.display = "none";
+es.onmessage = m => { const e = JSON.parse(m.data); if (e.type === "ui_theme" && window.ULTRON_THEME) ULTRON_THEME.apply(e.id); on(e); };
+if (window.ULTRON_THEME) ULTRON_THEME.init("phone"); es.onerror = () => $("off").style.display = "block"; es.onopen = () => $("off").style.display = "none";
 </script></body></html>"""

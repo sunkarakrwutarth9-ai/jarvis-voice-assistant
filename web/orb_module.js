@@ -185,6 +185,12 @@ renderSettings();
 box.onclick = e => { if (e.target === box) box.classList.remove("show"); };
 addEventListener("keydown", e => { if (e.key === "Escape") box.classList.remove("show"); });
 window.ORB.openSettings = () => { renderSettings(); box.classList.add("show"); };
+window.ORB.setTheme = t => {
+  pal = [parseInt(t.a1.slice(1), 16), parseInt(t.a2.slice(1), 16)]; rainbow = 0;
+  scene.background = new THREE.Color(t.bg);
+  mat.blending = t.light ? THREE.NormalBlending : THREE.AdditiveBlending; mat.needsUpdate = true;
+  stars.visible = !t.light; core.visible = !t.light;
+};
 window.ORB.setStyle = setStyle;
 window.ORB.styles = STYLES.map(s => s[1]);
 if (window.ORB.pendingStyle) setStyle(window.ORB.pendingStyle, true);

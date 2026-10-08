@@ -125,6 +125,8 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:16px}
 .toast.show{display:block;animation:pop .2s}
 @media (max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:auto;overflow:auto}body{overflow:auto}.stage{min-height:420px}}
 </style>
+<script src="/themes.js"></script>
+<script>addEventListener("DOMContentLoaded",()=>ULTRON_THEME.init("study"))</script>
 </head>
 <body>
 <div class="app">
@@ -132,6 +134,7 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:16px}
     <div class="brand">Study Mode<small>ULTRON · YOUR AI TUTOR</small></div>
     <div class="hello" id="hello"></div>
     <div class="pills" id="pills"></div>
+    <button class="hbtn" onclick="ULTRON_THEME.openGallery()">🎨 Theme</button>
     <button class="hbtn" id="planBtn">🗓 Study plan</button>
     <button class="hbtn" onclick="location.href='/'">⌂ Command center</button>
   </header>
@@ -284,6 +287,7 @@ function onEvent(e) {
     case "canvas": show(e); if (/^Class:/.test(e.title || "")) { $("live").classList.add("on"); $("stopBtn").style.display = ""; } load(); break;
     case "canvas_chunk": if (e.lang === "md" && e.text) { $("welcome").style.display = "none"; $("slide").style.display = "none"; $("doc").style.display = "block"; $("doc").innerHTML = md(e.text); } break;
     case "study_update": load(); break;
+    case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "tool": if (e.result && /quiz|study|teach|class/.test(e.name || "")) load(); if (e.name === "stop_class" && e.result) { $("live").classList.remove("on"); $("stopBtn").style.display = "none"; } break;
   }
 }

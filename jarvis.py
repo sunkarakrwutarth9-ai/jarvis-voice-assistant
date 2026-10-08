@@ -1028,6 +1028,14 @@ def run_gui(args):
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
             return
+        if action == "ui_theme" and isinstance(data.get("id"), str):
+            tid = data["id"][:40]
+            tools._save_state("ui_theme", tid)
+            hub.publish({"type": "ui_theme", "id": tid})
+            light = tid.startswith("apple-") and int(tid.split("-")[1]) > 10
+            bridge.appearance.emit("light" if light else "dark")
+            bridge.theme.emit("ironman" if tid.startswith("ironman-") else "ios")
+            return
         if action == "study":
             op = data.get("op")
             if op == "grade":
@@ -1200,6 +1208,7 @@ def run_gui(args):
         return "OK: Study Mode is open."
 
     tools.open_study_hook = open_study
+    tools.ui_theme_hook = lambda tid: dashboard_action("ui_theme", {"id": tid})
     hub.study = lambda: dict(tools.tutor.overview(), exams=tools._state("exams", []),
                              class_running=bool(tools.classroom._class.get("run")))
     import chats
@@ -1208,6 +1217,7 @@ def run_gui(args):
     hub.history.extend(chats.recent(40))              # yesterday's / earlier chat shows up after a restart
     brain.history.extend(chats.brain_turns(8))         # and Ultron remembers the last few exchanges
     hub.publish({"type": "orb_style", "name": tools._state("orb_style", "ultron")})   # every dashboard opens in it
+    hub.publish({"type": "ui_theme", "id": tools._state("ui_theme", "ironman-13")})
 
     # ---- background services: notes audio, day timeline, proactive care, phone remote
     tools.notes_mod.system_audio = system_audio
