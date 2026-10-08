@@ -98,6 +98,31 @@ QUICK_OPEN = [
 ]
 
 
+# Whisper "hears" words in background noise, videos and music ("I love you", "Yay!", Spanish, Korean...).
+# Ultron must not answer those while the user is working.
+FOREIGN = re.compile(r"[\u0B80-\u0BFF\u0D00-\u0D7F\u0C80-\u0CFF\uAC00-\uD7AF\u3040-\u30FF\u4E00-\u9FFF\u0600-\u06FF\u0400-\u04FF"
+                     r"\u0E00-\u0E7F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F¿¡ãõçñßøåäöüœ]", re.I)
+SPANISH_ETC = re.compile(r"\b(que|qué|como|cómo|porque|para|pero|muy|gracias|hola|estoy|eu|não|sim|obrigad[oa]|você|"
+                         r"merci|oui|bonjour|danke|ja|nein|bitte|ciao|grazie|arigato)\b", re.I)
+ASKING = re.compile(r"\b(open|close|play|pause|stop|resume|search|google|find|show|tell|what|what's|whats|who|how|why|when|"
+                    r"where|which|set|turn|switch|call|send|write|make|create|remind|add|delete|explain|teach|read|"
+                    r"type|volume|next|previous|skip|can you|could you|please|ultron|jarvis)\b", re.I)
+
+
+def drop_noise(heard, explicit):
+    """Removes what is probably not the user talking to Ultron. Returns the cleaned dict (maybe empty)."""
+    out = dict(heard)
+    w = out.get("whisper", "")
+    if w and (FOREIGN.search(w) or SPANISH_ETC.search(w)):
+        out.pop("whisper")                              # not English / Telugu / Hindi: a video or noise
+    if set(out) == {"whisper"} and not explicit:
+        # Follow-up listening, and only Whisper heard anything (Google heard nothing): only keep a clear request.
+        t = out["whisper"]
+        if len(t.split()) < 3 or not ASKING.search(" ".join(t.split()[:4])):   # a request starts like one
+            return {}
+    return out
+
+
 def quick_open(text):
     if len(text.split()) > 12:
         return None
@@ -111,7 +136,7 @@ def is_ultron_off(text):
         return False
     rest = OFF_FILLER.sub(" ", ULTRON_OFF.sub(" ", text))
     return len(rest.split()) == 0
-ACTIVE_IDLE_LIMIT = 10 * 60        # conversation mode ends by itself after 10 minutes of silence
+ACTIVE_IDLE_LIMIT = 2 * 60         # conversation mode ends quietly after 2 minutes without a real request
 
 log = logging.getLogger("jarvis")
 
@@ -349,7 +374,7 @@ class Assistant(threading.Thread):
         """In conversation mode: listen for the next request without needing the wake word."""
         if self.active and time.monotonic() - self.last_heard > ACTIVE_IDLE_LIMIT:
             self.deactivate()
-            self._speak_standalone("I'll stand by, Sir. Say OK Ultron when you need me.", "speaking")
+            self.speaker.chime(False)                # quietly, no announcement
             return False
         if not self.active:
             return False
@@ -469,6 +494,11 @@ class Assistant(threading.Thread):
             return
         heard = {lang: WAKE_PREFIX.sub("", t).strip() for lang, t in heard.items()}
         heard = {lang: t for lang, t in heard.items() if t}
+        if not typed and heard:
+            kept = drop_noise(heard, self.explicit_wake)
+            if kept != heard:
+                log.info("ignored as background noise: %r", {k: v for k, v in heard.items() if kept.get(k) != v})
+            heard = kept
         said = " ".join(heard.values())
         if "audio-only" not in heard and any(is_ultron_off(t) for t in heard.values()):
             m = SNOOZE.search(said)
@@ -500,7 +530,7 @@ class Assistant(threading.Thread):
         if not heard and explicit and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.2:
             # The recognisers caught nothing, but the user did call Jarvis: let Gemini listen to the audio.
             heard = {"audio-only": "(the recognisers could not make it out - listen to the recording)"}
-        elif not heard and self.active and self.brain.accepts_audio and len(audio) > 16000 * 2 * 1.5:
+        elif False and not heard and self.active:      # was: guess at unclear noise in conversation mode (too disturbing)
             # Conversation mode: a long recording the recognisers missed (accent, mixed language, quiet mic)
             # may still be a request - let Gemini listen, but stay silent if it's only noise.
             heard = {"audio-only": "(the recognisers could not make it out - listen to the recording. If it is not "
