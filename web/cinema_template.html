@@ -522,6 +522,7 @@ function onEvent(e) {
     case "power": powerEvent(e); break;
     case "power_state": setUltron(e.on, e.minutes, e.full); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
+    case "open_themes": ULTRON_THEME.openGallery(); break;
     case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
     case "notes": MODES.notes = e.on ? "🎙 NOTES" : ""; showModes(); break;
@@ -811,8 +812,7 @@ function setUltron(on, minutes, full) {
 }
 $("pwrBtn").onclick = () => {
   if (ULTRON_DOWN) { alert("Ultron is shut down. Start it again from the Ultron icon on your Desktop."); return; }
-  if (ULTRON_ON && !confirm("Shut Ultron down completely?
-All conversations are saved. Start it again from the Desktop icon.")) return;
+  if (ULTRON_ON && !confirm("Shut Ultron down completely? All conversations are saved. Start it again from the Desktop icon.")) return;
   post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
 };
 $("pwrX").onclick = () => $("pwr").classList.remove("show");

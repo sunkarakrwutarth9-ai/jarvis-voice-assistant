@@ -86,6 +86,24 @@ OFF_FILLER = re.compile(r"\b(yourself|ultron|jarvis|atomo|hey|ok|okay|please|now
                         r"minutes?|mins?|\d+|you|can|could|go|and|everything|all|assistant|bro)\b|[.,!?]", re.I)
 
 
+# "open the command center" / "study mode" / "show themes" - instant, no AI round trip (and no "sorry Sir").
+QUICK_OPEN = [
+    (re.compile(r"\b(open|show|launch|start|bring( up)?|go to)\b.{0,25}\b(command|comment|commend)\s*(cent(er|re)|centre|system)"
+                r"|\b(open|show)\b.{0,15}\b(dashboard|hud|your (interface|screen))\b"
+                r"|కమాం?డ్ సెంటర్|कमांड सेंटर", re.I), "show_dashboard", "Opening the command center, Sir."),
+    (re.compile(r"\b(open|start|launch|go to)\b.{0,15}\bstudy (mode|room|space)\b|^study mode$", re.I),
+     "study_mode", "Opening Study Mode, Sir."),
+    (re.compile(r"\b(open|show)\b.{0,15}\b(theme|themes|ui) (gallery|list)|\bshow (me )?(all )?(the )?themes\b", re.I),
+     "show_themes", "Here are all 200 themes, Sir."),
+]
+
+
+def quick_open(text):
+    if len(text.split()) > 12:
+        return None
+    return next(((tool, say) for rx, tool, say in QUICK_OPEN if rx.search(text)), None)
+
+
 def is_ultron_off(text):
     """True only when the whole request is about switching Ultron off ('shut down', 'go to sleep for 10 min'),
     not about switching something else off ('turn off the lights', 'shut down my PC')."""
@@ -457,6 +475,23 @@ class Assistant(threading.Thread):
             log.info("YOU: %s -> Ultron off", heard)
             self._pub({"type": "user", "text": next(iter(heard.values())), "heard": heard})
             self.power(False, float(m.group(1)) if m else 0)
+            return
+        quick = None if "audio-only" in heard else next(filter(None, (quick_open(t) for t in heard.values())), None)
+        if quick and not self.interp:
+            import tools
+            log.info("YOU: %s -> %s", heard, quick[0])
+            self._pub({"type": "user", "text": heard.get("whisper") or next(iter(heard.values())), "heard": heard})
+            try:
+                if quick[0] == "show_themes":
+                    tools.show_dashboard()
+                    self._pub({"type": "open_themes"})
+                else:
+                    getattr(tools, quick[0])()
+            except Exception:
+                log.exception("quick open failed")
+            self._pub({"type": "reply", "text": quick[1], "model": "instant"})
+            self.speaker.say(quick[1])
+            self.bridge.state.emit("idle", "", "", "")
             return
         if self.interp and not typed:
             self._interpret(heard, audio, cancelled)

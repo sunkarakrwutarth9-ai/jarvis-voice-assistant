@@ -1,4 +1,4 @@
-"""The LLM side of Jarvis: streaming chat with tool calls via OpenRouter."""
+﻿"""The LLM side of Jarvis: streaming chat with tool calls via OpenRouter."""
 
 import datetime
 import json
@@ -467,11 +467,12 @@ class Brain:
     LEAN_TOOLS = {"open_app", "close_app", "open_website", "web_search", "youtube_play", "youtube_control", "media_key",
                   "set_volume", "get_weather", "world_time", "set_reminder", "schedule_task", "list_add", "list_show",
                   "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
-                  "ultron_power", "take_screenshot", "lock_pc"}
+                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme",
+                  "focus_mode", "open_screen", "set_theme", "orb_style", "news", "power_off", "sleep_pc"}
     LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "
                    "'Jarvis' - your name is still Ultron). Address the user as Sir. Answer in 1-2 short spoken sentences, "
                    "no markdown. Use a tool whenever the user asks you to DO something; never claim you did something "
-                   "without calling the tool. Never invent facts, times or numbers. Reply in the language of the user's "
+                   "without calling the tool. The command center / dashboard / HUD is YOUR OWN screen: open it with show_dashboard. Never say you lack a tool - if nothing fits, say 'Let me think about that, Sir' instead. Never invent facts, times or numbers. Reply in the language of the user's "
                    "latest message (English, Telugu or Hindi, native script) and begin every reply with a hidden tag "
                    "[[en]], [[te]] or [[hi]].")
 
