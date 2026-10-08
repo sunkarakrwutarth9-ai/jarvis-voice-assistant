@@ -77,13 +77,21 @@ DEACTIVATE = re.compile(r"\b(de-?activate|deactivated|go to sleep|sleep mode|sto
 UNHEARD = re.compile(r"(did ?n.?t|did not|could ?n.?t|could not|unable to|can.?t) (quite )?(catch|hear|make out|understand)"
                      r"|\b(repeat that|speak again|say (that|it) again|no (clear )?speech)", re.I)
 # "Shut down", "Ultron off", "go to sleep", "stop everything" -> turn ULTRON off (not the PC).
-ULTRON_OFF = re.compile(r"\b(shut ?down|turn (yourself )?off|switch off|power off|go to sleep|sleep mode|stop everything|"
-                        r"go offline|ultron off|off ultron|stop talking|be quiet|keep quiet|silent mode|don'?t disturb)\b"
+ULTRON_OFF = re.compile(r"\b(shut ?(yourself )?down|turn (yourself )?off|switch (yourself )?off|power off|go to sleep|sleep mode|"
+                        r"stop everything|go offline|ultron off|off ultron|stop talking|be quiet|keep quiet|silent mode|"
+                        r"stop listening|do ?n[o']?t disturb|disturbing me|leave me alone|go away)\b"
                         r"|ఆపేయ్|ఆపు|పడుకో|నిద్రపో|మాట్లాడకు|बंद (हो|करो) ?जाओ?|सो जाओ|चुप", re.I)
 PC_WORDS = re.compile(r"\b(pc|computer|laptop|windows|machine|desktop)\b|కంప్యూటర్|ల్యాప్‌?టాప్|कंप्यूटर|लैपटॉप", re.I)
 SNOOZE = re.compile(r"(\d+)\s*(min|minute|నిమిష|मिनट)", re.I)
+SNOOZE_HOURS = re.compile(r"(\d+|an|one)\s*(hour|hr|గంట|घंट)", re.I)
+# Something else being switched off ("turn off the lights", "close YouTube") - not Ultron.
+OTHER_THING = re.compile(r"\b(light|lights|fan|tv|ac|wifi|wi-fi|bluetooth|music|song|video|youtube|chrome|tab|window|app|"
+                         r"screen|monitor|timer|alarm|reminder|notification|notifications|focus|class|camera|mic|volume|"
+                         r"sound|speaker|plug|bulb|geyser|heater|router|phone|mobile|data)s?\b", re.I)
 OFF_FILLER = re.compile(r"\b(yourself|ultron|jarvis|atomo|hey|ok|okay|please|now|right|just|sir|the|system|for|a|few|"
-                        r"minutes?|mins?|\d+|you|can|could|go|and|everything|all|assistant|bro)\b|[.,!?]", re.I)
+                        r"minutes?|mins?|hours?|an|one|\d+|u|you|can|could|go|and|everything|all|assistant|bro|do|not|don'?t|disturb|"
+                        r"disturbing|me|i|i'?m|am|working|busy|studying|teaching|reading|while|completely|fully|totally|"
+                        r"down|off|yourself|let|my|work|alone|quiet|now|till|until|later)\b|[.,!?]", re.I)
 
 
 # "open the command center" / "study mode" / "show themes" - instant, no AI round trip (and no "sorry Sir").
@@ -132,10 +140,44 @@ def quick_open(text):
 def is_ultron_off(text):
     """True only when the whole request is about switching Ultron off ('shut down', 'go to sleep for 10 min'),
     not about switching something else off ('turn off the lights', 'shut down my PC')."""
-    if not ULTRON_OFF.search(text) or PC_WORDS.search(text):
+    if not ULTRON_OFF.search(text) or PC_WORDS.search(text) or OTHER_THING.search(text):
         return False
     rest = OFF_FILLER.sub(" ", ULTRON_OFF.sub(" ", text))
-    return len(rest.split()) == 0
+    return len(rest.split()) <= 5          # "turn off for 16 minutes, I'm working" - a few extra words are fine
+
+
+def close_ultron_windows():
+    """Full shutdown: close Ultron's own app windows (command center, Study Mode, Ultron Screen).
+    Only bare 'U.L.T.R.O.N. ...' app windows - never a normal Chrome window, which may hold the user's other tabs."""
+    import ctypes
+    user32 = ctypes.windll.user32
+    found = []
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    def each(hwnd, _):
+        n = user32.GetWindowTextLengthW(hwnd)
+        if n:
+            buf = ctypes.create_unicode_buffer(n + 1)
+            user32.GetWindowTextW(hwnd, buf, n + 1)
+            title = buf.value
+            if title.startswith("U.L.T.R.O.N.") and not title.endswith(("Google Chrome", "Microsoft Edge", "Brave")):
+                found.append(hwnd)
+        return True
+
+    user32.EnumWindows(each, 0)
+    for hwnd in found:
+        user32.PostMessageW(hwnd, 0x0010, 0, 0)       # WM_CLOSE
+    return len(found)
+
+
+def snooze_minutes(text):
+    m = SNOOZE.search(text)
+    if m:
+        return float(m.group(1))
+    h = SNOOZE_HOURS.search(text)
+    if h:
+        return 60.0 * (1 if h.group(1).lower() in ("an", "one") else float(h.group(1)))
+    return 0
 ACTIVE_IDLE_LIMIT = 2 * 60         # conversation mode ends quietly after 2 minutes without a real request
 
 log = logging.getLogger("jarvis")
@@ -309,7 +351,15 @@ class Assistant(threading.Thread):
                     tools.save_chats_now()
                 except Exception:
                     pass
-                threading.Timer(3.0 if announce else 0.5, self.shutdown_cb).start()
+
+                def _gone():
+                    try:
+                        log.info("closed %d Ultron window(s)", close_ultron_windows())
+                    except Exception:
+                        log.exception("closing windows failed")
+                    self.shutdown_cb()
+
+                threading.Timer(3.0 if announce else 0.5, _gone).start()
             return
         was_off, self.off = self.off, False
         self._pub({"type": "power_state", "on": True})
@@ -501,10 +551,9 @@ class Assistant(threading.Thread):
             heard = kept
         said = " ".join(heard.values())
         if "audio-only" not in heard and any(is_ultron_off(t) for t in heard.values()):
-            m = SNOOZE.search(said)
             log.info("YOU: %s -> Ultron off", heard)
             self._pub({"type": "user", "text": next(iter(heard.values())), "heard": heard})
-            self.power(False, float(m.group(1)) if m else 0)
+            self.power(False, snooze_minutes(said))
             return
         quick = None if "audio-only" in heard else next(filter(None, (quick_open(t) for t in heard.values())), None)
         if quick and not self.interp:

@@ -83,6 +83,7 @@ function onEvent(e) {
     case "canvas_output": canvasOutput(e); break;
     case "canvas_cmd": canvasCmd(e.action); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
+    case "power_state": if (e.full) setTimeout(() => { try { window.close(); } catch (x) {} }, 2500); break;
     case "canvas_error": $("cStatus").textContent = "⚠ " + e.text; break;
     case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
   }

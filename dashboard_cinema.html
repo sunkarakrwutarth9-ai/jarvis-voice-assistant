@@ -1040,14 +1040,14 @@ fetch("/api/keys").then(r => r.json()).then(k => renderKeys(k)).catch(() => {});
 // =================== POWER ===================
 let ULTRON_ON = true, ULTRON_DOWN = false;
 function setUltron(on, minutes, full) {
-  ULTRON_ON = on; ULTRON_DOWN = !!full; document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
+  ULTRON_ON = on; ULTRON_DOWN = !!full;
+  if (full) setTimeout(() => { try { window.close(); } catch (e) {} }, 2500);   // everything gone document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
   $("pwrBtn").title = on ? "Switch Ultron off" : "Switch Ultron on";
   $("offSub").textContent = minutes ? `Back in ${minutes} min · or press ⏻`
     : full ? "Shut down · chats saved · start me again from the Ultron icon on your Desktop" : "Completely off · press ⏻ to switch me on";
 }
 $("pwrBtn").onclick = () => {
   if (ULTRON_DOWN) { alert("Ultron is shut down. Start it again from the Ultron icon on your Desktop."); return; }
-  if (ULTRON_ON && !confirm("Shut Ultron down completely? All conversations are saved. Start it again from the Desktop icon.")) return;
   post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
 };
 $("pwrX").onclick = () => $("pwr").classList.remove("show");

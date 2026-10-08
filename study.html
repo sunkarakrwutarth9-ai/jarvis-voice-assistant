@@ -288,6 +288,7 @@ function onEvent(e) {
     case "canvas_chunk": if (e.lang === "md" && e.text) { $("welcome").style.display = "none"; $("slide").style.display = "none"; $("doc").style.display = "block"; $("doc").innerHTML = md(e.text); } break;
     case "study_update": load(); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
+    case "power_state": if (e.full) setTimeout(() => { try { window.close(); } catch (x) {} }, 2500); break;
     case "tool": if (e.result && /quiz|study|teach|class/.test(e.name || "")) load(); if (e.name === "stop_class" && e.result) { $("live").classList.remove("on"); $("stopBtn").style.display = "none"; } break;
   }
 }
