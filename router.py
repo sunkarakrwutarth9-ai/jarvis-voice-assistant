@@ -12,7 +12,7 @@ CORE = {"open_app", "close_app", "open_website", "web_search", "web_lookup", "yo
         "media_key", "set_volume", "current_time", "world_time", "get_weather", "system_status", "create",
         "canvas_control", "save_creation", "revise_creation", "remember", "remember_note", "recall", "set_reminder",
         "schedule_task", "show_dashboard", "type_text", "press_keys", "take_screenshot", "read_screen", "deep_think",
-        "calculate", "set_timer", "open_browser", "find_files", "open_file", "do_task", "look", "watch"}
+        "calculate", "set_timer", "ultron_power", "open_browser", "find_files", "open_file", "do_task", "look", "watch"}
 
 GROUPS = [
     (r"mail|inbox|gmail|draft|e-?mail|ఈమెయిల్|मेल", {"email_triage", "email_search", "email_draft", "connect_gmail"}),

@@ -579,6 +579,15 @@ def power_off(action: str, seconds: int = 10) -> str:
 
 
 save_chats_now = lambda: None      # set by jarvis.py
+ultron_power_hook = None
+
+
+def ultron_power(on: bool = False, minutes: float = 0) -> str:
+    """Switch Ultron itself off (silent, stops class/interpreter/talking) or on; the PC stays on."""
+    if ultron_power_hook is None:
+        return "FAILED: not available."
+    threading.Timer(0.3, lambda: ultron_power_hook(bool(on), float(minutes or 0))).start()
+    return "OK: done. Reply with NOTHING (no words)."
 
 
 # --------------------------------------------------------------------------- #
@@ -1419,6 +1428,8 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("ultron_power", "Switch ULTRON ITSELF off (on=false: stops talking, the class, interpreter, copilot; silent until woken with the wake word) or on. Use for 'shut down', 'turn off', 'go to sleep', 'be quiet', 'stop everything' - anything that does NOT clearly name the computer/PC/laptop. minutes = snooze length (auto-wakes).",
+        {"on": {"type": "boolean"}, "minutes": {"type": "number"}}, ["on"]),
     _fn("interview", "Get-to-know-you interview: Ultron asks about the user's life, work, routine, people, goals and preferences one question at a time and saves the answers to memory. action 'start' (also resumes), 'answer' (pass the user's reply in answer), 'skip', 'stop', 'restart'.",
         {"action": {"type": "string", "enum": ["start", "answer", "skip", "stop", "restart"]}, "answer": {"type": "string"}}, ["action"]),
     _fn("save_skill", "Teach Ultron a reusable skill - how to do a task the user's way (e.g. 'Instagram caption style', 'customer reply', 'weekly review'). instructions = clear numbered steps; when = trigger words.",
@@ -1617,7 +1628,7 @@ TOOLS = [
     _fn("show_desktop", "Minimise all windows / show the desktop (toggles)."),
     _fn("lock_pc", "Lock the PC immediately."),
     _fn("sleep_pc", "Put the PC to sleep."),
-    _fn("power_off", "Shut down or restart the PC (after a short countdown, default 10 s), or cancel a pending one. When the user clearly asks to shut down / restart, do it right away - do NOT ask 'are you sure'.",
+    _fn("power_off", "Shut down or restart the COMPUTER - ONLY when the user explicitly says computer / PC / laptop / Windows (e.g. 'shut down my PC'). Plain 'shut down' means switch Ultron off (ultron_power). Short countdown (default 10 s), no 'are you sure'.",
         {"action": {"type": "string", "enum": ["shutdown", "restart", "cancel"]}, "seconds": {"type": "integer"}}, ["action"]),
 ]
 
@@ -1666,7 +1677,7 @@ FUNCS = {
     "connect_gmail": gmail.connect_gmail, "email_triage": gmail.email_triage, "email_search": gmail.email_search,
     "email_draft": gmail.email_draft, "publish_website": webpublish.publish_website,
     "show_memory_graph": show_memory_graph, "watch": videovision.watch,
-    "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
+    "ultron_power": ultron_power, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
     "tasks_list": gworkspace.tasks_list, "task_add": gworkspace.task_add,

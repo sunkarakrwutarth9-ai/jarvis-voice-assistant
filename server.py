@@ -102,6 +102,8 @@ class Hub:
             self.snapshot["ranking"] = event["models"]
         elif kind == "theme":
             self.snapshot["appearance"] = event.get("appearance", "light")
+        elif kind == "power_state":
+            self.snapshot["ultron_on"] = bool(event.get("on"))
         elif kind == "orb_style":
             self.snapshot["orb_style"] = event.get("name", "")
         elif kind == "focus":
@@ -240,7 +242,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:4000])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/clipboard":

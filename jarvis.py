@@ -76,6 +76,23 @@ DEACTIVATE = re.compile(r"\b(de-?activate|deactivated|go to sleep|sleep mode|sto
 # Replies meaning "I couldn't make that out" - in conversation mode they're dropped silently (it was noise).
 UNHEARD = re.compile(r"(did ?n.?t|did not|could ?n.?t|could not|unable to|can.?t) (quite )?(catch|hear|make out|understand)"
                      r"|\b(repeat that|speak again|say (that|it) again|no (clear )?speech)", re.I)
+# "Shut down", "Ultron off", "go to sleep", "stop everything" -> turn ULTRON off (not the PC).
+ULTRON_OFF = re.compile(r"\b(shut ?down|turn (yourself )?off|switch off|power off|go to sleep|sleep mode|stop everything|"
+                        r"go offline|ultron off|off ultron|stop talking|be quiet|keep quiet|silent mode|don'?t disturb)\b"
+                        r"|ఆపేయ్|ఆపు|పడుకో|నిద్రపో|మాట్లాడకు|बंद (हो|करो) ?जाओ?|सो जाओ|चुप", re.I)
+PC_WORDS = re.compile(r"\b(pc|computer|laptop|windows|machine|desktop)\b|కంప్యూటర్|ల్యాప్‌?టాప్|कंप्यूटर|लैपटॉप", re.I)
+SNOOZE = re.compile(r"(\d+)\s*(min|minute|నిమిష|मिनट)", re.I)
+OFF_FILLER = re.compile(r"\b(yourself|ultron|jarvis|atomo|hey|ok|okay|please|now|right|just|sir|the|system|for|a|few|"
+                        r"minutes?|mins?|\d+|you|can|could|go|and|everything|all|assistant|bro)\b|[.,!?]", re.I)
+
+
+def is_ultron_off(text):
+    """True only when the whole request is about switching Ultron off ('shut down', 'go to sleep for 10 min'),
+    not about switching something else off ('turn off the lights', 'shut down my PC')."""
+    if not ULTRON_OFF.search(text) or PC_WORDS.search(text):
+        return False
+    rest = OFF_FILLER.sub(" ", ULTRON_OFF.sub(" ", text))
+    return len(rest.split()) == 0
 ACTIVE_IDLE_LIMIT = 10 * 60        # conversation mode ends by itself after 10 minutes of silence
 
 log = logging.getLogger("jarvis")
@@ -202,13 +219,57 @@ class Assistant(threading.Thread):
         self.hub = None                  # dashboard event hub (server.Hub), if running
         self.active = False              # conversation mode: keep listening after every reply until "deactivate"
         self.interp = None               # interpreter mode: (language A, language B)
+        self.off = False                 # Ultron switched off: silent, not listening for commands
+        self._off_timer = None
+        self._missed = []                # alerts that arrived while off
         self.awaiting_answer = False     # Jarvis's last reply was a question
         self.last_heard = 0.0            # when the user last said something in conversation mode
         self.pending_pick = None         # callback(value) -> result string, for a clicked option
 
     # ---------------------------------------------- called from other threads
+    def power(self, on: bool, minutes: float = 0, announce: bool = True):
+        """Switch ULTRON itself on/off (the PC is untouched)."""
+        import tools
+        if self._off_timer:
+            self._off_timer.cancel()
+            self._off_timer = None
+        if not on:
+            self.off = True
+            self.turn += 1
+            tools.cancel_task.set()
+            self.speaker.stop()
+            for stop in (lambda: tools.classroom.stop_class(), lambda: self.set_interpreter(None, None),
+                         lambda: tools.copilot.screen_copilot(False)):
+                try:
+                    stop()
+                except Exception:
+                    pass
+            self.deactivate()
+            if self.listener is not None:
+                self.listener.set_idle()
+            if minutes:
+                self._off_timer = threading.Timer(minutes * 60, lambda: self.power(True))
+                self._off_timer.daemon = True
+                self._off_timer.start()
+            self._pub({"type": "power_state", "on": False, "minutes": minutes})
+            log.info("ULTRON OFF%s", f" for {minutes:g} min" if minutes else "")
+            if announce:
+                self.speaker.say(f"Going offline for {minutes:g} minutes, Sir." if minutes else "Going offline, Sir.")
+            self.bridge.state.emit("idle", "", "", "")
+            return
+        was_off, self.off = self.off, False
+        self._pub({"type": "power_state", "on": True})
+        log.info("ULTRON ON")
+        if was_off and announce:
+            missed, self._missed = self._missed, []
+            msg = "Ultron online, Sir." + (f" While I was off: {' '.join(missed[-3:])}" if missed else "")
+            self.events.put(("say", msg, None))
+
     def on_wake(self):
         """Wake word heard (listener thread) - interrupt whatever is happening."""
+        if self.off:
+            self.power(True, announce=False)            # "Hey Jarvis" wakes Ultron back up
+            self._pub({"type": "power_state", "on": True})
         self.turn += 1
         self.explicit_wake = True
         self.activate()
@@ -310,6 +371,9 @@ class Assistant(threading.Thread):
                     return
                 if kind == "say":
                     self._speak_standalone(payload, "speaking")
+                elif kind == "notify" and self.off:
+                    self._missed.append(payload)          # switched off: don't speak, tell them later
+                    self._pub({"type": "reply", "text": "🔕 " + payload, "model": "while off", "secs": 0})
                 elif kind == "notify":
                     self.turn += 1
                     self.speaker.chime(True)
@@ -368,6 +432,13 @@ class Assistant(threading.Thread):
             return
         heard = {lang: WAKE_PREFIX.sub("", t).strip() for lang, t in heard.items()}
         heard = {lang: t for lang, t in heard.items() if t}
+        said = " ".join(heard.values())
+        if "audio-only" not in heard and any(is_ultron_off(t) for t in heard.values()):
+            m = SNOOZE.search(said)
+            log.info("YOU: %s -> Ultron off", heard)
+            self._pub({"type": "user", "text": next(iter(heard.values())), "heard": heard})
+            self.power(False, float(m.group(1)) if m else 0)
+            return
         if self.interp and not typed:
             self._interpret(heard, audio, cancelled)
             return
@@ -524,6 +595,8 @@ class Assistant(threading.Thread):
 
     def on_text(self, text):
         """A command typed on the dashboard (server thread)."""
+        if self.off:
+            self.power(True, announce=False)
         self.turn += 1
         self.explicit_wake = True
         self.speaker.stop()
@@ -706,6 +779,7 @@ def run_gui(args):
     assistant = Assistant(brain, speaker, bridge)
     tools.notify = assistant.notify
     tools.set_interpreter = assistant.set_interpreter
+    tools.ultron_power_hook = assistant.power
     tools.everyday.notify = assistant.notify
 
     def ring_alarm():
@@ -931,6 +1005,9 @@ def run_gui(args):
             return
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
+            return
+        if action == "ultron_power":
+            assistant.power(bool(data.get("on")), float(data.get("minutes") or 0))
             return
         if action == "power":
             op = data.get("op")

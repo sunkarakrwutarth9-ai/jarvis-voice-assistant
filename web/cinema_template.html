@@ -181,6 +181,13 @@ body.amb .holo{display:none}
 .pwrbtn{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,77,90,.5);background:rgba(9,12,22,.82);color:#ff5a63;
   font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px rgba(255,77,90,.25)}
 .pwrbtn:hover{background:rgba(255,77,90,.15)}
+.pwrbtn.on{border-color:rgba(62,224,139,.6);color:#3ee08b;box-shadow:0 0 14px rgba(62,224,139,.3)}
+body.uoff .app>section.glass,body.uoff .radial,body.uoff #sats,body.uoff .holo{opacity:.18;filter:grayscale(1);transition:opacity .6s}
+body.uoff #gl{filter:grayscale(1) brightness(.45);transition:filter .8s}
+.offbanner{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;display:none;text-align:center;pointer-events:none}
+body.uoff .offbanner{display:block}
+.offbanner b{display:block;font:600 22px var(--hud);letter-spacing:10px;color:#ff5a63;text-shadow:0 0 20px rgba(255,77,90,.6)}
+.offbanner small{display:block;margin-top:10px;color:var(--sub);font-size:13px;letter-spacing:1px}
 .pwr{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:rgba(2,4,10,.65)}
 .pwr.show{display:flex}
 .pwrbox{width:min(440px,92vw);border-radius:22px;background:rgba(10,14,26,.97);border:1px solid rgba(255,77,90,.4);padding:22px;
@@ -297,7 +304,7 @@ body.amb .holo{display:none}
     <div class="brand">U.L.T.R.O.N<small>NEURAL COMMAND CORE</small></div>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span><span class="hchip" id="modeChip" hidden></span></div>
-    <button class="pwrbtn" id="pwrBtn" title="Power">⏻</button>
+    <button class="pwrbtn on" id="pwrBtn" title="Ultron on / off">⏻</button>
     <div class="clock"><span id="time">--:--</span><small id="date"></small></div>
   </header>
 
@@ -368,11 +375,12 @@ body.amb .holo{display:none}
 </div>
 
 <div id="sats"></div>
-<div class="pwr" id="pwr"><div class="pwrbox"><h3>⏻ POWER</h3><div class="pwrgrid">
+<div class="pwr" id="pwr"><div class="pwrbox"><h3>⏻ PC POWER</h3><div class="pwrgrid">
   <button data-p="shutdown"><b>⏻</b>Shut down</button><button data-p="restart"><b>↻</b>Restart</button>
   <button data-p="sleep"><b>☾</b>Sleep</button><button data-p="lock"><b>🔒</b>Lock</button>
   <button data-p="quit"><b>✕</b>Quit Ultron</button><button data-p="cancel"><b>⊘</b>Cancel shutdown</button>
   <button class="x" id="pwrX">Close</button></div></div></div>
+<div class="offbanner" id="offBanner"><b>ULTRON OFFLINE</b><small id="offSub">Press ⏻ or say “Hey Jarvis” to wake me</small></div>
 <div class="pwrcount" id="pwrCount"><span id="pwrTxt">Shutting down in 10 s</span><button id="pwrCancel">CANCEL</button></div>
 <div class="mgraph" id="mgraph"><div class="hd">🧠 MEMORY GRAPH<small id="mgInfo"></small></div><button class="x" id="mgX">✕ Close</button>
   <canvas id="mgCv"></canvas><div class="tip" id="mgTip"></div><div class="lg" id="mgLg"></div></div>
@@ -509,6 +517,7 @@ function onEvent(e) {
     case "weather": showWeather(e); break;
     case "focus": setFocus(e); break;
     case "power": powerEvent(e); break;
+    case "power_state": setUltron(e.on, e.minutes); break;
     case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
     case "notes": MODES.notes = e.on ? "🎙 NOTES" : ""; showModes(); break;
@@ -568,6 +577,7 @@ fetch("/api/state").then(r => r.json()).then(s => {
   onEvent({type: "me", on: s.me}); onEvent({type: "muted", on: s.muted}); models(s.ranking);
   if (s.gestures) setGestures(true);
   if (s.weather) showWeather(s.weather);
+  if (s.ultron_on === false) setUltron(false);
   if (s.orb_style) { if (window.ORB.setStyle) window.ORB.setStyle(s.orb_style, true); else window.ORB.pendingStyle = s.orb_style; }
   if (s.focus && s.focus.minutes && (s.focus.start + s.focus.minutes * 60) * 1000 > Date.now()) setFocus(s.focus);
   (s.history || []).forEach(e => { onEvent(e); try { logEvent(e); } catch (_) {} }); setState(s.state, s.title, s.body); });
@@ -658,6 +668,8 @@ const PAL = [
   ["♻️", "New conversation", "", () => $("newc").click()],
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
   ["🔒", "Lock the PC", "", () => ask("lock the PC")],
+  ["⏻", "PC power", "shut down · restart · sleep · lock", () => { closePal(); $("pwr").classList.add("show"); }],
+  ["⏼", "Switch Ultron off / on", "silent until woken", () => { closePal(); $("pwrBtn").click(); }],
 ];
 let palSel = 0, palItems = PAL;
 function fuzzy(q, t) { q = q.toLowerCase(); t = t.toLowerCase(); let i = 0; for (const ch of t) if (ch === q[i]) i++; return i === q.length; }
@@ -784,7 +796,13 @@ function mgLoop() {
 })();
 
 // =================== POWER ===================
-$("pwrBtn").onclick = () => $("pwr").classList.add("show");
+let ULTRON_ON = true;
+function setUltron(on, minutes) {
+  ULTRON_ON = on; document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
+  $("pwrBtn").title = on ? "Switch Ultron off" : "Switch Ultron on";
+  $("offSub").textContent = minutes ? `Back in ${minutes} min · press ⏻ or say “Hey Jarvis”` : "Press ⏻ or say “Hey Jarvis” to wake me";
+}
+$("pwrBtn").onclick = () => post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
 $("pwrX").onclick = () => $("pwr").classList.remove("show");
 $("pwr").onclick = e => { if (e.target === $("pwr")) $("pwr").classList.remove("show"); };
 document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => {
