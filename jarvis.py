@@ -1028,6 +1028,18 @@ def run_gui(args):
         if action == "canvas_run":
             threading.Thread(target=tools.run_creation, args=(data.get("id"),), daemon=True).start()
             return
+        if action == "study":
+            op = data.get("op")
+            if op == "grade":
+                tools.tutor.grade(str(data.get("deck", "")), int(data.get("idx", 0)), bool(data.get("ok")))
+            elif op == "exam_add" and data.get("name") and data.get("date"):
+                ex = [e for e in tools._state("exams", []) if e["name"] != data["name"]]
+                ex.append({"name": str(data["name"])[:60], "date": str(data["date"])[:10]})
+                tools._save_state("exams", sorted(ex, key=lambda e: e["date"]))
+            elif op == "exam_del":
+                tools._save_state("exams", [e for e in tools._state("exams", []) if e["name"] != data.get("name")])
+            hub.publish({"type": "study_update"})
+            return
         if action == "ultron_power":
             assistant.power(bool(data.get("on")), float(data.get("minutes") or 0))
             return
@@ -1175,6 +1187,21 @@ def run_gui(args):
             time.sleep(0.1)
 
     tools.ensure_screen = ensure_screen
+
+    # ---- Study Mode: its own window (http://localhost:7777/study)
+    def open_study():
+        exe = tools._chrome_exe()
+        url = f"http://localhost:{server.PORT}/study"
+        if exe:
+            subprocess.Popen([exe, f"--app={url}", "--start-maximized"], creationflags=subprocess.DETACHED_PROCESS)
+        else:
+            import webbrowser
+            webbrowser.open(url)
+        return "OK: Study Mode is open."
+
+    tools.open_study_hook = open_study
+    hub.study = lambda: dict(tools.tutor.overview(), exams=tools._state("exams", []),
+                             class_running=bool(tools.classroom._class.get("run")))
     import chats
     hub.on_event = chats.record                        # every conversation line is saved to chats/
     tools.save_chats_now = chats.flush

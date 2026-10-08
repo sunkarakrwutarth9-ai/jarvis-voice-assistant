@@ -20,7 +20,7 @@ GROUPS = [
     (r"\bac\b|air ?con|light|fan|plug|\btv\b|geyser|smart home|google home|cool(er)?|temperature|ఏసీ|लाइट|पंखा",
      {"smart_home", "connect_google_home"}),
     (r"stud|flash ?card|quiz|teach|class|lesson|exam|learn|tutor|revise|answer|నేర్|పరీక్ష|पढ़|सिखा",
-     {"study", "quiz", "teach", "stop_class"}),
+     {"study", "quiz", "teach", "stop_class", "study_mode"}),
     (r"note|lecture|meeting|transcri|record", {"take_notes"}),
     (r"list|shopping|to-?do|remind|alarm|routine|cancel|when i say|grocer|wake me|గుర్తు|याद", {
         "list_add", "list_remove", "list_show", "list_clear", "cancel_reminder", "list_reminders", "save_routine",

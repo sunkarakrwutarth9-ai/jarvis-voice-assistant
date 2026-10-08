@@ -863,6 +863,7 @@ const PAL = [
   ["♻️", "New conversation", "", () => $("newc").click()],
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
   ["🔒", "Lock the PC", "", () => ask("lock the PC")],
+  ["📚", "Study Mode", "classes · flashcards · focus", () => { closePal(); ask("open study mode"); }],
   ["⏻", "PC power", "shut down · restart · sleep · lock", () => { closePal(); $("pwr").classList.add("show"); }],
   ["⏼", "Switch Ultron off / on", "silent until woken", () => { closePal(); $("pwrBtn").click(); }],
 ];

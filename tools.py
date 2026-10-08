@@ -580,6 +580,12 @@ def power_off(action: str, seconds: int = 10) -> str:
 
 save_chats_now = lambda: None      # set by jarvis.py
 ultron_power_hook = None
+open_study_hook = None
+
+
+def study_mode() -> str:
+    """Open the Study Mode window."""
+    return open_study_hook() if open_study_hook else "FAILED: not available."
 
 
 def ultron_power(on: bool = False, minutes: float = 0) -> str:
@@ -1435,6 +1441,7 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("study_mode", "Open Study Mode - the dedicated study space (live classes, flashcards, quizzes, pomodoro with ambient sounds, exam countdowns, streak). 'study mode', 'I want to study', 'open study'."),
     _fn("architect_departments", "Design Ultron's command layer: an organisation of AI departments (e.g. Growth, Socials, Study, Finance, Tasks) that fits the user's life/business, each with mission, KPIs, skills and routines, shown as an org chart. 'architect my departments', 'build my AI company', 'set up departments for my business'. about = anything the user described.",
         {"about": {"type": "string"}, "count": {"type": "integer"}}),
     _fn("activate_departments", "Schedule the departments' routines (daily/weekly tasks). Only after the user agrees."),
@@ -1693,7 +1700,7 @@ FUNCS = {
     "show_memory_graph": show_memory_graph, "watch": videovision.watch,
     "architect_departments": departments.architect, "activate_departments": departments.activate_departments,
     "list_departments": departments.list_departments, "ask_department": departments.ask_department,
-    "ultron_power": ultron_power, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
+    "ultron_power": ultron_power, "study_mode": study_mode, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
     "tasks_list": gworkspace.tasks_list, "task_add": gworkspace.task_add,
@@ -1805,6 +1812,7 @@ def describe(name: str, args: dict):
         "find_files": lambda: f"Searching files: {a.get('query', '')}",
         "open_file": lambda: "Opening file",
         "publish_website": lambda: "Publishing to the web" if a.get("confirm") else "Preparing to publish",
+        "study_mode": lambda: "Opening Study Mode",
         "architect_departments": lambda: "Architecting departments", "activate_departments": lambda: "Activating departments",
         "list_departments": lambda: "Your departments", "ask_department": lambda: f"{a.get('department', '')} department working",
         "interview": lambda: "Interview" if a.get("action") != "answer" else "Noting your answer",

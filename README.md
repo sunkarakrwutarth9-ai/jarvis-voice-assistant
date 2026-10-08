@@ -72,6 +72,10 @@ reacting to your voice), system vitals, the conversation log and the **canvas**
 with a **Daily** panel (reminders and alarms with one-click cancel, shopping/to-do lists you can tick off or type into,
 routines with ▶ run buttons), live weather and next-alarm chips.
 
+**📚 Study Mode** — say "study mode" (or open <http://localhost:7777/study>): a separate study space with a live AI classroom (real-photo slides, explained aloud), flashcard decks with flip-card spaced repetition, voice quizzes, a doubt box, a pomodoro ring with built-in rain / ocean / fire / café sounds, exam countdowns, streaks and a one-click study plan.
+
+**⚡ Groq speed** — add a free Groq key (`GROQ_API_KEY` in `.env`): everyday commands answer in ~0.5–1.5 s and Whisper improves hearing.
+
 **The 9-step JARVIS recipe — all in one install**
 - **🎤 It interviews you** — "interview me": 15 questions about your life, work, routine, people and goals, all filed into memory
 - **🧩 Skills** — teach it how to do tasks *your* way ("learn this as a skill…"); starter skills: reel scripts, email replies, study plans, day planning

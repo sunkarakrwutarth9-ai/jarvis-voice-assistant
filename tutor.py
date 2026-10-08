@@ -118,6 +118,7 @@ def quiz(action: str = "next", answer: str = "", deck: str = "") -> str:
             card["box"] = 1
         card["due"] = time.time() + INTERVALS[card["box"]]
         _save(name, d)
+        _log_activity()
         feedback = ("Correct! " if ok else f"Not quite - the answer is: {card['a']}. ") + note + " "
     now = time.time()
     due = [i for i, c in enumerate(d["cards"]) if c["due"] <= now and i != _cur.get("card")]
@@ -130,3 +131,68 @@ def quiz(action: str = "next", answer: str = "", deck: str = "") -> str:
     _cur.update(deck=name, card=i)
     return (f"OK: {feedback}Next question (card {i + 1}/{len(d['cards'])}): {d['cards'][i]['q']} "
             f"(Say the feedback, then ask exactly this question and wait; pass the user's reply to quiz(action='answer').)")
+
+
+# ------------------------------------------------------------------ Study Mode page support
+LOG = DIR / "_log.json"
+
+
+def _log_activity(cards=1):
+    import datetime
+    DIR.mkdir(exist_ok=True)
+    try:
+        log_ = json.loads(LOG.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        log_ = {}
+    day = datetime.date.today().isoformat()
+    log_[day] = log_.get(day, 0) + cards
+    LOG.write_text(json.dumps(log_), encoding="utf-8")
+
+
+def overview():
+    """Decks with mastery + streak, for the Study Mode page."""
+    import datetime
+    decks = []
+    now = time.time()
+    for name in _decks():
+        if name.startswith("_"):
+            continue
+        try:
+            d = _load(name)
+        except (OSError, ValueError):
+            continue
+        cards = d.get("cards", [])
+        boxes = [c.get("box", 1) for c in cards]
+        decks.append({"id": name, "title": d.get("title", name), "cards": len(cards),
+                      "mastered": sum(b >= 4 for b in boxes), "learning": sum(1 < b < 4 for b in boxes),
+                      "new": sum(b == 1 for b in boxes), "due": sum(c.get("due", 0) <= now for c in cards)})
+    try:
+        log_ = json.loads(LOG.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        log_ = {}
+    streak, day = 0, datetime.date.today()
+    if not log_.get(day.isoformat()):
+        day -= datetime.timedelta(days=1)            # today not started yet: keep yesterday's streak
+    while log_.get(day.isoformat()):
+        streak += 1
+        day -= datetime.timedelta(days=1)
+    return {"decks": decks, "streak": streak, "today": log_.get(datetime.date.today().isoformat(), 0)}
+
+
+def deck_cards(name):
+    try:
+        d = _load(_slug(name) if not (DIR / f"{name}.json").exists() else name)
+    except (OSError, ValueError):
+        return {"title": name, "cards": []}
+    return {"title": d.get("title", name), "cards": [{"i": i, "q": c["q"], "a": c["a"], "box": c.get("box", 1)}
+                                                       for i, c in enumerate(d.get("cards", []))]}
+
+
+def grade(name, idx, ok):
+    d = _load(name)
+    c = d["cards"][int(idx)]
+    c["box"] = min(6, c.get("box", 1) + 1) if ok else 1
+    c["due"] = time.time() + INTERVALS[c["box"]]
+    _save(name, d)
+    _log_activity()
+    return c["box"]

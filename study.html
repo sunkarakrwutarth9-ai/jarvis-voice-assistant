@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>U.L.T.R.O.N. Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f1e;--ink:#eef1ff;--sub:#9aa3c7;--paper:rgba(255,252,243,.06);--line:rgba(255,236,190,.14);
+  --amber:#ffb84d;--rose:#ff6b8b;--mint:#4fe0b0;--sky:#7cc4ff;--violet:#a98bff;
+  --hand:"Caveat",cursive;--font:"Inter","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--font);overflow:hidden}
+/* the desk: lamp glow + paper grain */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 55% at 78% -5%,rgba(255,184,77,.28),transparent 60%),
+             radial-gradient(ellipse 50% 50% at 0% 110%,rgba(124,196,255,.14),transparent 60%),
+             radial-gradient(ellipse 40% 40% at 45% 60%,rgba(169,139,255,.08),transparent 70%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.07;
+  background-image:repeating-linear-gradient(0deg,transparent 0 27px,rgba(255,255,255,.5) 27px 28px)}
+.app{position:relative;z-index:1;height:100%;display:grid;grid-template-columns:300px 1fr 320px;grid-template-rows:auto 1fr 190px;gap:14px;padding:14px 18px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(8px);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+h2{font:700 26px var(--hand);color:var(--amber);letter-spacing:.5px;padding:14px 18px 4px;display:flex;align-items:center;gap:8px}
+h2 small{font:500 11px var(--font);color:var(--sub);margin-left:auto}
+/* header */
+header{grid-column:1/-1;display:flex;align-items:center;gap:16px}
+.brand{font:700 40px var(--hand);color:var(--amber);line-height:1;text-shadow:0 0 30px rgba(255,184,77,.35)}
+.brand small{display:block;font:600 10px var(--font);letter-spacing:6px;color:var(--sub);margin-top:2px}
+.hello{color:var(--sub);font-size:13px}.hello b{color:var(--ink)}
+.pills{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.pill{padding:8px 14px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-weight:600;font-size:13px;white-space:nowrap}
+.pill.fire{color:#ffcf7a}.pill.exam{border-color:rgba(255,107,139,.45)}.pill.exam b{color:var(--rose)}
+.hbtn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;font:600 13px var(--font)}
+.hbtn.hot{background:linear-gradient(135deg,#ff8a4d,#ffb84d);color:#2a1600;border:0}
+/* ask column */
+.ask{display:flex;flex-direction:column;min-height:0}
+.feed{flex:1;overflow-y:auto;padding:6px 14px;display:flex;flex-direction:column;gap:8px}
+.msg{padding:9px 12px;border-radius:14px;font-size:13px;max-width:92%;animation:pop .25s}
+.msg.u{align-self:flex-end;background:linear-gradient(135deg,#ff8a4d,#ffb84d);color:#2a1600;border-bottom-right-radius:4px}
+.msg.j{align-self:flex-start;background:rgba(255,255,255,.07);border:1px solid var(--line);border-bottom-left-radius:4px}
+.empty{color:var(--sub);text-align:center;margin:auto;font-size:13px;padding:20px}
+.askbar{display:flex;gap:8px;padding:12px}
+.askbar input,.field{flex:1;min-width:0;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:14px;color:var(--ink);padding:11px 13px;font:14px var(--font);outline:none}
+.askbar input:focus,.field:focus{border-color:var(--amber)}
+.round{width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;font-size:17px;flex:0 0 auto;background:linear-gradient(135deg,#ff8a4d,#ffb84d);color:#2a1600}
+.round.mic{background:radial-gradient(circle,#ff6b8b,#b3264a);color:#fff}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* classroom stage */
+.stage{position:relative;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.stagebody{position:relative;flex:1;margin:4px 14px 14px;border-radius:16px;overflow:hidden;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+.stagebody iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#04060e;display:none}
+.stagebody .doc{position:absolute;inset:0;overflow:auto;padding:24px 30px;display:none;background:#fffaf0;color:#2b2a33;font:15px/1.65 var(--font)}
+.doc h1{font:700 34px var(--hand);color:#b4521a;margin-bottom:8px}.doc h2{font:700 24px var(--hand);color:#2f4f8f;padding:0;margin:16px 0 6px}
+.doc h3{margin:12px 0 4px}.doc li{margin:3px 0 3px 20px}.doc p{margin:6px 0}.doc code{background:#f1e9d6;padding:1px 5px;border-radius:5px}
+.welcome{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px;text-align:center}
+.welcome .big{font:700 46px var(--hand);color:var(--ink)}
+.welcome .big span{color:var(--amber)}
+.learnbar{display:flex;gap:10px;width:min(620px,92%)}
+.learnbar .field{font-size:16px;padding:14px 18px;border-radius:18px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:680px}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer;font:600 12.5px var(--font)}
+.chip:hover{border-color:var(--amber);color:var(--amber)}
+.chip b{margin-right:5px}
+.stagebar{display:flex;align-items:center;gap:8px;padding:0 14px 0 4px}
+.stagebar .live{color:var(--rose);font-weight:700;font-size:12px;display:none}
+.stagebar .live.on{display:inline}
+.stagebar .x{margin-left:auto}
+/* focus column */
+.focus{display:flex;flex-direction:column;align-items:center;padding-bottom:12px}
+.ringwrap{position:relative;width:190px;height:190px;margin:6px 0 4px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringwrap .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ringwrap .t b{font:600 44px var(--font);letter-spacing:1px;font-variant-numeric:tabular-nums}
+.ringwrap .t small{color:var(--sub);font-size:12px;letter-spacing:3px;text-transform:uppercase}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 12px}
+.sound{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:calc(100% - 24px);margin-top:10px}
+.sound button{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);border-radius:12px;padding:8px 2px;cursor:pointer;font:600 11px var(--font)}
+.sound button b{display:block;font-size:18px}
+.sound button.on{border-color:var(--mint);background:rgba(79,224,176,.12);color:var(--mint)}
+.vol{width:calc(100% - 24px);margin-top:8px;accent-color:var(--amber)}
+.mins{color:var(--sub);font-size:12px;margin-top:8px}.mins b{color:var(--mint)}
+.exams{width:calc(100% - 24px);margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.exrow{display:flex;justify-content:space-between;align-items:center;padding:5px 2px;font-size:13px}
+.exrow b{color:var(--rose)}.exrow .del{border:0;background:none;color:var(--sub);cursor:pointer}
+.exadd{display:flex;gap:6px;margin-top:6px}.exadd .field{padding:7px 9px;font-size:12px;border-radius:10px}
+/* deck shelf */
+.shelf{grid-column:1/-1;display:flex;flex-direction:column;min-height:0}
+.decks{display:flex;gap:12px;overflow-x:auto;padding:4px 16px 14px;flex:1}
+.deck{flex:0 0 230px;border-radius:16px;padding:14px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+.deck::after{content:"";position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--c,#ffb84d);opacity:.13}
+.deck b{font-size:14px;line-height:1.3;max-height:2.6em;overflow:hidden}
+.deck small{color:var(--sub);font-size:12px}
+.bar{display:flex;height:7px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,.08)}
+.bar i{display:block}
+.deck .acts{display:flex;gap:6px;margin-top:auto}
+.deck .acts button{flex:1;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--ink);border-radius:10px;padding:7px 4px;cursor:pointer;font:600 11.5px var(--font)}
+.deck .acts button.go{background:linear-gradient(135deg,#ff8a4d,#ffb84d);color:#2a1600;border:0}
+.newdeck{flex:0 0 200px;border:2px dashed var(--line);border-radius:16px;display:flex;align-items:center;justify-content:center;text-align:center;
+  color:var(--sub);cursor:pointer;font:700 22px var(--hand);padding:14px}
+.newdeck:hover{color:var(--amber);border-color:var(--amber)}
+/* flashcard review */
+.rev{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(5,7,16,.88);backdrop-filter:blur(6px)}
+.rev.show{display:flex}
+.rev .top{display:flex;align-items:center;gap:14px;width:min(720px,90vw);color:var(--sub)}
+.rev .top b{color:var(--amber);font:700 26px var(--hand)}
+.rev .top .x{margin-left:auto}
+.flip{width:min(720px,90vw);height:min(380px,50vh);perspective:1400px;cursor:pointer}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+.flip.on .in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:26px;display:flex;align-items:center;justify-content:center;
+  padding:40px;text-align:center;font:600 26px/1.35 var(--font);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.face.q{background:linear-gradient(160deg,#fffaf0,#f5ead2);color:#2b2a33;background-image:repeating-linear-gradient(0deg,transparent 0 33px,rgba(47,79,143,.12) 33px 34px),linear-gradient(160deg,#fffaf0,#f5ead2)}
+.face.a{background:linear-gradient(160deg,#1d2a4a,#0f1830);color:#ffe2a8;transform:rotateY(180deg);border:1px solid rgba(255,184,77,.4)}
+.face small{position:absolute;top:16px;left:22px;font:700 13px var(--font);letter-spacing:3px;opacity:.5}
+.rev .btns{display:flex;gap:14px}
+.rev .btns button{border:0;border-radius:16px;padding:14px 26px;font:700 15px var(--font);cursor:pointer}
+.again{background:rgba(255,107,139,.18);color:#ff9bb0;border:1px solid rgba(255,107,139,.4)!important}
+.knew{background:linear-gradient(135deg,#2fbf8f,#4fe0b0);color:#032319}
+.hint{color:var(--sub);font-size:12px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;background:rgba(20,26,48,.95);border:1px solid var(--amber);
+  padding:10px 18px;border-radius:14px;font-weight:600;display:none}
+.toast.show{display:block;animation:pop .2s}
+@media (max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:auto;overflow:auto}body{overflow:auto}.stage{min-height:420px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">Study Mode<small>ULTRON · YOUR AI TUTOR</small></div>
+    <div class="hello" id="hello"></div>
+    <div class="pills" id="pills"></div>
+    <button class="hbtn" id="planBtn">🗓 Study plan</button>
+    <button class="hbtn" onclick="location.href='/'">⌂ Command center</button>
+  </header>
+
+  <section class="card ask">
+    <h2>✏️ Ask a doubt <small>type or 🎙</small></h2>
+    <div class="feed" id="feed"><div class="empty" id="empty">Stuck on something?<br>Ask me anything — I'll explain it simply.</div></div>
+    <div class="askbar"><input id="askIn" placeholder="e.g. Why is the sky blue?"><button class="round mic" id="micBtn" title="Talk">🎙</button><button class="round" id="askBtn">➤</button></div>
+  </section>
+
+  <section class="card stage">
+    <div class="stagebar"><h2 id="stageTitle">📖 Classroom</h2><span class="live" id="live">● LIVE CLASS</span>
+      <button class="hbtn x" id="stopBtn" style="display:none">■ Stop class</button></div>
+    <div class="stagebody">
+      <iframe id="slide" sandbox="allow-scripts allow-forms" title="class"></iframe>
+      <div class="doc" id="doc"></div>
+      <div class="welcome" id="welcome">
+        <div class="big">What shall we <span>learn</span> today?</div>
+        <div class="learnbar"><input class="field" id="topic" placeholder="A topic, a chapter… or paste a PDF path"><button class="round" id="teachBtn">➤</button></div>
+        <div class="chips">
+          <button class="chip" data-a="teach"><b>🎓</b>Teach me (live class)</button>
+          <button class="chip" data-a="cards"><b>🃏</b>Make flashcards</button>
+          <button class="chip" data-a="quiz"><b>❓</b>Quiz me</button>
+          <button class="chip" data-a="simple"><b>🧒</b>Explain like I'm 10</button>
+          <button class="chip" data-a="notes"><b>📝</b>Short notes</button>
+          <button class="chip" data-a="exam"><b>🎯</b>Exam questions</button>
+        </div>
+        <div class="hint">Classes play here with real photos · Ultron explains each slide aloud</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card focus">
+    <h2>⏳ Focus <small id="phase">study block</small></h2>
+    <div class="ringwrap"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/>
+      <circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="url(#g)" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/>
+      <defs><linearGradient id="g"><stop offset="0" stop-color="#ff8a4d"/><stop offset="1" stop-color="#ffd37a"/></linearGradient></defs></svg>
+      <div class="t"><b id="clock">25:00</b><small id="clockLbl">ready</small></div></div>
+    <div class="row"><button class="hbtn hot" id="startBtn">▶ Start</button><button class="hbtn" id="resetBtn">↺</button>
+      <button class="hbtn" data-len="25">25</button><button class="hbtn" data-len="50">50</button></div>
+    <div class="sound">
+      <button data-snd="rain"><b>🌧</b>Rain</button><button data-snd="brown"><b>🌊</b>Ocean</button>
+      <button data-snd="fire"><b>🔥</b>Fire</button><button data-snd="cafe"><b>☕</b>Café</button></div>
+    <input class="vol" id="vol" type="range" min="0" max="1" step="0.01" value="0.5">
+    <div class="mins">Focused today: <b id="mins">0 min</b> · cards: <b id="cardsToday">0</b></div>
+    <div class="exams"><div id="exList"></div>
+      <div class="exadd"><input class="field" id="exName" placeholder="Exam (e.g. Physics)"><input class="field" id="exDate" type="date"><button class="hbtn" id="exAdd">＋</button></div></div>
+  </section>
+
+  <section class="card shelf">
+    <h2>🃏 Your decks <small id="deckSum"></small></h2>
+    <div class="decks" id="decks"></div>
+  </section>
+</div>
+
+<div class="rev" id="rev">
+  <div class="top"><b id="revTitle">Deck</b><span id="revProg"></span><button class="hbtn x" id="revX">✕ Close</button></div>
+  <div class="flip" id="flip"><div class="in"><div class="face q"><small>QUESTION</small><span id="fq"></span></div>
+    <div class="face a"><small>ANSWER</small><span id="fa"></span></div></div></div>
+  <div class="btns"><button class="again" id="again">✗ Again</button><button class="knew" id="knew">✓ Knew it</button></div>
+  <div class="hint">Space = flip · ← again · → knew it</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const post = (u, b) => fetch(u, {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(b)});
+const ask = t => post("/api/command", {text: t});
+function toast(t) { $("toast").textContent = t; $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 2600); }
+const store = {get(k, d) { try { return JSON.parse(localStorage.getItem("study_" + k)) ?? d; } catch (e) { return d; } },
+               set(k, v) { try { localStorage.setItem("study_" + k, JSON.stringify(v)); } catch (e) {} }};
+
+// ---------- greeting
+function hello() { const h = new Date().getHours();
+  $("hello").innerHTML = `${h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"}, <b>Sir</b> · ${new Date().toLocaleDateString([], {weekday: "long", day: "numeric", month: "long"})}`; }
+hello();
+
+// ---------- study data
+let DATA = {decks: [], exams: [], streak: 0, today: 0};
+const COLORS = ["#ffb84d", "#7cc4ff", "#ff6b8b", "#4fe0b0", "#a98bff", "#ffd37a"];
+async function load() {
+  DATA = await (await fetch("/api/study")).json();
+  const days = e => Math.ceil((new Date(e.date + "T09:00") - Date.now()) / 864e5);
+  const ex = (DATA.exams || []).filter(e => days(e) >= 0);
+  $("pills").innerHTML = `<span class="pill fire">🔥 ${DATA.streak} day streak</span>` +
+    ex.slice(0, 3).map(e => `<span class="pill exam">${esc(e.name)} · <b>${days(e) === 0 ? "today!" : days(e) + " days"}</b></span>`).join("");
+  $("exList").innerHTML = ex.map(e => `<div class="exrow"><span>🎯 ${esc(e.name)}</span><span><b>${days(e)}d</b> <button class="del" data-ex="${esc(e.name)}">✕</button></span></div>`).join("")
+    || `<div class="hint">Add your exams for a countdown</div>`;
+  $("exList").querySelectorAll("[data-ex]").forEach(b => b.onclick = () => post("/api/action", {action: "study", op: "exam_del", name: b.dataset.ex}));
+  $("cardsToday").textContent = DATA.today || 0;
+  const D = DATA.decks || [];
+  $("deckSum").textContent = D.length ? `${D.reduce((a, d) => a + d.mastered, 0)} of ${D.reduce((a, d) => a + d.cards, 0)} cards mastered` : "";
+  $("decks").innerHTML = D.map((d, i) => `<div class="deck" style="--c:${COLORS[i % COLORS.length]}"><b>${esc(d.title)}</b>
+      <small>${d.cards} cards · ${d.due} due</small>
+      <div class="bar"><i style="width:${d.mastered / d.cards * 100}%;background:#4fe0b0"></i><i style="width:${d.learning / d.cards * 100}%;background:#ffb84d"></i></div>
+      <small>✓ ${d.mastered} mastered · ↻ ${d.learning} learning · ✦ ${d.new} new</small>
+      <div class="acts"><button class="go" data-rev="${d.id}">Review</button><button data-quiz="${esc(d.title)}">🎙 Quiz</button></div></div>`).join("")
+    + `<div class="newdeck" id="newDeck">＋ New deck<br>from a topic or PDF</div>`;
+  $("decks").querySelectorAll("[data-rev]").forEach(b => b.onclick = () => review(b.dataset.rev));
+  $("decks").querySelectorAll("[data-quiz]").forEach(b => b.onclick = () => { ask(`quiz me on ${b.dataset.quiz}`); toast("🎙 Quiz starting — answer out loud"); });
+  $("newDeck").onclick = () => { $("topic").focus(); toast("Type a topic above, then press 🃏 Make flashcards"); };
+  $("live").classList.toggle("on", !!DATA.class_running); $("stopBtn").style.display = DATA.class_running ? "" : "none";
+}
+load();
+
+// ---------- learn actions
+const T = () => $("topic").value.trim();
+const isPath = t => /^[a-z]:\\|\.(pdf|docx?|txt|md)$/i.test(t);
+const ACTION = {
+  teach: t => isPath(t) ? `Teach me this file as a class: ${t}` : `Teach me ${t}`,
+  cards: t => isPath(t) ? `Make flashcards from this file: ${t}` : `Make 15 flashcards on ${t}`,
+  quiz: t => t ? `Make flashcards on ${t} and then quiz me` : "quiz me",
+  simple: t => `Explain ${t} like I'm 10 years old, simply, with an example`,
+  notes: t => `Write short revision notes on ${t} as a document`,
+  exam: t => `Write 10 likely exam questions with answers on ${t} as a document`};
+document.querySelectorAll("[data-a]").forEach(b => b.onclick = () => {
+  const t = T(), a = b.dataset.a;
+  if (!t && a !== "quiz") { $("topic").focus(); toast("First type what you want to learn ✍️"); return; }
+  ask(ACTION[a](t)); toast({teach: "🎓 Preparing your class…", cards: "🃏 Making flashcards…", quiz: "❓ Quiz coming up", simple: "🧒 Explaining…", notes: "📝 Writing notes…", exam: "🎯 Writing exam questions…"}[a]);
+});
+$("teachBtn").onclick = () => document.querySelector('[data-a="teach"]').click();
+$("topic").onkeydown = e => { if (e.key === "Enter") $("teachBtn").click(); };
+$("stopBtn").onclick = () => ask("stop class");
+$("planBtn").onclick = () => { ask((DATA.exams || []).length ? `Make my study plan for my exams: ${DATA.exams.map(e => e.name + " on " + e.date).join(", ")}` : "Make me a study plan for this week"); toast("🗓 Planning…"); };
+
+// ---------- ask a doubt
+function bubble(k, t) { $("empty")?.remove(); const d = document.createElement("div"); d.className = "msg " + k; d.textContent = t; $("feed").appendChild(d); $("feed").scrollTop = 1e9; }
+$("askBtn").onclick = () => { const t = $("askIn").value.trim(); if (!t) return; $("askIn").value = ""; ask(t); };
+$("askIn").onkeydown = e => { if (e.key === "Enter") $("askBtn").click(); };
+$("micBtn").onclick = () => post("/api/action", {action: "talk"});
+
+// ---------- the stage: live classes and study material appear here
+function md(src) {
+  return src.replace(/\r/g, "").split("\n").map(l => {
+    const e = esc(l).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    if (/^# /.test(l)) return `<h1>${e.slice(2)}</h1>`; if (/^## /.test(l)) return `<h2>${e.slice(3)}</h2>`; if (/^### /.test(l)) return `<h3>${e.slice(4)}</h3>`;
+    if (/^\s*[-*] /.test(l)) return `<li>${e.replace(/^\s*[-*] /, "")}</li>`; if (/^\s*\d+\. /.test(l)) return `<li>${e.replace(/^\s*\d+\. /, "")}</li>`;
+    return l.trim() ? `<p>${e}</p>` : ""; }).join("");
+}
+function show(e) {
+  $("welcome").style.display = "none"; $("stageTitle").textContent = (e.kind === "presentation" ? "🎓 " : "📖 ") + (e.title || "Classroom");
+  if (e.lang === "html") { $("doc").style.display = "none"; $("slide").style.display = "block"; $("slide").srcdoc = e.content; }
+  else { $("slide").style.display = "none"; $("doc").style.display = "block"; $("doc").innerHTML = md(e.content || ""); $("doc").scrollTop = 0; }
+}
+function onEvent(e) {
+  switch (e.type) {
+    case "user": bubble("u", e.text); break;
+    case "reply": if (e.text) bubble("j", e.text); break;
+    case "canvas": show(e); if (/^Class:/.test(e.title || "")) { $("live").classList.add("on"); $("stopBtn").style.display = ""; } load(); break;
+    case "canvas_chunk": if (e.lang === "md" && e.text) { $("welcome").style.display = "none"; $("slide").style.display = "none"; $("doc").style.display = "block"; $("doc").innerHTML = md(e.text); } break;
+    case "study_update": load(); break;
+    case "tool": if (e.result && /quiz|study|teach|class/.test(e.name || "")) load(); if (e.name === "stop_class" && e.result) { $("live").classList.remove("on"); $("stopBtn").style.display = "none"; } break;
+  }
+}
+fetch("/api/state").then(r => r.json()).then(s => (s.history || []).slice(-12).forEach(e => { if (e.type === "user" || e.type === "reply") onEvent(e); }));
+const es = new EventSource("/events?id=study-" + Math.random().toString(36).slice(2, 8));
+es.onmessage = m => onEvent(JSON.parse(m.data));
+
+// ---------- flashcard review (spaced repetition)
+let REV = null;
+async function review(id) {
+  const d = await (await fetch("/api/study/deck?name=" + encodeURIComponent(id))).json();
+  const cards = d.cards.sort((a, b) => a.box - b.box);
+  if (!cards.length) { toast("This deck is empty"); return; }
+  REV = {id, cards, i: 0, right: 0}; $("revTitle").textContent = d.title; $("rev").classList.add("show"); showCard();
+}
+function showCard() {
+  const c = REV.cards[REV.i]; $("flip").classList.remove("on");
+  if (!c) { $("fq").innerHTML = `🎉 Done!<br><span style="font-size:18px;color:#6b6a77">${REV.right} of ${REV.cards.length} known</span>`; $("fa").textContent = ""; $("revProg").textContent = ""; load(); return; }
+  setTimeout(() => { $("fq").textContent = c.q; $("fa").textContent = c.a; }, 150);
+  $("revProg").textContent = `card ${REV.i + 1} / ${REV.cards.length}`;
+}
+function gradeCard(ok) {
+  if (!REV || !REV.cards[REV.i]) return;
+  post("/api/action", {action: "study", op: "grade", deck: REV.id, idx: REV.cards[REV.i].i, ok});
+  if (ok) REV.right++; REV.i++; showCard();
+}
+$("flip").onclick = () => $("flip").classList.toggle("on");
+$("again").onclick = () => gradeCard(false); $("knew").onclick = () => gradeCard(true);
+$("revX").onclick = () => { $("rev").classList.remove("show"); load(); };
+addEventListener("keydown", e => {
+  if (!$("rev").classList.contains("show")) return;
+  if (e.code === "Space") { e.preventDefault(); $("flip").classList.toggle("on"); }
+  if (e.key === "ArrowRight") gradeCard(true); if (e.key === "ArrowLeft") gradeCard(false); if (e.key === "Escape") $("revX").click();
+});
+
+// ---------- exams
+$("exAdd").onclick = () => { const n = $("exName").value.trim(), d = $("exDate").value;
+  if (!n || !d) { toast("Exam name and date, please"); return; }
+  post("/api/action", {action: "study", op: "exam_add", name: n, date: d}); $("exName").value = ""; toast("🎯 Countdown added"); };
+
+// ---------- pomodoro
+let LEN = 25, left = 25 * 60, running = false, phase = "focus", tick = null;
+const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+function draw() { $("clock").textContent = fmt(left); const total = (phase === "focus" ? LEN : 5) * 60;
+  $("arc").setAttribute("stroke-dashoffset", (326.7 * (1 - left / total)).toFixed(1));
+  $("clockLbl").textContent = running ? (phase === "focus" ? "focus" : "break") : "paused"; $("phase").textContent = phase === "focus" ? "study block" : "break time";
+  const today = new Date().toDateString(), m = store.get("mins", {}); $("mins").textContent = (m[today] || 0) + " min"; }
+function beep() { try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain(); o.frequency.value = 660; o.connect(g); g.connect(a.destination);
+  g.gain.setValueAtTime(.25, a.currentTime); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + 1.2); o.start(); o.stop(a.currentTime + 1.2); } catch (e) {} }
+function step() {
+  left--;
+  if (phase === "focus" && left % 60 === 0) { const today = new Date().toDateString(), m = store.get("mins", {}); m[today] = (m[today] || 0) + 1; store.set("mins", m); }
+  if (left <= 0) { beep(); if (phase === "focus") { phase = "break"; left = 5 * 60; toast("☕ Great work! 5-minute break"); } else { phase = "focus"; left = LEN * 60; toast("📚 Back to it!"); } }
+  draw();
+}
+$("startBtn").onclick = () => { running = !running; $("startBtn").textContent = running ? "⏸ Pause" : "▶ Start";
+  clearInterval(tick); if (running) tick = setInterval(step, 1000); draw(); };
+$("resetBtn").onclick = () => { running = false; clearInterval(tick); phase = "focus"; left = LEN * 60; $("startBtn").textContent = "▶ Start"; draw(); };
+document.querySelectorAll("[data-len]").forEach(b => b.onclick = () => { LEN = +b.dataset.len; $("resetBtn").click(); toast(`⏳ ${LEN}-minute blocks`); });
+draw();
+
+// ---------- ambient sound (generated in the browser - no internet needed)
+let AC = null, master = null, current = null, nodes = [];
+function noise(type) {
+  const len = AC.sampleRate * 3, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0); let last = 0;
+  for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1;
+    if (type === "brown") { last = (last + .02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+  const s = AC.createBufferSource(); s.buffer = buf; s.loop = true; return s;
+}
+function stopSound() { nodes.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch (e) {} }); nodes = []; current = null;
+  document.querySelectorAll("[data-snd]").forEach(b => b.classList.remove("on")); }
+function play(kind) {
+  if (!AC) { AC = new AudioContext(); master = AC.createGain(); master.connect(AC.destination); }
+  master.gain.value = +$("vol").value; stopSound(); current = kind;
+  const add = n => (nodes.push(n), n);
+  if (kind === "rain") { const s = add(noise("white")), f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1400; f.Q.value = .6;
+    const g = AC.createGain(); g.gain.value = .35; s.connect(f); f.connect(g); g.connect(master); s.start(); }
+  if (kind === "brown") { const s = add(noise("brown")), g = AC.createGain(), l = add(AC.createOscillator()), lg = AC.createGain();
+    l.frequency.value = .09; lg.gain.value = .25; l.connect(lg); lg.connect(g.gain); g.gain.value = .55; s.connect(g); g.connect(master); s.start(); l.start(); }
+  if (kind === "fire") { const s = add(noise("brown")), g = AC.createGain(); g.gain.value = .5; s.connect(g); g.connect(master); s.start();
+    const crack = () => { if (current !== "fire") return; const c = noise("white"), cg = AC.createGain(), f = AC.createBiquadFilter();
+      f.type = "highpass"; f.frequency.value = 2500; cg.gain.setValueAtTime(.4 * Math.random(), AC.currentTime); cg.gain.exponentialRampToValueAtTime(.001, AC.currentTime + .05);
+      c.connect(f); f.connect(cg); cg.connect(master); c.start(); c.stop(AC.currentTime + .06); setTimeout(crack, 80 + Math.random() * 500); }; crack(); }
+  if (kind === "cafe") { const s = add(noise("brown")), f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 900;
+    const g = AC.createGain(), l = add(AC.createOscillator()), lg = AC.createGain(); l.frequency.value = .3; lg.gain.value = .12; l.connect(lg); lg.connect(g.gain);
+    g.gain.value = .4; s.connect(f); f.connect(g); g.connect(master); s.start(); l.start();
+    const clink = () => { if (current !== "cafe") return; const o = AC.createOscillator(), og = AC.createGain(); o.frequency.value = 2400 + Math.random() * 1600;
+      og.gain.setValueAtTime(.03, AC.currentTime); og.gain.exponentialRampToValueAtTime(.0001, AC.currentTime + .4); o.connect(og); og.connect(master); o.start(); o.stop(AC.currentTime + .4);
+      setTimeout(clink, 1500 + Math.random() * 5000); }; clink(); }
+  document.querySelector(`[data-snd="${kind}"]`).classList.add("on");
+}
+document.querySelectorAll("[data-snd]").forEach(b => b.onclick = () => current === b.dataset.snd ? stopSound() : play(b.dataset.snd));
+$("vol").oninput = () => { if (master) master.gain.value = +$("vol").value; };
+setInterval(() => { hello(); }, 60000);
+</script>
+</body>
+</html>
