@@ -1,4 +1,4 @@
-"""Local web dashboard for Jarvis: http://localhost:7777
+﻿"""Local web dashboard for Jarvis: http://localhost:7777
 
 - GET  /            the dashboard page (dashboard.html)
 - GET  /events      live Server-Sent Events: state changes, conversation, tool runs, vitals, voice levels
@@ -41,6 +41,7 @@ class Hub:
         self.everyday = lambda: {}   # set by the app: reminders, lists, routines for the Daily panel
         self.on_event = lambda event: None   # set by the app: saves chats
         self.study = lambda: {}              # set by the app: Study Mode data
+        self.keys = lambda: []               # set by the app: which API keys are set (never the keys)
         self.on_visibility = lambda any_visible: None
         self.history = []            # recent conversation events, replayed to new tabs
         self.snapshot = {"state": "idle", "title": "", "body": "", "me": False, "muted": False, "ranking": [],
@@ -194,6 +195,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(tutor.deck_cards(unquote(self.path.partition("name=")[2])[:80]), ensure_ascii=False).encode())
         elif self.path == "/screen":
             self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/keys":
+            self._send(200, json.dumps(self.hub.keys()).encode())
         elif self.path == "/api/vault_graph":
             try:
                 import vault
@@ -260,7 +263,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.on_command(data["text"].strip()[:4000])
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/action" and data.get("action") in ("talk", "me", "mute", "new_chat", "stop",
-                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme"):
+                                                                   "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme", "api_key"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
         elif self.path == "/api/clipboard":

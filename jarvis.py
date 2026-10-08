@@ -1093,6 +1093,13 @@ def run_gui(args):
                 tools._save_state("exams", [e for e in tools._state("exams", []) if e["name"] != data.get("name")])
             hub.publish({"type": "study_update"})
             return
+        if action == "api_key" and isinstance(data.get("env"), str):
+            def _set(env=data["env"][:40]):
+                result = tools.apikeys.set_key(env)
+                hub.publish({"type": "api_keys", "keys": tools.apikeys.status(), "msg": result})
+                assistant.notify(result.replace("OK: ", "").replace("FAILED: ", "Sorry Sir, "))
+            threading.Thread(target=_set, daemon=True).start()
+            return
         if action == "ultron_power":
             assistant.power(bool(data.get("on")), float(data.get("minutes") or 0))
             return
@@ -1299,6 +1306,8 @@ def run_gui(args):
         return secret_box["value"]
 
     tools.brains.hooks.update(brain=brain, ask_secret=ask_secret_any)
+    tools.apikeys.hooks.update(brain=brain, ask_secret=ask_secret_any, publish=hub.publish)
+    hub.keys = tools.apikeys.status
     tools.telegrambot.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
                                  state=tools._state, save=tools._save_state, ask_token=ask_token)
     threading.Thread(target=tools.telegrambot.resume, name="telegram-start", daemon=True).start()

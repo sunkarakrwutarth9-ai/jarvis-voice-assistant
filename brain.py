@@ -467,7 +467,7 @@ class Brain:
     LEAN_TOOLS = {"open_app", "close_app", "open_website", "web_search", "youtube_play", "youtube_control", "media_key",
                   "set_volume", "get_weather", "world_time", "set_reminder", "schedule_task", "list_add", "list_show",
                   "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
-                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme",
+                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys",
                   "focus_mode", "open_screen", "set_theme", "orb_style", "news", "power_off", "sleep_pc"}
     LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "
                    "'Jarvis' - your name is still Ultron). Address the user as Sir. Answer in 1-2 short spoken sentences, "

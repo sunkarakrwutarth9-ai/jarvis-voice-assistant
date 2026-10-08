@@ -198,6 +198,15 @@ body.uoff .offbanner{display:block}
   font:600 13px var(--font);cursor:pointer}
 .pwrgrid button b{display:block;font-size:24px;margin-bottom:4px}
 .pwrgrid button:hover{border-color:#ff5a63;background:rgba(255,77,90,.1)}
+.keyrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--stroke);border-radius:14px;margin-bottom:8px}
+.keyrow .kd{flex:1;min-width:0}.keyrow .kd b{display:block;font:600 14px var(--font);color:var(--text)}
+.keyrow .kd small{color:var(--sub);font-size:12px}
+.keyrow .ks{font:600 11px var(--hud);letter-spacing:1px;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.keyrow .ks.on{color:#3ddc84;background:rgba(61,220,132,.12)}.keyrow .ks.off{color:#ffb84d;background:rgba(255,184,77,.12)}
+.keyrow button{border:1px solid var(--stroke);background:rgba(255,255,255,.06);color:var(--text);border-radius:10px;padding:7px 12px;cursor:pointer;font:600 12px var(--font)}
+.keyrow button:hover{border-color:var(--gold)}
+#keyBtn.warn{border-color:#ffb84d!important;box-shadow:0 0 12px rgba(255,184,77,.5)}
+.keynote{color:var(--sub);font-size:12px;margin:10px 2px 14px;line-height:1.5}
 .pwrgrid .x{grid-column:1/-1;padding:10px;color:var(--sub)}
 .pwrcount{position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:95;display:none;align-items:center;gap:14px;padding:12px 18px;
   border-radius:18px;background:rgba(40,6,10,.95);border:1px solid #ff5a63;font:600 14px var(--font);box-shadow:0 0 40px rgba(255,77,90,.4)}
@@ -357,6 +366,7 @@ body.uoff .offbanner{display:block}
     <div class="brand">U.L.T.R.O.N<small>NEURAL COMMAND CORE</small></div>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span><span class="hchip" id="modeChip" hidden></span></div>
+    <button class="pwrbtn" id="keyBtn" title="API keys" style="border-color:var(--stroke);color:var(--text)" onclick="openKeys()">🔑</button>
     <button class="pwrbtn" id="themeBtn" title="Themes" style="border-color:var(--stroke);color:var(--text)" onclick="ULTRON_THEME.openGallery()">🎨</button>
     <button class="pwrbtn on" id="pwrBtn" title="Ultron on / off">⏻</button>
     <div class="clock"><span id="time">--:--</span><small id="date"></small></div>
@@ -434,6 +444,10 @@ body.uoff .offbanner{display:block}
   <button data-p="sleep"><b>☾</b>Sleep</button><button data-p="lock"><b>🔒</b>Lock</button>
   <button data-p="quit"><b>✕</b>Quit Ultron</button><button data-p="cancel"><b>⊘</b>Cancel shutdown</button>
   <button class="x" id="pwrX">Close</button></div></div></div>
+<div class="pwr" id="keys"><div class="pwrbox" style="width:min(560px,94vw);max-height:88vh;overflow:auto"><h3 style="color:var(--gold)">🔑 API KEYS</h3>
+  <div id="keyList"></div>
+  <div class="keynote" id="keyMsg">Click <b>Add</b> - Ultron opens its own secure box on your PC. Paste the key there; it is checked and saved only on this PC (.env). Keys are never shown here.</div>
+  <div class="pwrgrid" style="grid-template-columns:1fr"><button class="x" id="keysX">Close</button></div></div></div>
 <div class="offbanner" id="offBanner"><b>ULTRON OFFLINE</b><small id="offSub">Completely off · press ⏻ to switch me on</small></div>
 <div class="pwrcount" id="pwrCount"><span id="pwrTxt">Shutting down in 10 s</span><button id="pwrCancel">CANCEL</button></div>
 <div class="mgraph" id="mgraph"><div class="hd">🧠 MEMORY GRAPH<small id="mgInfo"></small></div><button class="x" id="mgX">✕ Close</button>
@@ -574,6 +588,8 @@ function onEvent(e) {
     case "power_state": setUltron(e.on, e.minutes, e.full); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "open_themes": ULTRON_THEME.openGallery(); break;
+    case "open_keys": openKeys(); break;
+    case "api_keys": renderKeys(e.keys, e.msg); break;
     case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
     case "notes": MODES.notes = e.on ? "🎙 NOTES" : ""; showModes(); break;
@@ -869,6 +885,7 @@ const PAL = [
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
   ["🔒", "Lock the PC", "", () => ask("lock the PC")],
   ["🎨", "Themes (200)", "change the whole look", () => { closePal(); ULTRON_THEME.openGallery(); }],
+  ["🔑", "API keys", "see which keys are missing, add one", () => { closePal(); openKeys(); }],
   ["📚", "Study Mode", "classes · flashcards · focus", () => { closePal(); ask("open study mode"); }],
   ["⏻", "PC power", "shut down · restart · sleep · lock", () => { closePal(); $("pwr").classList.add("show"); }],
   ["⏼", "Shut Ultron down", "saves every chat, then quits", () => { closePal(); $("pwrBtn").click(); }],
@@ -996,6 +1013,29 @@ function mgLoop() {
   $("mgX").onclick = () => { $("mgraph").classList.remove("show"); cancelAnimationFrame(MG.raf); };
   addEventListener("keydown", e => { if (e.key === "Escape" && $("mgraph").classList.contains("show")) $("mgX").click(); });
 })();
+
+// =================== API KEYS ===================
+function renderKeys(keys, msg) {
+  if (!keys) return;
+  const miss = keys.filter(k => !k.set).length;
+  $("keyBtn").classList.toggle("warn", keys.slice(0, 2).some(k => !k.set));
+  $("keyList").innerHTML = keys.map(k => `<div class="keyrow"><div class="kd"><b>${k.name}</b><small>${k.what}</small></div>
+    <span class="ks ${k.set ? "on" : "off"}">${k.set ? "✓ SET" : "MISSING"}</span>
+    <button data-env="${k.env}">${k.set ? "Change" : "Add"}</button></div>`).join("");
+  $("keyList").querySelectorAll("button").forEach(b => b.onclick = () => {
+    post("/api/action", {action: "api_key", env: b.dataset.env});
+    $("keyMsg").textContent = "Look at your PC screen - Ultron's secure key box is open. Paste the key there and press OK.";
+  });
+  if (msg) $("keyMsg").textContent = msg.replace(/^OK: /, "✓ ").replace(/^FAILED: /, "✕ ");
+  $("keyBtn").title = miss ? `API keys (${miss} optional missing)` : "API keys";
+}
+async function openKeys() {
+  $("keys").classList.add("show");
+  try { renderKeys(await fetch("/api/keys").then(r => r.json())); } catch (e) {}
+}
+$("keysX").onclick = () => $("keys").classList.remove("show");
+$("keys").onclick = e => { if (e.target === $("keys")) $("keys").classList.remove("show"); };
+fetch("/api/keys").then(r => r.json()).then(k => renderKeys(k)).catch(() => {});
 
 // =================== POWER ===================
 let ULTRON_ON = true, ULTRON_DOWN = false;

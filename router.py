@@ -1,4 +1,4 @@
-"""Tool router: send the model only the tools a request can need.
+﻿"""Tool router: send the model only the tools a request can need.
 
 All ~90 tool descriptions are ~9,000 tokens; sending them on every request makes the first word slow and
 the free models time out. The router keeps a core set (everyday actions) and adds groups whose keywords
@@ -25,8 +25,8 @@ GROUPS = [
     (r"list|shopping|to-?do|remind|alarm|routine|cancel|when i say|grocer|wake me|గుర్తు|याद", {
         "list_add", "list_remove", "list_show", "list_clear", "cancel_reminder", "list_reminders", "save_routine",
         "run_routine", "delete_routine"}),
-    (r"theme|ui|look|design|colou?r|dark|light mode|orb|style|sphere|gesture|robot|danc|focus|pomodoro|graph|voice|hologram|avatar",
-     {"set_theme", "ui_theme", "orb_style", "gestures", "robot", "focus_mode", "show_memory_graph", "voice_mode", "learn_my_voice"}),
+    (r"api|key|token|theme|ui|look|design|colou?r|dark|light mode|orb|style|sphere|gesture|robot|danc|focus|pomodoro|graph|voice|hologram|avatar",
+     {"set_theme", "ui_theme", "api_keys", "orb_style", "gestures", "robot", "focus_mode", "show_memory_graph", "voice_mode", "learn_my_voice"}),
     (r"phone|telegram|\bqr\b|mobile|remote|ఫోన్|फोन", {"phone_remote", "connect_telegram"}),
     (r"screen|click|camera|webcam|look|see|watch|video|what('?s| is) (this|that)|చూడు|देख", {
         "click_on_screen", "look", "screen_copilot", "read_screen", "watch"}),

@@ -583,6 +583,24 @@ ultron_power_hook = None
 open_study_hook = None
 
 
+def api_keys(action: str = "status", which: str = "") -> str:
+    """Which API keys Ultron has / is missing, or open the secure dialog to add or change one."""
+    if action == "status":
+        rows = apikeys.status()
+        have = [r["name"] for r in rows if r["set"]]
+        miss = [r["name"] for r in rows if not r["set"]]
+        publish({"type": "open_keys"})
+        return (f"OK: keys set: {', '.join(have) or 'none'}. Missing (optional): {', '.join(miss) or 'none'}. "
+                "The API Keys panel is open in the command center - tell the user to click Add on any of them.")
+    w = (which or "").lower()
+    env = next((r[0] for r in apikeys.KEYS if w and (w in r[1].lower() or w in r[0].lower()
+               or (w in ("grok", "groq") and r[0] == "GROQ_API_KEY") or (w in ("chatgpt", "gpt") and r[0] == "OPENAI_API_KEY")
+               or (w in ("deepseek", "xpl") and r[0] == "XPL_API_KEY"))), None)
+    if not env:
+        return "FAILED: which key? Gemini, Groq, DeepSeek, OpenRouter, Claude, ChatGPT or Telegram."
+    return apikeys.set_key(env)
+
+
 def ui_theme(name: str) -> str:
     """Switch the whole UI to one of the 200 themes by name or category."""
     import json as _j
@@ -1466,6 +1484,8 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("api_keys", "Ultron's API keys. action 'status' = which keys are set / missing and open the API Keys panel ('which api keys are missing', 'show my keys'); action 'add' with which = gemini|groq|deepseek|openrouter|claude|chatgpt|telegram opens Ultron's secure dialog so the USER pastes the key (never ask for the key in chat, never type it).",
+        {"action": {"type": "string", "enum": ["status", "add"]}, "which": {"type": "string"}}, ["action"]),
     _fn("ui_theme", "Change the look of ALL Ultron screens to one of 200 UI themes - by theme name ('Night City', 'Diwali', 'Mark 42', 'Sakura', 'Black Gold') or category ('Apple Clean', 'Iron Man HUD', 'Neon Cyberpunk', 'Glassmorphism', 'Space', 'Nature', 'Retro', 'Minimal', 'Luxury', 'Indian Festive'). For 'show me themes' tell them to press the 🎨 button.",
         {"name": {"type": "string"}}, ["name"]),
     _fn("study_mode", "Open Study Mode - the dedicated study space (live classes, flashcards, quizzes, pomodoro with ambient sounds, exam countdowns, streak). 'study mode', 'I want to study', 'open study'."),
@@ -1699,6 +1719,7 @@ import interview as interview_mod  # noqa: E402  (get-to-know-you interview)
 import skills  # noqa: E402  (reusable task know-how)
 import gworkspace  # noqa: E402  (Google Calendar + Tasks)
 import brains  # noqa: E402  (Claude / ChatGPT / local models)
+import apikeys  # noqa: E402  (which API keys are set / missing)
 import departments  # noqa: E402  (command layer: self-designed departments)
 
 
@@ -1727,7 +1748,7 @@ FUNCS = {
     "show_memory_graph": show_memory_graph, "watch": videovision.watch,
     "architect_departments": departments.architect, "activate_departments": departments.activate_departments,
     "list_departments": departments.list_departments, "ask_department": departments.ask_department,
-    "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
+    "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "api_keys": api_keys, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
     "tasks_list": gworkspace.tasks_list, "task_add": gworkspace.task_add,
