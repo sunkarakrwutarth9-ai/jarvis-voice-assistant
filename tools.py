@@ -1,4 +1,4 @@
-"""Everything Jarvis can actually do on the PC, plus the tool schemas sent to the model."""
+﻿"""Everything Jarvis can actually do on the PC, plus the tool schemas sent to the model."""
 
 import ctypes
 import datetime
@@ -614,7 +614,7 @@ def study_mode() -> str:
 
 
 def ultron_power(on: bool = False, minutes: float = 0) -> str:
-    """Switch Ultron itself off (silent, stops class/interpreter/talking) or on; the PC stays on."""
+    """Shut Ultron itself down (saves every chat, then quits completely; minutes>0 = silent snooze instead). PC stays on."""
     if ultron_power_hook is None:
         return "FAILED: not available."
     threading.Timer(0.3, lambda: ultron_power_hook(bool(on), float(minutes or 0))).start()

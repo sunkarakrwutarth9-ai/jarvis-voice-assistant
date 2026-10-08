@@ -520,7 +520,7 @@ function onEvent(e) {
     case "weather": showWeather(e); break;
     case "focus": setFocus(e); break;
     case "power": powerEvent(e); break;
-    case "power_state": setUltron(e.on, e.minutes); break;
+    case "power_state": setUltron(e.on, e.minutes, e.full); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "memory_graph": openMemoryGraph(); break;
     case "orb_style": if (window.ORB.setStyle) window.ORB.setStyle(e.name); else window.ORB.pendingStyle = e.name; break;
@@ -675,7 +675,7 @@ const PAL = [
   ["🎨", "Themes (200)", "change the whole look", () => { closePal(); ULTRON_THEME.openGallery(); }],
   ["📚", "Study Mode", "classes · flashcards · focus", () => { closePal(); ask("open study mode"); }],
   ["⏻", "PC power", "shut down · restart · sleep · lock", () => { closePal(); $("pwr").classList.add("show"); }],
-  ["⏼", "Switch Ultron off / on", "silent until woken", () => { closePal(); $("pwrBtn").click(); }],
+  ["⏼", "Shut Ultron down", "saves every chat, then quits", () => { closePal(); $("pwrBtn").click(); }],
 ];
 let palSel = 0, palItems = PAL;
 function fuzzy(q, t) { q = q.toLowerCase(); t = t.toLowerCase(); let i = 0; for (const ch of t) if (ch === q[i]) i++; return i === q.length; }
@@ -802,13 +802,19 @@ function mgLoop() {
 })();
 
 // =================== POWER ===================
-let ULTRON_ON = true;
-function setUltron(on, minutes) {
-  ULTRON_ON = on; document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
+let ULTRON_ON = true, ULTRON_DOWN = false;
+function setUltron(on, minutes, full) {
+  ULTRON_ON = on; ULTRON_DOWN = !!full; document.body.classList.toggle("uoff", !on); $("pwrBtn").classList.toggle("on", on);
   $("pwrBtn").title = on ? "Switch Ultron off" : "Switch Ultron on";
-  $("offSub").textContent = minutes ? `Back in ${minutes} min · or press ⏻` : "Completely off · press ⏻ to switch me on";
+  $("offSub").textContent = minutes ? `Back in ${minutes} min · or press ⏻`
+    : full ? "Shut down · chats saved · start me again from the Ultron icon on your Desktop" : "Completely off · press ⏻ to switch me on";
 }
-$("pwrBtn").onclick = () => post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
+$("pwrBtn").onclick = () => {
+  if (ULTRON_DOWN) { alert("Ultron is shut down. Start it again from the Ultron icon on your Desktop."); return; }
+  if (ULTRON_ON && !confirm("Shut Ultron down completely?
+All conversations are saved. Start it again from the Desktop icon.")) return;
+  post("/api/action", {action: "ultron_power", on: !ULTRON_ON});
+};
 $("pwrX").onclick = () => $("pwr").classList.remove("show");
 $("pwr").onclick = e => { if (e.target === $("pwr")) $("pwr").classList.remove("show"); };
 document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => {

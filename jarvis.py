@@ -221,6 +221,7 @@ class Assistant(threading.Thread):
         self.interp = None               # interpreter mode: (language A, language B)
         self.off = False                 # Ultron switched off: silent, not listening for commands
         self._off_timer = None
+        self.shutdown_cb = lambda: None  # set by main(): quits the whole app
         self._missed = []                # alerts that arrived while off
         self.awaiting_answer = False     # Jarvis's last reply was a question
         self.last_heard = 0.0            # when the user last said something in conversation mode
@@ -251,12 +252,21 @@ class Assistant(threading.Thread):
                 self._off_timer = threading.Timer(minutes * 60, lambda: self.power(True))
                 self._off_timer.daemon = True
                 self._off_timer.start()
-            self._pub({"type": "power_state", "on": False, "minutes": minutes})
+            self._pub({"type": "power_state", "on": False, "minutes": minutes, "full": not minutes})
             self.bridge.island_on.emit(False)
-            log.info("ULTRON OFF%s", f" for {minutes:g} min" if minutes else "")
+            log.info("ULTRON OFF%s", f" for {minutes:g} min" if minutes else " - shutting down completely")
             if announce:
-                self.speaker.say(f"Going offline for {minutes:g} minutes, Sir." if minutes else "Going offline, Sir.")
+                self.speaker.say(f"Going offline for {minutes:g} minutes, Sir." if minutes
+                                 else "Saving our conversation and shutting down, Sir.")
             self.bridge.state.emit("idle", "", "", "")
+            if not minutes:
+                # A real shutdown: every chat is already on disk (chats/), save it once more, then quit the
+                # whole program - no island, no tray, no microphone. The Desktop icon starts Ultron again.
+                try:
+                    tools.save_chats_now()
+                except Exception:
+                    pass
+                threading.Timer(3.0 if announce else 0.5, self.shutdown_cb).start()
             return
         was_off, self.off = self.off, False
         self._pub({"type": "power_state", "on": True})
@@ -1345,6 +1355,7 @@ def run_gui(args):
         QTimer.singleShot(1500, app.quit)
 
     bridge.quit.connect(quit_app)
+    assistant.shutdown_cb = bridge.quit.emit
     island.clicked.connect(assistant.on_click)
     island.quit_requested.connect(quit_app)
     island.mute_toggled.connect(set_muted)
@@ -1363,7 +1374,7 @@ def run_gui(args):
     tray = QSystemTrayIcon(QIcon(pm))
     tray.setToolTip("Ultron - say \"OK Ultron\" or \"Hey Jarvis\"")
     menu = QMenu()
-    for text, fn in (("Turn Ultron on / off", lambda: assistant.power(assistant.off)),
+    for text, fn in (("Shut Ultron down (saves chats)", lambda: assistant.power(False)),
                      ("Talk to Ultron", assistant.on_click),
                      ("Open command center", open_dashboard),
                      ("Toggle my voice and face", lambda: set_me(not me_pending["on"])),
