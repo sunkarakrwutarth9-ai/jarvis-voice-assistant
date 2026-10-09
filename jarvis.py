@@ -1204,7 +1204,7 @@ def run_gui(args):
                 daemon=True).start()
             return
         if action == "ultron_power":
-            assistant.power(bool(data.get("on")), float(data.get("minutes") or 0))
+            assistant.power(bool(data.get("on")), float(data.get("minutes") or 0), bool(data.get("announce", True)))
             return
         if action == "power":
             op = data.get("op")
@@ -1590,7 +1590,10 @@ def run_gui(args):
             bridge.state.emit("error", "Microphone unavailable", listener.error[:80], "")
 
     QTimer.singleShot(2500, check_mic)
-    assistant.events.put(("say", greeting(), None))
+    if getattr(args, "off_for", 0):
+        QTimer.singleShot(800, lambda: assistant.power(False, args.off_for, announce=False))
+    else:
+        assistant.events.put(("say", greeting(), None))
 
     # Let Ctrl+C in the console close the app.
     import signal
@@ -1650,6 +1653,8 @@ def main():
     parser.add_argument("--text", action="store_true", help="type to Jarvis in the console")
     parser.add_argument("--mute", action="store_true", help="start with the voice muted")
     parser.add_argument("--no-wake", action="store_true", help="disable the wake word; click the island to talk")
+    parser.add_argument("--off-for", type=float, default=0, metavar="MIN",
+                        help="start silently and stay switched off for MIN minutes (no greeting)")
     args = parser.parse_args()
     setup_logging()
     if args.text:
