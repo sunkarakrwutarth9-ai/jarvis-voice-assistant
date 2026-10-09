@@ -67,9 +67,10 @@ def _gemini_schema(s):
 
 
 class Live:
-    def __init__(self, listener, publish, on_state, run_tool, tool_defs, context, on_turn=None):
+    def __init__(self, listener, publish, on_state, run_tool, tool_defs, context, on_turn=None, on_heard=None):
         self.listener, self.publish, self.on_state = listener, publish, on_state
         self.run_tool, self.tool_defs, self.context, self.on_turn = run_tool, tool_defs, context, on_turn
+        self.on_heard = on_heard                # tells the safety checks what the user just said
         self.on = False
         self._thread = None
         self._loop = None
@@ -304,6 +305,8 @@ class Live:
         responses = []
         for fc in calls:
             name, args = fc.get("name", ""), fc.get("args") or {}
+            if self.on_heard:
+                self.on_heard("".join(self._user_txt))
             self.on_state("thinking", f"{name.replace('_', ' ')}…")
             if name == "live_mode" and not args.get("on", False):
                 result = "OK: live voice turning off. Say a short goodbye."

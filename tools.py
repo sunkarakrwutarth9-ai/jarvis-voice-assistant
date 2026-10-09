@@ -558,6 +558,11 @@ def sleep_pc() -> str:
 
 turn_unclear = False      # set by jarvis.py when this turn came from a recording nobody could make out
 RISKY = {"power_off", "sleep_pc", "lock_pc", "close_app", "window_control"}
+recent_user_texts = []
+# Shutting down / restarting / sleeping the PC by voice only when the user clearly said the computer
+# ("shut down my PC", "laptop sleep", "కంప్యూటర్ ఆపు"). "Shut down" / "sleep" / "పడుకో" alone means Ultron.
+PC_MEANT = re.compile(r"\b(pc|computer|laptop|windows|machine|desktop|system|device)\b|కంప్యూటర్|ల్యాప్|సిస్టం|सिस्टम|"
+                      r"कंप्यूटर|लैपटॉप|పీసీ", re.I)
 
 
 def power_off(action: str, seconds: int = 10) -> str:
@@ -1956,6 +1961,11 @@ def run_tool(name: str, raw_args: str):
         args = json.loads(raw_args or "{}")
     except json.JSONDecodeError:
         return {}, "FAILED: invalid arguments."
+    if (name == "sleep_pc" or (name == "power_off" and args.get("action", "shutdown") != "cancel")) \
+            and not PC_MEANT.search(" ".join(recent_user_texts[-2:] or [last_user_text])):
+        return args, ("FAILED: the user did not clearly say the COMPUTER, so the PC stays on. If they wanted YOU "
+                      "(Ultron) off or quiet, call ultron_power instead; otherwise ask 'Shut down the computer, Sir?' "
+                      "and wait for them to say 'shut down the computer'.")
     if func is None:
         return args, f"FAILED: unknown tool {name}."
     try:

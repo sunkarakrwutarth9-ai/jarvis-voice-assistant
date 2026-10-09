@@ -263,6 +263,7 @@ class Ducker(threading.Thread):
         super().__init__(daemon=True, name="ducker")
         self.q = queue.Queue()
         self._saved = None
+        self._guard = None               # safety timer: the volume never stays lowered
 
     def run(self):
         import comtypes
@@ -275,7 +276,12 @@ class Ducker(threading.Thread):
                 try:
                     if cmd == "duck" and self._saved is None:
                         self._saved = vol.GetMasterVolumeLevelScalar()
-                        vol.SetMasterVolumeLevelScalar(self._saved * 0.35, None)
+                        vol.SetMasterVolumeLevelScalar(self._saved * 0.55, None)
+                        if self._guard:
+                            self._guard.cancel()
+                        self._guard = threading.Timer(25, self.restore)
+                        self._guard.daemon = True
+                        self._guard.start()
                     elif cmd == "restore" and self._saved is not None:
                         vol.SetMasterVolumeLevelScalar(self._saved, None)
                         self._saved = None
@@ -288,8 +294,8 @@ class Ducker(threading.Thread):
                         pass
                     if attempt == 2:
                         log.info("volume ducking skipped: %s", str(e)[:80])
-                        if cmd == "restore":
-                            self._saved = None
+                        if cmd == "restore" and self._saved is not None:
+                            threading.Timer(3, self.restore).start()   # try again: never leave it quiet
 
     def duck(self):
         self.q.put("duck")
@@ -1433,7 +1439,8 @@ def run_gui(args):
     assistant.live = live_mod.Live(
         listener, hub.publish,
         on_state=lambda st, t: bridge.state.emit(st, "Live" if st != "speaking" else "", t, ""),
-        run_tool=tools.run_tool, tool_defs=lambda: tools.TOOLS, context=live_context, on_turn=live_turn)
+        run_tool=tools.run_tool, tool_defs=lambda: tools.TOOLS, context=live_context, on_turn=live_turn,
+        on_heard=lambda t: setattr(tools, "recent_user_texts", (tools.recent_user_texts + [t])[-3:]))
 
     def live_hook(on):
         if assistant.off:
@@ -1592,7 +1599,7 @@ def run_gui(args):
     QTimer.singleShot(2500, check_mic)
     if getattr(args, "off_for", 0):
         QTimer.singleShot(800, lambda: assistant.power(False, args.off_for, announce=False))
-    else:
+    elif not getattr(args, "quiet", False):
         assistant.events.put(("say", greeting(), None))
 
     # Let Ctrl+C in the console close the app.
@@ -1653,6 +1660,7 @@ def main():
     parser.add_argument("--text", action="store_true", help="type to Jarvis in the console")
     parser.add_argument("--mute", action="store_true", help="start with the voice muted")
     parser.add_argument("--no-wake", action="store_true", help="disable the wake word; click the island to talk")
+    parser.add_argument("--quiet", action="store_true", help="start without the spoken greeting")
     parser.add_argument("--off-for", type=float, default=0, metavar="MIN",
                         help="start silently and stay switched off for MIN minutes (no greeting)")
     args = parser.parse_args()

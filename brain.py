@@ -214,6 +214,7 @@ class Brain:
 
     def ask(self, user_text, on_sentence, on_tool_start, on_tool_end, cancelled=lambda: False, audio_wav_b64=None) -> str:
         tools.last_user_text = user_text or ""        # the save guard checks the user really agreed
+        tools.recent_user_texts = (tools.recent_user_texts + [user_text or ""])[-3:]
         """Stream a reply. Complete sentences go to on_sentence as soon as they're written.
 
         audio_wav_b64: the user's actual recording. Gemini listens to it directly (far better than the
