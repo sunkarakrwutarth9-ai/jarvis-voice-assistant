@@ -27,6 +27,12 @@ PRIVATE = re.compile(r"passw|bank|statement|aadha|aadhar|\bpan\b|passport|creden
                      r"seed ?phrase|recovery|license key|salary|payslip|tax|itr|kyc|otp|pin\b", re.I)
 MAX_FILE_MB, CHUNK, OVERLAP, MAX_CHUNKS_FILE, MAX_TOTAL = 30, 1200, 200, 60, 25000
 MODEL, DIM = "gemini-embedding-001", 768
+BATCH = 100                     # passages per embedding request
+MAX_REQUESTS_PER_RUN = 30       # a gentle share of the free Gemini quota per run (runs every 6 hours)
+
+
+class QuotaExhausted(Exception):
+    """Google said the embedding quota is used up: stop now, keep what is done, continue next run."""
 _lock = threading.Lock()
 _state = {"busy": False, "done": 0, "total": 0, "last": 0.0}
 _cache = {"vec": None, "meta": None, "mtime": 0}
@@ -57,9 +63,12 @@ def _embed(texts):
                 out.extend(d.embedding for d in r.data)
                 break
             except Exception as e:
+                msg = str(e)
+                if "RESOURCE_EXHAUSTED" in msg or "exceeded your current quota" in msg:
+                    raise QuotaExhausted(msg[:120]) from None       # never hammer a used-up quota
                 if attempt == 3:
                     raise
-                log.info("embedding retry (%s)", str(e)[:80])
+                log.info("embedding retry (%s)", msg[:80])
                 time.sleep(4 * (attempt + 1))
         time.sleep(0.6)                                   # stay under the free-tier rate limit
     v = np.asarray(out, dtype=np.float32)
@@ -147,33 +156,59 @@ def build(publish=None):
         changed = [f for f in current if abs(old_files.get(f, -1) - current[f]) >= 1]
         done_files = {f: current[f] for f in current if f not in changed}
         _state.update(done=0, total=len(changed))
-        texts, chunk_meta = [], []
-        for n, f in enumerate(changed):
-            done_files[f] = current[f]
-            try:
-                parts = _chunks(_read(Path(f)))
-            except Exception as e:
-                log.info("skip %s: %s", f, str(e)[:80])
-                parts = []
-            for j, c in enumerate(parts):
-                texts.append(f"{Path(f).name}\n{c}")
-                chunk_meta.append({"f": f, "i": j, "t": c})
-            _state["done"] = n + 1
-            if len(new_meta_chunks) + len(chunk_meta) > MAX_TOTAL:
+        vecs = [vec[keep_idx].astype(np.float32) if len(vec) else np.zeros((0, DIM), dtype=np.float32)]
+        chunks_all = list(new_meta_chunks)
+
+        def save():
+            np.save(IDX / "vectors.npy", np.vstack(vecs).astype(np.float16))
+            (IDX / "meta.json").write_text(json.dumps(
+                {"files": done_files, "chunks": chunks_all, "built": time.time(),
+                 "roots": [str(r) for r in roots()]}, ensure_ascii=False), encoding="utf-8")
+            _cache["mtime"] = 0
+
+        # Files are read and embedded in batches; progress is saved after each batch, so a stop (quota, shutdown)
+        # loses nothing and the next run carries on where this one ended.
+        pending_files, texts, chunk_meta, requests, stopped = [], [], [], 0, ""
+        for n, f in enumerate(changed + [None]):
+            if f is not None:
+                try:
+                    parts = _chunks(_read(Path(f)))
+                except Exception as e:
+                    log.info("skip %s: %s", f, str(e)[:80])
+                    parts = []
+                pending_files.append(f)
+                for j, c in enumerate(parts):
+                    texts.append(f"{Path(f).name}\n{c}")
+                    chunk_meta.append({"f": f, "i": j, "t": c})
+                _state["done"] = n + 1
+            if texts and (len(texts) >= BATCH or f is None):
+                try:
+                    vecs.append(_embed(texts))
+                except QuotaExhausted:
+                    stopped = "the free Gemini quota for today is used up - I'll continue later"
+                    break
+                requests += (len(texts) + BATCH - 1) // BATCH
+                chunks_all.extend(chunk_meta)
+                texts, chunk_meta = [], []
+            if not texts:                       # everything read so far is embedded: mark those files done
+                for pf in pending_files:
+                    done_files[pf] = current[pf]
+                pending_files = []
+                save()
+            if requests >= MAX_REQUESTS_PER_RUN:
+                stopped = "paused to save your Gemini quota - more in the next run"
                 break
-        new_vec = _embed(texts) if texts else np.zeros((0, DIM), dtype=np.float32)
-        vec = np.vstack([vec[keep_idx] if len(vec) else np.zeros((0, DIM), dtype=np.float32), new_vec]).astype(np.float16)
-        meta = {"files": done_files, "chunks": new_meta_chunks + chunk_meta,
-                "built": time.time(), "roots": [str(r) for r in roots()]}
-        np.save(IDX / "vectors.npy", vec)
-        (IDX / "meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
-        _cache["mtime"] = 0
+            if len(chunks_all) + len(chunk_meta) > MAX_TOTAL:
+                stopped = "reached the size limit"
+                break
+        save()
         _state["last"] = time.time()
-        msg = (f"OK: indexed {len(current)} files ({len(meta['chunks'])} passages); "
-               f"{len(changed)} new or changed read just now.")
+        left = sum(1 for f in changed if f not in done_files)
+        msg = (f"OK: indexed {len(done_files)} files ({len(chunks_all)} passages)"
+               + (f"; {left} still to read ({stopped})." if left else "."))
         log.info(msg)
         if publish:
-            publish({"type": "docindex", "files": len(current), "passages": len(meta["chunks"])})
+            publish({"type": "docindex", "files": len(done_files), "passages": len(chunks_all)})
         return msg
     finally:
         _state["busy"] = False

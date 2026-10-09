@@ -26,6 +26,8 @@ If running And WScript.Arguments.Count = 0 Then
 End If
 
 py = dir & "\.venv\Scripts\pythonw.exe"
-If Not fso.FileExists(py) Then py = "pythonw"
+' Use .venv only when setup.bat finished installing into it (an empty / half-installed .venv would fail).
+If Not (fso.FileExists(py) And fso.FolderExists(dir & "\.venv\Lib\site-packages\dotenv") And _
+        fso.FolderExists(dir & "\.venv\Lib\site-packages\PySide6")) Then py = "pythonw"
 sh.CurrentDirectory = dir
 sh.Run """" & py & """ """ & dir & "\jarvis.py""", 0, False
