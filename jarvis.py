@@ -271,15 +271,25 @@ class Ducker(threading.Thread):
         vol = AudioUtilities.GetSpeakers().EndpointVolume
         while True:
             cmd = self.q.get()
-            try:
-                if cmd == "duck" and self._saved is None:
-                    self._saved = vol.GetMasterVolumeLevelScalar()
-                    vol.SetMasterVolumeLevelScalar(self._saved * 0.35, None)
-                elif cmd == "restore" and self._saved is not None:
-                    vol.SetMasterVolumeLevelScalar(self._saved, None)
-                    self._saved = None
-            except Exception:
-                log.exception("volume ducking failed")
+            for attempt in (1, 2):
+                try:
+                    if cmd == "duck" and self._saved is None:
+                        self._saved = vol.GetMasterVolumeLevelScalar()
+                        vol.SetMasterVolumeLevelScalar(self._saved * 0.35, None)
+                    elif cmd == "restore" and self._saved is not None:
+                        vol.SetMasterVolumeLevelScalar(self._saved, None)
+                        self._saved = None
+                    break
+                except Exception as e:
+                    # the speakers changed (headphones plugged / unplugged): pick up the current device and retry
+                    try:
+                        vol = AudioUtilities.GetSpeakers().EndpointVolume
+                    except Exception:
+                        pass
+                    if attempt == 2:
+                        log.info("volume ducking skipped: %s", str(e)[:80])
+                        if cmd == "restore":
+                            self._saved = None
 
     def duck(self):
         self.q.put("duck")
@@ -322,6 +332,8 @@ class Assistant(threading.Thread):
         if not on:
             self.off = True
             self.turn += 1
+            if getattr(self, "live", None) is not None and self.live.on:
+                self.live.stop("ultron off")
             tools.cancel_task.set()
             self.speaker.stop()
             for stop in (lambda: tools.classroom.stop_class(), lambda: self.set_interpreter(None, None),
@@ -644,6 +656,7 @@ class Assistant(threading.Thread):
             self.bridge.state.emit("speaking", "", body, "")
 
         used_tools = []
+        failed_tools = []
 
         def on_tool_start(name, args):
             used_tools.append(name)
@@ -656,6 +669,8 @@ class Assistant(threading.Thread):
             _, label = __import__("tools").describe(name, args)
             self._pub({"type": "tool", "id": f"{turn}-{len(used_tools)}", "name": name, "label": label,
                        "result": result[:200]})
+            if result.startswith("FAILED"):
+                failed_tools.append(f"{name}: {result[8:120]}")
             if not cancelled() and result.startswith("FAILED"):
                 self.bridge.state.emit("error", "Couldn't do that", result[8:], "")
 
@@ -680,6 +695,7 @@ class Assistant(threading.Thread):
         log.info("JARVIS: %s", reply)
         try:
             __import__("tools").vault.journal(text if text != "…" else "(voice)", reply, used_tools)
+            __import__("tools").lessons.observe(text if text != "…" else "", reply, used_tools, failed_tools)
         except Exception:
             log.exception("journal failed")
         if (("NOREPLY" in (reply or "") or (quiet_check and UNHEARD.search(reply or "")))
@@ -1179,6 +1195,14 @@ def run_gui(args):
                 assistant.notify(result.replace("OK: ", "").replace("FAILED: ", "Sorry Sir, "))
             threading.Thread(target=_set, daemon=True).start()
             return
+        if action == "live":
+            threading.Thread(target=live_hook, args=(bool(data.get("on")),), daemon=True).start()
+            return
+        if action == "diagnostics":
+            threading.Thread(target=lambda: assistant.notify(
+                tools.diagnostics.diagnostics().split(" The full report")[0].replace("OK: diagnostic done - ", "Diagnostic: ")),
+                daemon=True).start()
+            return
         if action == "ultron_power":
             assistant.power(bool(data.get("on")), float(data.get("minutes") or 0))
             return
@@ -1386,6 +1410,54 @@ def run_gui(args):
 
     tools.brains.hooks.update(brain=brain, ask_secret=ask_secret_any)
     tools.apikeys.hooks.update(brain=brain, ask_secret=ask_secret_any, publish=hub.publish)
+
+    # ---- advanced: live voice, self-diagnostic, file search, learning from mistakes
+    import live as live_mod
+    tools.diagnostics.ctx.update(brain=brain, listener=listener, port=server.PORT)
+
+    def live_context():
+        parts = []
+        try:
+            parts.append("What you know about the user:\n" + tools.vault.context_for("", budget=1500))
+        except Exception:
+            pass
+        les = tools.lessons.for_prompt("", limit=10)
+        if les:
+            parts.append("Lessons from your past mistakes (follow them):\n" + les)
+        return "\n\n".join(p for p in parts if p.strip())
+
+    def live_turn(user, reply):
+        tools.vault.journal(user or "(voice)", reply, ["live"])
+        tools.lessons.observe(user, reply)
+
+    assistant.live = live_mod.Live(
+        listener, hub.publish,
+        on_state=lambda st, t: bridge.state.emit(st, "Live" if st != "speaking" else "", t, ""),
+        run_tool=tools.run_tool, tool_defs=lambda: tools.TOOLS, context=live_context, on_turn=live_turn)
+
+    def live_hook(on):
+        if assistant.off:
+            return "FAILED: Ultron is off."
+        if on:
+            assistant.deactivate()
+            assistant.speaker.stop()
+            return assistant.live.start()
+        return assistant.live.stop("asked")
+
+    tools.live_hook = live_hook
+    tools.docsearch.background()
+
+    def nightly():
+        while True:
+            time.sleep(600)
+            if datetime.datetime.now().hour >= 1:          # once a day, after 1 AM, about yesterday
+                try:
+                    tools.lessons.nightly_review()
+                except Exception:
+                    log.exception("nightly lesson review failed")
+            time.sleep(3 * 3600)
+
+    threading.Thread(target=nightly, daemon=True, name="lessons-review").start()
     hub.keys = tools.apikeys.status
     tools.telegrambot.ctx.update(hub=hub, on_command=assistant.on_text, on_action=lambda a, d: dashboard_action(a, d),
                                  state=tools._state, save=tools._save_state, ask_token=ask_token)

@@ -1,4 +1,4 @@
-"""Microphone thread: offline "Hey Jarvis" / "OK Jarvis" wake word, then records one command.
+﻿"""Microphone thread: offline "Hey Jarvis" / "OK Jarvis" wake word, then records one command.
 
 Modes:
   wake   - idle; waiting for the wake word
@@ -60,11 +60,15 @@ class Listener(threading.Thread):
         self._preroll = collections.deque(maxlen=24)
         self.wake_score = None           # score that opened the current recording (None = click/follow-up)
         self._stop = threading.Event()
+        self.ready = False               # wake model loaded and the mic is open
+        self.tap = None                  # live voice: gets every mic frame (data, rms, noise) while mode == "tap"
         self._model = None
         self.error = None
 
     # ------------------------------------------------------------- control
     def start_recording(self, no_speech_timeout=6.0, include_preroll=False, wake_score=None):
+        if self.tap is not None:
+            return                       # live voice owns the microphone
         self.wake_score = wake_score
         self._frames = list(self._preroll) if include_preroll else []
         self._env_mic, self._env_sys = [], []
@@ -85,10 +89,10 @@ class Listener(threading.Thread):
         return b"".join(self._capture_frames)
 
     def set_idle(self):
-        self.mode = "wake"
+        self.mode = "tap" if self.tap is not None else "wake"
 
     def set_busy(self):
-        self.mode = "busy"
+        self.mode = "tap" if self.tap is not None else "busy"
 
     def stop(self):
         self._stop.set()
@@ -144,6 +148,7 @@ class Listener(threading.Thread):
             self.error = str(e)
             return
         log.info("listening (wake word %s)", "on" if self._model else "off")
+        self.ready = True
         last_gain_log = 0.0
         while not self._stop.is_set():
             try:
@@ -180,6 +185,10 @@ class Listener(threading.Thread):
             self.on_level(min(1.0, rms / 2500.0))
             now = time.monotonic()
 
+            if self.mode == "tap":
+                if self.tap is not None:
+                    self.tap(data, rms, self._noise)
+                continue
             if self.mode == "record":
                 self._record(data, rms, now)
             elif self.mode == "capture":

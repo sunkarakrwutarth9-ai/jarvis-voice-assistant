@@ -601,6 +601,18 @@ def api_keys(action: str = "status", which: str = "") -> str:
     return apikeys.set_key(env)
 
 
+live_hook = None   # set by the app: live_hook(on) -> str
+
+
+def live_mode(on: bool = True) -> str:
+    """Real-time, interruptible voice conversation (Gemini Live)."""
+    if live_hook is None:
+        return "FAILED: live voice isn't available."
+    threading.Timer(1.2 if on else 0.1, lambda: live_hook(bool(on))).start()   # let the reply finish first
+    return ("OK: live voice starting - tell the user in a few words they can now just talk and interrupt any time."
+            if on else "OK: live voice off.")
+
+
 def ui_theme(name: str) -> str:
     """Switch the whole UI to one of the 200 themes by name or category."""
     import json as _j
@@ -1484,6 +1496,16 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("live_mode", "LIVE VOICE: real-time natural conversation - Ultron answers instantly while you talk and can be interrupted mid-sentence. on=true for 'live mode', 'talk to me live', 'let's have a conversation', 'real time mode'; on=false for 'stop live mode'.",
+        {"on": {"type": "boolean"}}, ["on"]),
+    _fn("lessons", "Ultron's lessons from past mistakes (it learns one whenever the user corrects it). action 'list' ('what have you learned', 'your mistakes'), 'add' ('remember this lesson: ...', 'next time always ...'), 'forget' (remove lessons containing the text).",
+        {"action": {"type": "string", "enum": ["list", "add", "forget"]}, "lesson": {"type": "string"}}, ["action"]),
+    _fn("diagnostics", "Full self-diagnostic of Ultron and the PC: internet, every AI brain + key, hearing, microphone, wake word, speakers, live voice, command center, disk/RAM/CPU/battery - fixes what it safely can and shows a JARVIS-style report on the Ultron Screen. 'run diagnostics', 'system check', 'are you ok', 'why are you slow', 'check yourself', 'fix yourself'.",
+        {"fix": {"type": "boolean", "description": "apply safe automatic fixes (default true)"}}),
+    _fn("search_my_files", "Answer from the user's OWN files by meaning (Documents, Desktop, Downloads, notes, PDFs, Word): 'what did my notes say about X', 'find the document where I wrote about Y', 'in my files what is ...', 'search my PDFs for ...'. Not for finding a file by name (use find_files).",
+        {"question": {"type": "string"}}, ["question"]),
+    _fn("index_my_files", "Re-read the user's files for search_my_files now, or add a folder to it ('also search my D:/College folder').",
+        {"folder": {"type": "string"}}),
     _fn("api_keys", "Ultron's API keys. action 'status' = which keys are set / missing and open the API Keys panel ('which api keys are missing', 'show my keys'); action 'add' with which = gemini|groq|deepseek|openrouter|claude|chatgpt|telegram opens Ultron's secure dialog so the USER pastes the key (never ask for the key in chat, never type it).",
         {"action": {"type": "string", "enum": ["status", "add"]}, "which": {"type": "string"}}, ["action"]),
     _fn("ui_theme", "Change the look of ALL Ultron screens to one of 200 UI themes - by theme name ('Night City', 'Diwali', 'Mark 42', 'Sakura', 'Black Gold') or category ('Apple Clean', 'Iron Man HUD', 'Neon Cyberpunk', 'Glassmorphism', 'Space', 'Nature', 'Retro', 'Minimal', 'Luxury', 'Indian Festive'). For 'show me themes' tell them to press the 🎨 button.",
@@ -1720,6 +1742,9 @@ import skills  # noqa: E402  (reusable task know-how)
 import gworkspace  # noqa: E402  (Google Calendar + Tasks)
 import brains  # noqa: E402  (Claude / ChatGPT / local models)
 import apikeys  # noqa: E402  (which API keys are set / missing)
+import lessons  # noqa: E402  (learning from corrections)
+import diagnostics  # noqa: E402  (self-check + auto-fix)
+import docsearch  # noqa: E402  (search the user's files by meaning)
 import departments  # noqa: E402  (command layer: self-designed departments)
 
 
@@ -1748,7 +1773,9 @@ FUNCS = {
     "show_memory_graph": show_memory_graph, "watch": videovision.watch,
     "architect_departments": departments.architect, "activate_departments": departments.activate_departments,
     "list_departments": departments.list_departments, "ask_department": departments.ask_department,
-    "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "api_keys": api_keys, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
+    "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "api_keys": api_keys,
+    "live_mode": live_mode, "lessons": lessons.lessons, "diagnostics": diagnostics.diagnostics,
+    "search_my_files": docsearch.search_my_files, "index_my_files": docsearch.index_my_files, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
     "tasks_list": gworkspace.tasks_list, "task_add": gworkspace.task_add,
@@ -1861,6 +1888,9 @@ def describe(name: str, args: dict):
         "open_file": lambda: "Opening file",
         "publish_website": lambda: "Publishing to the web" if a.get("confirm") else "Preparing to publish",
         "study_mode": lambda: "Opening Study Mode", "ui_theme": lambda: f"Theme · {a.get('name', '')}",
+        "live_mode": lambda: "Live voice " + ("on" if a.get("on", True) else "off"), "diagnostics": lambda: "Running diagnostics",
+        "search_my_files": lambda: f"Searching your files · {a.get('question', '')[:40]}", "lessons": lambda: "Lessons",
+        "index_my_files": lambda: "Reading your files",
         "architect_departments": lambda: "Architecting departments", "activate_departments": lambda: "Activating departments",
         "list_departments": lambda: "Your departments", "ask_department": lambda: f"{a.get('department', '')} department working",
         "interview": lambda: "Interview" if a.get("action") != "answer" else "Noting your answer",

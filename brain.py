@@ -467,7 +467,7 @@ class Brain:
     LEAN_TOOLS = {"open_app", "close_app", "open_website", "web_search", "youtube_play", "youtube_control", "media_key",
                   "set_volume", "get_weather", "world_time", "set_reminder", "schedule_task", "list_add", "list_show",
                   "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
-                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys",
+                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys", "live_mode", "diagnostics", "search_my_files", "index_my_files", "lessons",
                   "focus_mode", "open_screen", "set_theme", "orb_style", "news", "power_off", "sleep_pc"}
     LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "
                    "'Jarvis' - your name is still Ultron). Address the user as Sir. Answer in 1-2 short spoken sentences, "
@@ -481,6 +481,8 @@ class Brain:
         system = msgs[0]["content"] if msgs and msgs[0].get("role") == "system" else ""
         when = re.search(r"Current local date and time[^\n]*", system)
         mem = system.split("FROM YOUR MEMORY VAULT", 1)[1][:900] if "FROM YOUR MEMORY VAULT" in system else ""
+        if "LESSONS FROM YOUR PAST MISTAKES" in system:
+            mem = system.split("LESSONS FROM YOUR PAST MISTAKES", 1)[1].split("\n\n", 1)[0][:700] + "\n" + mem
         sys_lean = self.LEAN_PROMPT + ("\n" + when.group(0)[:260] if when else "") + ("\nMemory:" + mem if mem else "")
         rest = [m for m in msgs if m.get("role") != "system"][-6:]
         while rest and rest[0].get("role") != "user":
@@ -595,6 +597,12 @@ class Brain:
             mem = tools.vault.context_for(tools.last_user_text)
         except Exception:
             mem = ""
+        try:
+            les = tools.lessons.for_prompt(tools.last_user_text)
+        except Exception:
+            les = ""
+        if les:
+            system += ("\n\nLESSONS FROM YOUR PAST MISTAKES (the user corrected you - always follow these):\n" + les)
         if mem:
             system += ("\n\nFROM YOUR MEMORY VAULT (notes you have learned about the user - use them naturally, "
                        "don't recite them):\n" + mem)

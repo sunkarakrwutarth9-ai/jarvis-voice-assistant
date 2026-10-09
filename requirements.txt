@@ -44,3 +44,4 @@ imageio-ffmpeg
 h2
 google-auth-oauthlib
 qrcode
+websockets           # live voice (Gemini Live)

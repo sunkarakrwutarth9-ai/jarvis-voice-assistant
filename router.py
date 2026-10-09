@@ -8,13 +8,19 @@ appear in what the user said - plus every tool already used in the recent conver
 
 import re
 
-CORE = {"open_app", "close_app", "open_website", "web_search", "web_lookup", "youtube_play", "youtube_control",
+CORE = {"live_mode", "diagnostics", "search_my_files", "open_app", "close_app", "open_website", "web_search", "web_lookup", "youtube_play", "youtube_control",
         "media_key", "set_volume", "current_time", "world_time", "get_weather", "system_status", "create",
         "canvas_control", "save_creation", "revise_creation", "remember", "remember_note", "recall", "set_reminder",
         "schedule_task", "show_dashboard", "type_text", "press_keys", "take_screenshot", "read_screen", "deep_think",
         "calculate", "set_timer", "ultron_power", "open_browser", "find_files", "open_file", "do_task", "look", "watch"}
 
 GROUPS = [
+    (r"live|real ?time|conversation|talk to me|chat with me|interrupt", {"live_mode"}),
+    (r"learn|lesson|mistake|wrong|correct|meant|remember this|next time|అది కాదు|तप्पु|गलत", {"lessons"}),
+    (r"diagnos|system check|check (your)?self|fix (your)?self|are you ok|slow|not working|broken|health|status",
+     {"diagnostics", "system_status"}),
+    (r"my (files?|notes?|documents?|pdfs?|docs)|in my|search my|what did i write|where did i (write|save)|index",
+     {"search_my_files", "index_my_files", "find_files", "open_file"}),
     (r"mail|inbox|gmail|draft|e-?mail|ఈమెయిల్|मेल", {"email_triage", "email_search", "email_draft", "connect_gmail"}),
     (r"friday|edith|karen|team|overnight|agent|scan my|security|audit|ఫ్రైడే|फ्राइडे", {"ask_agent", "overnight_shift"}),
     (r"\bac\b|air ?con|light|fan|plug|\btv\b|geyser|smart home|google home|cool(er)?|temperature|ఏసీ|लाइट|पंखा",
