@@ -1513,6 +1513,20 @@ def run_gui(args):
         set_hold=set_hold, command=assistant.on_text, open=agents_open,
         say=lambda t, v=None: assistant.speaker.say(t))
     hub.agents = lambda data: tools.agents.handle(str(data.get("op")), data)
+
+    # ---- the AI software company (http://localhost:7777/company)
+    def company_open():
+        if hub.company_open():
+            return
+        exe = tools._chrome_exe()
+        url = f"http://localhost:{server.PORT}/company"
+        if exe:
+            subprocess.Popen([exe, f"--app={url}", "--start-maximized"], creationflags=subprocess.DETACHED_PROCESS)
+        else:
+            import webbrowser
+            webbrowser.open(url)
+
+    tools.softco.hooks.update(publish=hub.publish, notify=assistant.notify, show=tools.show_content, open=company_open)
     tools.agents.start()
     tools.docsearch.background()
 

@@ -470,7 +470,7 @@ class Brain:
                   "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
                   "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys", "live_mode", "diagnostics", "search_my_files", "index_my_files", "lessons", "business_mode", "records",
                   "connect_telegram", "ad_script", "ai_agents", "decide", "plan_day", "council", "delegate",
-                  "reflex_rule", "agent_goal",
+                  "reflex_rule", "agent_goal", "build_software",
                   "make_bill", "urgent_alert", "prescription", "business_report", "business_alerts", "open_business",
                   "focus_mode", "open_screen", "set_theme", "orb_style", "news", "power_off", "sleep_pc"}
     LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "

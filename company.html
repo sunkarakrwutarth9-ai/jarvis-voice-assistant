@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U.L.T.R.O.N. Software Company</title>
+<script src="/themes.js"></script>
+<style>
+:root{--bg:#060914;--ink:#eef2ff;--sub:#8f9bb8;--panel:rgba(18,24,42,.8);--line:rgba(120,160,255,.18);
+  --a1:#22d3ee;--a2:#a78bfa;--a3:#f43f5e;--font:"Inter","Segoe UI",system-ui,sans-serif;--display:"Inter","Segoe UI",sans-serif;--r:16px}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px var(--font);min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;
+  background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px)}
+.logo{font:800 20px var(--display)} .logo small{display:block;font:500 11px var(--font);letter-spacing:4px;color:var(--sub)}
+.sp{flex:1} .btn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;cursor:pointer;text-decoration:none;color:inherit}
+.btn.pri{background:linear-gradient(135deg,var(--a1),var(--a2));border:0;color:#fff;font-weight:700}
+main{max-width:1500px;margin:auto;padding:18px 22px 50px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{font:600 12px var(--font);letter-spacing:3px;text-transform:uppercase;color:var(--sub);margin:0 0 12px}
+.ask{display:flex;gap:10px} .ask input{flex:1;font-size:16px;padding:14px 16px}
+input,select{background:color-mix(in srgb,var(--ink) 6%,transparent);border:1px solid var(--line);border-radius:12px;padding:9px 11px;outline:0}
+input:focus{border-color:var(--a1)}
+.ex{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px} .ex button{border:1px solid var(--line);background:none;border-radius:99px;padding:5px 12px;cursor:pointer;color:var(--sub);font-size:12.5px}
+.ex button:hover{color:var(--ink);border-color:var(--a1)}
+.org{display:grid;grid-template-columns:repeat(8,1fr);gap:10px} @media(max-width:1100px){.org{grid-template-columns:repeat(4,1fr)}}
+.role{text-align:center;padding:14px 8px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--ink) 3%,transparent);position:relative;transition:.3s}
+.role i{font-style:normal;font-size:30px;display:block} .role b{display:block;margin-top:6px;font-size:13px} .role small{display:block;color:var(--sub);font-size:11.5px;min-height:30px;margin-top:4px}
+.role.working{border-color:var(--a1);box-shadow:0 0 22px color-mix(in srgb,var(--a1) 40%,transparent)} .role.working i{animation:bob 1s infinite}
+.role.done{border-color:#3ddc84} .role.failed{border-color:var(--a3)}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.org .arrow{display:none}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px} @media(max-width:900px){.board{grid-template-columns:1fr 1fr}}
+.col{background:color-mix(in srgb,var(--ink) 3%,transparent);border-radius:14px;padding:10px;min-height:160px}
+.col h3{margin:0 0 8px;font:600 12px var(--font);letter-spacing:2px;color:var(--sub);text-transform:uppercase;display:flex;justify-content:space-between}
+.tk{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:7px;font-size:12.5px;animation:in .35s}
+.tk code{color:var(--a2);font-size:12.5px} .tk small{display:block;color:var(--sub);margin-top:3px}
+.col.done .tk{border-color:#3ddc84}
+@keyframes in{from{opacity:0;transform:scale(.95)}}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:16px} @media(max-width:1000px){.two{grid-template-columns:1fr}}
+pre#term{margin:0;background:#020409;color:#b9f6ca;border-radius:12px;padding:12px;height:300px;overflow:auto;font:12.5px Consolas,monospace;white-space:pre-wrap}
+.feed{height:300px;overflow:auto;display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.feed div{padding:6px 9px;border-radius:9px;background:color-mix(in srgb,var(--ink) 4%,transparent)} .feed small{color:var(--sub)}
+#viewer{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+#viewer.show{display:flex} #viewer .box{width:min(1100px,96vw);height:min(88vh,900px);background:var(--bg);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--line)}
+#viewer .bar{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)} #viewer iframe{flex:1;border:0}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:600;opacity:0;transition:.3s;z-index:40}
+.toast.show{opacity:1}
+.stat{display:flex;gap:18px;flex-wrap:wrap;color:var(--sub);font-size:13px;margin-top:10px} .stat b{color:var(--ink)}
+</style></head>
+<body>
+<header><div class="logo">🏢 ULTRON SOFTWARE COMPANY<small>ONE SENTENCE IN · WORKING, TESTED SOFTWARE OUT</small></div><div class="sp"></div>
+  <button class="btn" id="repBtn" style="display:none">📄 Ship report</button>
+  <a class="btn" href="/agents">🤖 Agents</a><button class="btn" onclick="ULTRON_THEME.openGallery()">🎨</button><a class="btn" href="/">⌂ Command center</a></header>
+<main>
+  <div class="card"><h2>What should the team build?</h2>
+    <div class="ask"><input id="idea" placeholder="e.g. a pharmacy stock tracker with expiry alerts and a dashboard"><select id="stack"><option value="auto">Auto stack</option><option value="python">Python</option><option value="web">Web app</option></select>
+      <button class="btn pri" id="go">🚀 Build it</button></div>
+    <div class="ex"><button>a beautiful pomodoro + to-do web app</button><button>a GST invoice calculator with PDF-ready receipts (web)</button>
+      <button>a Python library that parses Indian bank SMS into expenses, with categories and monthly totals</button><button>a typing-speed game in the browser with levels and high scores</button>
+      <button>a hospital bed-allocation simulator (Python) with priority rules</button></div>
+    <div class="stat" id="stat"></div></div>
+  <div class="card"><h2>The team</h2><div class="org" id="org"></div></div>
+  <div class="card"><h2>Kanban — every file, live</h2><div class="board" id="board"></div></div>
+  <div class="two"><div class="card"><h2>Test terminal (real runs on this PC)</h2><pre id="term">$ waiting for the QA engineer…</pre></div>
+    <div class="card"><h2>Team chat</h2><div class="feed" id="feed"></div></div></div>
+  <div class="card"><h2>Shipped projects</h2><div id="projects" style="color:var(--sub)"></div></div>
+</main>
+<div id="viewer"><div class="box"><div class="bar"><b>🚀 Ship report</b><div class="sp"></div><button class="btn" id="vClose">✕</button></div><iframe id="vFrame"></iframe></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const COLS = [["todo", "To do"], ["doing", "Coding"], ["review", "Review"], ["testing", "Testing"], ["done", "Done ✓"]];
+let S = null, REPORT = null, T0 = 0;
+const toast = t => { $("toast").textContent = String(t).replace(/^OK: /, "✓ ").replace(/^FAILED: /, "✕ "); $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 6000); };
+
+function org() { $("org").innerHTML = S.roles.map(r => `<div class="role ${r.status}" id="r-${r.id}"><i>${r.icon}</i><b>${esc(r.name)}</b><small>${esc(r.text || "idle")}</small></div>`).join(""); }
+function board() {
+  const B = S.job.board || {};
+  $("board").innerHTML = COLS.map(([k, n]) => { const items = Object.entries(B).filter(([p, c]) => c.col === k);
+    return `<div class="col ${k}"><h3>${n}<span>${items.length}</span></h3>${items.map(([p, c]) => `<div class="tk"><code>${esc(p)}</code><small>${esc(c.who ? c.who + " · " : "")}${esc(c.note)}</small></div>`).join("")}</div>`; }).join("");
+}
+function feed() { $("feed").innerHTML = (S.job.log || []).slice().reverse().map(l => { const r = S.roles.find(x => x.id === l.role);
+  return `<div><small>${l.t}</small> <b>${r ? r.icon + " " + esc(r.name) : ""}</b> ${esc(l.text)}</div>`; }).join(""); }
+function stat() {
+  const n = Object.keys(S.job.board || {}).length, done = Object.values(S.job.board || {}).filter(c => c.col === "done").length;
+  $("stat").innerHTML = S.job.idea ? `<span>Building: <b>${esc(S.job.idea)}</b></span><span>Files: <b>${done}/${n}</b> done</span>
+    <span>Status: <b>${S.job.running ? "⏳ working" : S.job.result ? (S.job.result.passed ? "✓ shipped, tests pass" : "⚠ shipped, tests need attention") : "idle"}</b></span>` : "";
+  $("projects").innerHTML = (S.projects || []).map(p => `📁 ${esc(p.name)}`).join(" &nbsp; ") || "None yet.";
+  $("go").disabled = !!S.job.running; $("go").textContent = S.job.running ? "⏳ Team at work…" : "🚀 Build it";
+}
+async function load() { S = await fetch("/api/company").then(r => r.json()); org(); board(); feed(); stat();
+  if (S.job.terminal) $("term").textContent = S.job.terminal; }
+
+$("go").onclick = () => { const idea = $("idea").value.trim(); if (!idea) return toast("✕ Describe what to build");
+  fetch("/api/company", {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify({op: "build", idea, stack: $("stack").value})})
+    .then(r => r.json()).then(r => { toast(r.result); $("term").textContent = "$ the team is starting…\n"; load(); }); };
+document.querySelectorAll(".ex button").forEach(b => b.onclick = () => { $("idea").value = b.textContent; $("idea").focus(); });
+$("vClose").onclick = () => $("viewer").classList.remove("show");
+$("repBtn").onclick = () => { if (REPORT) { $("vFrame").srcdoc = REPORT; $("viewer").classList.add("show"); } };
+
+const es = new EventSource("/events?id=company-" + Math.random().toString(36).slice(2, 8));
+es.onmessage = m => { const e = JSON.parse(m.data); if (!S) return;
+  if (e.type === "company") {
+    if (e.kind === "role") { const r = S.roles.find(x => x.id === e.role); if (r) { r.status = e.status; r.text = e.text; } S.job.log.push({t: new Date().toTimeString().slice(0, 8), role: e.role, text: e.text}); org(); feed(); }
+    else if (e.kind === "card") { S.job.board[e.path] = {col: e.col, who: e.who, note: e.note}; board(); stat(); }
+    else if (e.kind === "term") { $("term").textContent = (S.job.terminal = (S.job.terminal || "") + e.text).slice(-12000); $("term").scrollTop = 1e9; }
+    else if (e.kind === "result") { REPORT = e.html; $("repBtn").style.display = ""; $("vFrame").srcdoc = REPORT; $("viewer").classList.add("show"); }
+    else if (e.kind === "done") load();
+  } else if (e.type === "ui_theme") ULTRON_THEME.apply(e.id);
+};
+addEventListener("DOMContentLoaded", () => ULTRON_THEME.init("business"));
+load();
+</script>
+</body></html>

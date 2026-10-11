@@ -130,7 +130,7 @@ bring your hand closer to zoom, make a fist to collapse the electrons, open your
 
 ---
 
-## 🎨 200 UI themes
+## 🎨 220 UI themes
 
 Every screen can be restyled: the command center, Study Mode (`/study`), the Ultron Screen (`/screen`), the phone page and the island.
 There are 10 categories with 20 themes each: Apple Clean, Iron Man HUD, Neon Cyberpunk, Glassmorphism, Space, Nature, Retro, Minimal, Luxury and Indian Festive.
@@ -138,6 +138,52 @@ There are 10 categories with 20 themes each: Apple Clean, Iron Man HUD, Neon Cyb
 - Click **🎨** in the top bar, or press Ctrl+K and choose "Themes (200)". The gallery lets you hover to preview and click to apply.
 - Or ask by voice: *"change the theme to Diwali"*, *"make it neon cyberpunk"*, *"Apple light theme"*.
 - Your choice is saved, and every open screen switches live.
+
+## 🏢 Business modes
+
+Say **"switch to hospital mode"**, or supermarket / kirana, restaurant / cafe, pharmacy / medical store, school / college, hotel, office or factory. Say **"normal mode"** to go back.
+
+Each mode gives Ultron:
+- its own persona;
+- its own records, saved locally in `business/`;
+- its own actions;
+- a matching "Industry" theme;
+- its console at <http://localhost:7777/business>, which opens by itself.
+
+What each mode can do:
+- **Billing with GST and stock** (supermarket, restaurant, pharmacy, hotel): *"bill 2 bread and 1 milk"*.
+- **Urgent alerts** that escalate every 2 minutes until someone acknowledges them.
+- **Voice prescriptions:** Ultron drafts, reads back, the doctor confirms, then it is sent. Controlled drugs are always blocked.
+- **Pharmacy checks:** Schedule H medicines need a prescription.
+- **Reports, Excel/CSV import, and ✨ demo data.**
+
+## 🤖 8 AI agent systems — <http://localhost:7777/agents>
+
+| Agent | Example |
+|---|---|
+| ⚡ Reflex | "when battery below 20, tell me to charge" |
+| 🌍 World-model | goes quiet by itself in meetings and presentations; keeps updates while you're away |
+| 🎯 Goal | "crack my physics exam by 25 October" → dated milestones |
+| ⚖️ Utility | "which laptop should I buy?" → weighted scoring table |
+| 📚 Learning | learns from every correction |
+| 🗓 Planning | "plan my day: study 3 h, gym, call mom" |
+| 👥 Council | 3 agents on 3 AI brains debate; a judge decides |
+| 🏛 Manager | splits a big job across parallel specialist workers |
+
+**🎬 Ad Studio** uses them all: *"make a 30-second reel ad for my bakery"*. It produces research, 3 scripts from 3 AI brains, a critic score, the winner, a storyboard with photos, a caption, hashtags, a 7-day posting plan and a voice-over.
+
+## 🏢 Ultron Software Company — <http://localhost:7777/company>
+
+Say *"build me a GST invoice calculator web app"*. A whole AI team then builds it, step by step:
+1. The **CEO** writes the spec.
+2. The **architect** designs the files.
+3. **Engineers** write the code in parallel on different AI brains.
+4. A **reviewer** finds bugs.
+5. **QA** writes and **runs real tests**.
+6. A **debugger** fixes the code until the tests pass.
+7. A **tech writer** adds a README.
+
+The project lands in `Documents/Ultron Projects` and opens in VS Code. The page shows the team, a live Kanban board and the test terminal.
 
 ## 🧑 Your own voice and face (optional)
 

@@ -1501,6 +1501,9 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("build_software", "🏢 The Ultron Software Company builds a COMPLETE, WORKING, TESTED software project from one sentence: CEO writes the spec → architect designs the files → several engineers code in parallel on different AI brains → code review → QA writes and RUNS real tests → debugger fixes until they pass → README → project folder opened in VS Code (+ live preview for web apps). For 'build me an app/website/tool/game/software/project', 'make a program that…'. Use create instead only for a quick single-file demo.",
+        {"idea": {"type": "string"}, "stack": {"type": "string", "enum": ["auto", "python", "web"]}}, ["idea"]),
+    _fn("software_company", "Open the Software Company page (team, Kanban board, test terminal, shipped projects)."),
     _fn("ad_script", "🎬 Ad Studio: a complete, professional ad / promo / reel script made by Ultron's 8-agent team (research → 3 copywriters on 3 AI brains → critic → utility pick → polish → storyboard with real photos → caption, hashtags, 7-day posting plan, voice-over). 'make an ad for…', 'write a reel script for my shop', 'promo video script'.",
         {"product": {"type": "string"}, "audience": {"type": "string"}, "platform": {"type": "string", "description": "Instagram Reels, YouTube Shorts, YouTube, Facebook, TV / radio, WhatsApp status"},
          "seconds": {"type": "integer"}, "language": {"type": "string"}, "tone": {"type": "string"}}, ["product"]),
@@ -1790,6 +1793,7 @@ import diagnostics  # noqa: E402  (self-check + auto-fix)
 import docsearch  # noqa: E402  (search the user's files by meaning)
 import modes  # noqa: E402  (business modes: hospital, supermarket, restaurant, ...)
 import agents  # noqa: E402  (the 8 AI agent systems + Ad Studio)
+import softco  # noqa: E402  (the AI software company: idea -> tested project)
 modes_tools = {"records", "make_bill", "urgent_alert", "prescription", "business_report", "business_alerts",
                "import_records", "open_business", "business_mode"}
 import departments  # noqa: E402  (command layer: self-designed departments)
@@ -1825,7 +1829,7 @@ FUNCS = {
     "business_mode": modes.business_mode, "records": modes.records, "make_bill": modes.make_bill,
     "ai_agents": agents.ai_agents, "reflex_rule": agents.reflex_rule, "agent_goal": agents.goal, "decide": agents.decide,
     "plan_day": agents.plan_day, "council": agents.council, "delegate": agents.delegate, "ad_script": agents.ad_script,
-    "world_model": agents.world_model,
+    "world_model": agents.world_model, "build_software": softco.build_software, "software_company": softco.company,
     "urgent_alert": modes.urgent_alert, "prescription": modes.prescription, "business_report": modes.business_report,
     "business_alerts": modes.business_alerts, "import_records": modes.import_records, "open_business": modes.open_business,
     "search_my_files": docsearch.search_my_files, "index_my_files": docsearch.index_my_files, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
@@ -1946,6 +1950,7 @@ def describe(name: str, args: dict):
         "index_my_files": lambda: "Reading your files",
         "business_mode": lambda: f"Mode · {a.get('name', '')}", "records": lambda: f"{a.get('action', '')} {a.get('collection', '')}",
         "make_bill": lambda: "Making the bill", "ad_script": lambda: f"🎬 Ad Studio · {a.get('product', '')[:30]}",
+        "build_software": lambda: f"🏢 Software company · {a.get('idea', '')[:30]}", "software_company": lambda: "🏢 Software company",
         "council": lambda: "👥 Agent council", "delegate": lambda: "🏛 Delegating to the team", "decide": lambda: "⚖️ Weighing options",
         "plan_day": lambda: "🗓 Planning your day", "agent_goal": lambda: "🎯 Goal agent", "reflex_rule": lambda: "⚡ Reflex rule",
         "ai_agents": lambda: "🤖 AI agents", "world_model": lambda: "🌍 World model", "urgent_alert": lambda: "🚨 Urgent alert", "prescription": lambda: f"Prescription · {a.get('action', '')}",

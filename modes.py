@@ -285,7 +285,7 @@ def business_mode(name: str) -> str:
     if m == "personal":
         return "OK: back to personal mode."
     try:                                             # the console opens by itself (an open one just switches)
-        if hooks.get("open") and not hooks.get("is_open", lambda: False)():
+        if hooks.get("open") and not hooks.get("is_open", lambda: False)():   # (a business- window)
             hooks["open"]()
     except Exception:
         log.exception("opening the business console failed")

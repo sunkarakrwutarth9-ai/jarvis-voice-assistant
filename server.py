@@ -75,11 +75,15 @@ class Hub:
 
     def business_open(self):
         with self._lock:
-            return bool(self._biz)
+            return any(v.startswith("business-") for v in self._biz)
+
+    def company_open(self):
+        with self._lock:
+            return any(v.startswith("company-") for v in self._biz)
 
     def set_view(self, view_id, visible):
         """Track whether any dashboard is on screen (visible=None removes a closed tab)."""
-        if view_id.startswith("business-"):
+        if view_id.startswith(("business-", "company-")):
             with self._lock:
                 (self._biz.discard if visible is None else self._biz.add)(view_id)
             return
@@ -208,6 +212,11 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(tutor.deck_cards(unquote(self.path.partition("name=")[2])[:80]), ensure_ascii=False).encode())
         elif self.path == "/screen":
             self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/company":
+            self._send(200, (HERE / "company.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/company":
+            import softco
+            self._send(200, json.dumps(softco.status(), ensure_ascii=False, default=str).encode())
         elif self.path == "/agents":
             self._send(200, (HERE / "agents.html").read_bytes(), "text/html; charset=utf-8")
         elif self.path == "/api/agents":
@@ -296,6 +305,10 @@ class _Handler(BaseHTTPRequestHandler):
                                                                    "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme", "api_key", "live", "diagnostics"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
+        elif self.path == "/api/company" and data.get("op") == "build" and isinstance(data.get("idea"), str):
+            import softco
+            result = softco.build_software(data["idea"][:1500], str(data.get("stack") or "auto")[:20])
+            self._send(200, json.dumps({"result": result}, ensure_ascii=False).encode())
         elif self.path == "/api/agents" and isinstance(data.get("op"), str):
             try:
                 result = self.hub.agents(data)
@@ -328,7 +341,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.end_headers()
         q = self.hub.subscribe()
-        if view_id and (view_id.startswith("screen-") or view_id.startswith("business-")):
+        if view_id and view_id.startswith(("screen-", "business-", "company-")):
             self.hub.set_view(view_id, True)          # a Jarvis Screen / business console window is connected
         try:
             self.wfile.write(b"retry: 1500\n\n")
