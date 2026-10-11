@@ -592,6 +592,7 @@ function onEvent(e) {
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "open_themes": ULTRON_THEME.openGallery(); break;
     case "open_keys": openKeys(); break;
+    case "biz_alert": toast("🚨 URGENT → " + e.to + ": " + e.message, 9000); break;
     case "live": LIVE_ON = !!e.on; $("liveBtn").classList.toggle("on", LIVE_ON); $("liveBtn").title = LIVE_ON ? "Live voice ON - click to stop" : "Live voice - talk naturally, interrupt any time"; break;
     case "api_keys": renderKeys(e.keys, e.msg); break;
     case "memory_graph": openMemoryGraph(); break;
@@ -888,7 +889,8 @@ const PAL = [
   ["♻️", "New conversation", "", () => $("newc").click()],
   ["📸", "Screenshot", "", () => ask("take a screenshot")],
   ["🔒", "Lock the PC", "", () => ask("lock the PC")],
-  ["🎨", "Themes (200)", "change the whole look", () => { closePal(); ULTRON_THEME.openGallery(); }],
+  ["🎨", "Themes (220)", "change the whole look", () => { closePal(); ULTRON_THEME.openGallery(); }],
+  ["🏢", "Business modes", "hospital, supermarket, restaurant, pharmacy, school, hotel, office, factory", () => { closePal(); window.open("/business", "_blank"); }],
   ["🔑", "API keys", "see which keys are missing, add one", () => { closePal(); openKeys(); }],
   ["🎙", "Live voice", "real-time talk - interrupt any time", () => { closePal(); post("/api/action", {action: "live", on: !LIVE_ON}); }],
   ["🩺", "Run diagnostics", "check every system and auto-fix", () => { closePal(); post("/api/action", {action: "diagnostics"}); }],

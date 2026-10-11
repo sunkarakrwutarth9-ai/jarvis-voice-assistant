@@ -45,3 +45,4 @@ h2
 google-auth-oauthlib
 qrcode
 websockets           # live voice (Gemini Live)
+openpyxl             # business modes: import Excel

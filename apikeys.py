@@ -86,7 +86,12 @@ def set_key(env: str) -> str:
     elif env == "GEMINI_API_KEY":
         note = " Restart Ultron to use it as the main brain."
     elif env == "TELEGRAM_BOT_TOKEN":
-        note = " Say 'connect Telegram' to pair your phone."
+        try:
+            import telegrambot
+            res = telegrambot.connect_telegram(new_pairing=False)     # starts the bot + shows the pairing code
+            note = " " + res.replace("OK: ", "").split(" - ")[0]
+        except Exception as e:
+            note = f" Saved, but the bot couldn't start yet ({str(e)[:80]}). Say 'connect Telegram'."
     if hooks["publish"]:
         hooks["publish"]({"type": "api_keys", "keys": status()})
     log.info("API key saved: %s", env)

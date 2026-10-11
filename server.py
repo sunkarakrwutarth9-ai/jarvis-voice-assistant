@@ -42,6 +42,7 @@ class Hub:
         self.on_event = lambda event: None   # set by the app: saves chats
         self.study = lambda: {}              # set by the app: Study Mode data
         self.keys = lambda: []               # set by the app: which API keys are set (never the keys)
+        self.business = lambda data: "FAILED: not ready"   # set by the app: business console actions
         self.on_visibility = lambda any_visible: None
         self.history = []            # recent conversation events, replayed to new tabs
         self.snapshot = {"state": "idle", "title": "", "body": "", "me": False, "muted": False, "ranking": [],
@@ -195,6 +196,18 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(tutor.deck_cards(unquote(self.path.partition("name=")[2])[:80]), ensure_ascii=False).encode())
         elif self.path == "/screen":
             self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/business":
+            self._send(200, (HERE / "business.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/business":
+            import modes
+            self._send(200, json.dumps(modes.overview(), ensure_ascii=False).encode())
+        elif self.path.startswith("/api/business/records"):
+            import modes
+            from urllib.parse import parse_qs, urlparse
+            qs = parse_qs(urlparse(self.path).query)
+            col, q = (qs.get("c") or [""])[0][:40], (qs.get("q") or [""])[0][:100]
+            rows = modes._find(col, q, 500) if q else modes._rows(col, limit=500)
+            self._send(200, json.dumps(rows, ensure_ascii=False, default=str).encode())
         elif self.path == "/api/keys":
             self._send(200, json.dumps(self.hub.keys()).encode())
         elif self.path == "/api/vault_graph":
@@ -254,7 +267,7 @@ class _Handler(BaseHTTPRequestHandler):
             self.send_error(403)
             return
         try:
-            length = min(int(self.headers.get("Content-Length", 0)), 10000)
+            length = min(int(self.headers.get("Content-Length", 0)), 200000)
             data = json.loads(self.rfile.read(length) or b"{}")
         except (ValueError, json.JSONDecodeError):
             self.send_error(400)
@@ -266,6 +279,12 @@ class _Handler(BaseHTTPRequestHandler):
                                                                    "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme", "api_key", "live", "diagnostics"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
+        elif self.path == "/api/business" and isinstance(data.get("op"), str):
+            try:
+                result = self.hub.business(data)
+            except Exception as e:
+                result = f"FAILED: {e}"
+            self._send(200, json.dumps({"result": result}, ensure_ascii=False).encode())
         elif self.path == "/api/clipboard":
             try:
                 import pyperclip

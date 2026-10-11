@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U.L.T.R.O.N. Business</title>
+<script src="/themes.js"></script>
+<style>
+:root{--bg:#0b1020;--ink:#eef2ff;--sub:#97a0b8;--panel:rgba(20,26,44,.78);--line:rgba(120,160,255,.18);
+  --a1:#22c3a6;--a2:#3b82f6;--a3:#f59e0b;--font:"Inter","Segoe UI",system-ui,sans-serif;--display:"Inter","Segoe UI",sans-serif;--r:16px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px var(--font)}
+button,input,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);z-index:5;flex-wrap:wrap}
+.logo{font:700 22px var(--display);display:flex;align-items:center;gap:10px}
+.logo .ic{font-size:28px}
+.logo small{display:block;font:500 11px var(--font);letter-spacing:3px;color:var(--sub);text-transform:uppercase}
+#bizName{background:transparent;border:1px dashed transparent;border-radius:8px;padding:2px 6px;font:600 15px var(--font);color:var(--sub);min-width:160px}
+#bizName:hover,#bizName:focus{border-color:var(--line);outline:0}
+.sp{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--a1)} .btn.pri{background:var(--a1);border-color:var(--a1);color:#fff;font-weight:600}
+.btn.warn{background:#e5484d;border-color:#e5484d;color:#fff;font-weight:600}
+select.btn{padding-right:6px}
+main{padding:18px 20px 40px;display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;max-width:1500px;margin:auto}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{font:600 12px var(--font);letter-spacing:3px;text-transform:uppercase;color:var(--sub);margin:0 0 12px}
+.kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.kpi small{color:var(--sub);font-size:12px} .kpi b{display:block;font:700 28px var(--display);margin-top:4px}
+.kpi:after{content:"";position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:50%;background:var(--a1);opacity:.08}
+#urgent{grid-column:1/-1;display:none;flex-direction:column;gap:8px}
+.ur{display:flex;align-items:center;gap:12px;background:#e5484d;color:#fff;border-radius:14px;padding:12px 16px;animation:flash 1s infinite;font-weight:600}
+.ur span{flex:1} .ur button{background:#fff;color:#c01;border:0;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer}
+@keyframes flash{50%{box-shadow:0 0 0 6px rgba(229,72,77,.35)}}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:6px 14px;cursor:pointer;text-transform:capitalize}
+.tabs button.on{background:var(--a1);border-color:var(--a1);color:#fff}
+.tools{display:flex;gap:8px;margin-bottom:10px} .tools input{flex:1}
+input,select{background:color-mix(in srgb,var(--ink) 6%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:0;min-width:0}
+input:focus,select:focus{border-color:var(--a1)}
+.tw{overflow:auto;max-height:58vh;border-radius:12px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:color-mix(in srgb,var(--bg) 92%,var(--a1));text-align:left;padding:9px 10px;font-weight:600;text-transform:capitalize;color:var(--sub);white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--line);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+tr:hover td{background:color-mix(in srgb,var(--a1) 6%,transparent)}
+td .x{opacity:.0;border:0;background:none;cursor:pointer;color:#e5484d;font-size:15px} tr:hover .x{opacity:1}
+.low{color:#e5484d;font-weight:700}
+.st{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;background:color-mix(in srgb,var(--a2) 18%,transparent)}
+.st.free,.st.running,.st.sent,.st.paid,.st.yes,.st.acknowledged{background:rgba(48,164,108,.2)}
+.st.occupied,.st.open,.st.down,.st.draft,.st.new{background:rgba(229,72,77,.2)}
+.st.cleaning,.st.cooking,.st.confirmed{background:rgba(245,158,11,.22)}
+.addrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:10px}
+.side{display:flex;flex-direction:column;gap:16px}
+.cart{margin:10px 0;display:flex;flex-direction:column;gap:6px}
+.ci{display:grid;grid-template-columns:1fr 60px 80px 24px;gap:6px;align-items:center;font-size:13px}
+.ci b{text-align:right}
+.tot{display:flex;justify-content:space-between;font:700 20px var(--display);padding-top:8px;border-top:1px dashed var(--line)}
+.alist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+.al{padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--a3) 14%,transparent);font-size:13px}
+.al.urgent{background:rgba(229,72,77,.18)}
+.rx{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;font-size:13px}
+.rx .r{display:flex;gap:6px;margin-top:8px}
+.hint{color:var(--sub);font-size:12.5px;line-height:1.6}
+.hint b{color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:12px;
+  font-weight:600;opacity:0;transition:.3s;pointer-events:none;max-width:90vw;z-index:20}
+.toast.show{opacity:1}
+.empty{padding:30px;text-align:center;color:var(--sub)}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;grid-column:1/-1}
+.mode{cursor:pointer;text-align:center;padding:22px 10px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel);transition:.2s}
+.mode:hover{border-color:var(--a1);transform:translateY(-3px)} .mode i{font-size:36px;font-style:normal;display:block;margin-bottom:8px}
+</style></head>
+<body>
+<header>
+  <div class="logo"><span class="ic" id="icon">🏢</span><div><span id="mname">Business</span><small>ULTRON · business mode</small></div></div>
+  <input id="bizName" placeholder="Your business name" title="Shown on bills">
+  <div class="sp"></div>
+  <select class="btn" id="modeSel" title="Switch mode"></select>
+  <button class="btn" id="demoBtn" title="Fill empty lists with sample data for a demo">✨ Demo data</button>
+  <button class="btn" id="repBtn">📊 Report</button>
+  <button class="btn" onclick="ULTRON_THEME.openGallery()">🎨</button>
+  <a class="btn" href="/" style="text-decoration:none;color:inherit">⌂ Command center</a>
+</header>
+<main id="main">
+  <div id="urgent"></div>
+  <div class="kpis" id="kpis"></div>
+  <section class="card"><div class="tabs" id="tabs"></div>
+    <div class="tools"><input id="q" placeholder="Search…"><button class="btn" id="addToggle">＋ Add</button></div>
+    <div class="tw" id="tw"></div>
+    <div class="addrow" id="addrow" style="display:none"></div>
+  </section>
+  <aside class="side" id="side"></aside>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const api = (b) => fetch("/api/business", {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(b)}).then(r => r.json());
+let OV = null, COL = null, ROWS = [], CATALOG = [], CART = [];
+
+function toast(t) { $("toast").textContent = t.replace(/^OK: /, "✓ ").replace(/^FAILED: /, "✕ "); $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 4200); }
+
+async function load() {
+  OV = await fetch("/api/business").then(r => r.json());
+  $("icon").textContent = OV.icon; $("mname").textContent = OV.name + " mode"; document.title = `U.L.T.R.O.N. ${OV.name}`;
+  if (document.activeElement !== $("bizName")) $("bizName").value = OV.biz_name || "";
+  $("modeSel").innerHTML = OV.modes.map(m => `<option value="${m.id}" ${m.id === OV.mode ? "selected" : ""}>${m.icon} ${m.name}</option>`).join("");
+  if (OV.mode === "personal") return pickMode();
+  $("kpis").innerHTML = OV.kpis.map(k => `<div class="kpi"><small>${esc(k.label)}</small><b>${esc(k.value)}</b></div>`).join("");
+  const cols = Object.keys(OV.collections);
+  if (!COL || !cols.includes(COL)) COL = cols[0];
+  $("tabs").innerHTML = cols.map(c => `<button class="${c === COL ? "on" : ""}" data-c="${c}">${c.replace("_", " ")}</button>`).join("");
+  $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { COL = b.dataset.c; load(); });
+  urgent(OV.alerts.filter(a => a.kind === "urgent"));
+  await rows(); side();
+}
+
+function pickMode() {
+  $("main").innerHTML = `<div class="modes">${OV.modes.filter(m => m.id !== "personal").map(m =>
+    `<div class="mode" data-m="${m.id}"><i>${m.icon}</i><b>${m.name}</b></div>`).join("")}</div>
+    <p class="hint" style="grid-column:1/-1;text-align:center">Pick what Ultron should run — or say <b>"Ultron, switch to supermarket mode"</b>.</p>`;
+  document.querySelectorAll(".mode").forEach(d => d.onclick = () => api({op: "mode", mode: d.dataset.m}).then(r => { toast(r.result); location.reload(); }));
+}
+
+async function rows() {
+  ROWS = await fetch(`/api/business/records?c=${encodeURIComponent(COL)}&q=${encodeURIComponent($("q").value)}`).then(r => r.json());
+  const fields = OV.collections[COL];
+  if (!ROWS.length) { $("tw").innerHTML = `<div class="empty">Nothing here yet — press <b>＋ Add</b>, <b>✨ Demo data</b>, or say "Ultron, import my ${COL} from Excel".</div>`; }
+  else $("tw").innerHTML = `<table><tr><th>#</th>${fields.map(f => `<th>${f.replace("_", " ")}</th>`).join("")}<th></th></tr>${ROWS.map(r =>
+    `<tr><td>${r.id}</td>${fields.map(f => cell(f, r)).join("")}<td><button class="x" data-id="${r.id}" title="Delete">✕</button></td></tr>`).join("")}</table>`;
+  $("tw").querySelectorAll(".x").forEach(b => b.onclick = () => { if (confirm("Delete this record?")) api({op: "delete", col: COL, id: +b.dataset.id}).then(r => toast(r.result)); });
+  $("addrow").innerHTML = fields.map(f => `<input placeholder="${f.replace("_", " ")}" data-f="${f}">`).join("") + `<button class="btn pri" id="addGo">Save</button>`;
+  $("addGo").onclick = () => { const d = {}; $("addrow").querySelectorAll("input").forEach(i => { if (i.value.trim()) d[i.dataset.f] = i.value.trim(); });
+    api({op: "add", col: COL, data: d}).then(r => { toast(r.result); $("addrow").querySelectorAll("input").forEach(i => i.value = ""); }); };
+}
+
+function cell(f, r) {
+  let v = r[f];
+  if (Array.isArray(v)) v = v.map(i => i.name ? `${i.qty}× ${i.name}` : JSON.stringify(i)).join(", ");
+  if (f === "status" || f === "on_call" || f === "available") return `<td><span class="st ${esc(String(v).toLowerCase())}">${esc(v)}</span></td>`;
+  if (f === "stock" && typeof v === "number" && typeof r.min_stock === "number" && v <= r.min_stock) return `<td class="low">${v}</td>`;
+  if ((f === "price" || f === "total" || f === "subtotal") && typeof v === "number") return `<td>₹${v.toLocaleString("en-IN")}</td>`;
+  return `<td title="${esc(v)}">${esc(v)}</td>`;
+}
+
+function urgent(list) {
+  $("urgent").style.display = list.length ? "flex" : "none";
+  $("urgent").innerHTML = list.map(a => `<div class="ur">🚨 <span>${esc(a.text)}</span><button data-id="${a.id}">Acknowledge</button></div>`).join("");
+  $("urgent").querySelectorAll("button").forEach(b => b.onclick = () => api({op: "ack", id: +b.dataset.id, by: "console"}).then(() => load()));
+}
+
+async function side() {
+  let h = "";
+  if (OV.catalog) {
+    CATALOG = await fetch(`/api/business/records?c=${OV.catalog}`).then(r => r.json());
+    h += `<div class="card"><h2>🧾 New bill</h2>
+      <div class="tools"><input id="itm" list="cat" placeholder="Item name or barcode"><input id="qty" type="number" value="1" min="0.1" step="any" style="max-width:70px"><button class="btn" id="addItem">Add</button></div>
+      <datalist id="cat">${CATALOG.map(c => `<option value="${esc(c.name)}">₹${c.price}${c.stock !== undefined ? " · stock " + c.stock : ""}</option>`).join("")}</datalist>
+      <div class="cart" id="cart"></div>
+      <div class="tools"><input id="cust" placeholder="Customer (optional)"><select id="pay"><option>cash</option><option>UPI</option><option>card</option></select></div>
+      <div class="tot"><span>Total</span><span id="tot">₹0</span></div>
+      <button class="btn pri" id="billGo" style="width:100%;margin-top:10px">Create bill</button>
+      <p class="hint">Or say: <b>${({supermarket: '"Ultron, bill 2 bread and 1 milk"', restaurant: '"Ultron, bill table 4: 2 biryani and 3 naan"',
+        pharmacy: '"Ultron, bill 2 Dolo 650"', hotel: '"Ultron, bill room 103: 2 nights deluxe and breakfast"'})[OV.mode] || ""}</b></p></div>`;
+  }
+  if (OV.mode === "hospital" || OV.mode === "factory" || OV.mode === "supermarket" || OV.mode === "hotel" || OV.mode === "restaurant") {
+    h += `<div class="card"><h2>🚨 Urgent alert</h2><input id="amsg" placeholder="${OV.mode === "hospital" ? "Bed 12: chest pain, BP 90/60" : "What happened?"}" style="width:100%">
+      <div class="tools" style="margin-top:8px"><select id="apri"><option>critical</option><option selected>high</option><option>medium</option></select>
+      <input id="ato" placeholder="${OV.mode === "hospital" ? "Doctor (blank = on-call)" : "Who (optional)"}"><button class="btn warn" id="aGo">Alert</button></div>
+      <p class="hint">Flashes on every Ultron screen, speaks aloud, goes to Telegram, and escalates every 2 min until acknowledged.</p></div>`;
+  }
+  if (OV.collections.prescriptions) {
+    const rx = await fetch(`/api/business/records?c=prescriptions`).then(r => r.json());
+    h += `<div class="card"><h2>💊 Prescriptions</h2>${rx.slice(0, 8).map(p => `<div class="rx"><b>#${p.id} ${esc(p.patient)}</b> · <span class="st ${esc(p.status)}">${esc(p.status)}</span>
+      <div class="hint">${esc(p.medicines)}</div><div class="hint">Dr ${esc(p.doctor)}</div>
+      <div class="r">${p.status === "draft" ? `<button class="btn pri" data-c="${p.id}">Doctor: confirm</button>` : ""}${p.status === "confirmed" ? `<button class="btn pri" data-s="${p.id}">Send to pharmacy</button>` : ""}</div></div>`).join("") ||
+      `<p class="hint">Say: <b>"Ultron, prescription for Ravi Kumar: Dolo 650 twice a day for 3 days"</b> — Ultron drafts it, reads it back, and the doctor confirms.</p>`}</div>`;
+  }
+  h += `<div class="card"><h2>🔔 Alerts</h2><div class="alist">${OV.alerts.map(a => `<div class="al ${a.kind}">${esc(a.text)}</div>`).join("") || `<p class="hint">All good — nothing needs attention.</p>`}</div></div>`;
+  h += `<div class="card"><h2>🎙 Say it</h2><p class="hint">${tips()}</p></div>`;
+  $("side").innerHTML = h;
+  if (OV.catalog) {
+    const add = () => { const n = $("itm").value.trim(); if (!n) return; const c = CATALOG.find(x => String(x.name).toLowerCase() === n.toLowerCase() || String(x.barcode) === n) ||
+      CATALOG.find(x => String(x.name).toLowerCase().includes(n.toLowerCase()));
+      if (!c) return toast("✕ Not in the list: " + n); CART.push({name: c.name, qty: +$("qty").value || 1, price: +c.price || 0, gst: +c.gst || 0}); $("itm").value = ""; $("qty").value = 1; cart(); $("itm").focus(); };
+    $("addItem").onclick = add; $("itm").onkeydown = e => { if (e.key === "Enter") add(); };
+    $("billGo").onclick = () => { if (!CART.length) return toast("✕ Add items first");
+      api({op: "bill", items: CART.map(c => ({name: c.name, qty: c.qty})), customer: $("cust").value, payment: $("pay").value}).then(r => { toast(r.result); if (r.result.startsWith("OK")) { CART = []; cart(); } }); };
+    cart();
+  }
+  if ($("aGo")) $("aGo").onclick = () => { if (!$("amsg").value.trim()) return; api({op: "alert", message: $("amsg").value, priority: $("apri").value, to: $("ato").value}).then(r => { toast(r.result); $("amsg").value = ""; }); };
+  document.querySelectorAll("[data-c]").forEach(b => { if (b.closest(".rx")) b.onclick = () => api({op: "rx_confirm", id: +b.dataset.c}).then(() => load()); });
+  document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => api({op: "rx_send", id: +b.dataset.s, pharmacy: prompt("Send to which pharmacy?", "Hospital pharmacy") || ""}).then(r => toast(r.result)));
+}
+
+function cart() {
+  $("cart").innerHTML = CART.map((c, i) => `<div class="ci"><span>${esc(c.name)}</span><span>× ${c.qty}</span><b>₹${(c.price * c.qty).toFixed(2)}</b><button class="x" style="opacity:1" data-i="${i}">✕</button></div>`).join("");
+  $("cart").querySelectorAll("[data-i]").forEach(b => b.onclick = () => { CART.splice(+b.dataset.i, 1); cart(); });
+  const t = CART.reduce((s, c) => s + c.price * c.qty * (1 + c.gst / 100), 0);
+  $("tot").textContent = "₹" + t.toLocaleString("en-IN", {maximumFractionDigits: 2});
+}
+
+function tips() {
+  return ({
+    hospital: `"Urgent: bed 12 chest pain, call the cardiologist" · "Prescription for Ravi: Dolo 650 twice daily 3 days" · "How many beds are free?" · "Admit Lakshmi to G-3"`,
+    supermarket: `"Bill 2 bread, 1 Amul milk and 3 Maggi" · "Where is the toor dal?" · "What's low on stock?" · "Today's sales report"`,
+    restaurant: `"Table 4: 2 chicken biryani and 3 naan" · "Bill table 4" · "Is paneer butter masala available?" · "Book a table for 6 at 8 pm"`,
+    pharmacy: `"Bill 2 Dolo 650" · "Which medicines expire soon?" · "Is Azithral in stock?" · "Import my stock from Excel"`,
+    school: `"Mark Rohan absent today" · "Add Maths marks: Diya 92 out of 100" · "What's 10-A's timetable on Monday?"`,
+    hotel: `"Check in Mr Sharma to room 103 for 2 nights" · "Which rooms need cleaning?" · "Bill room 103: 2 nights deluxe and breakfast"`,
+    office: `"Add a task for Priya: client deck by Friday" · "Log visitor Ravi meeting Meena" · "Who's on leave this week?"`,
+    factory: `"CNC-3 is down — alert maintenance" · "Log production: line A, 500 bolts, 3 defects" · "What material is low?"`,
+  })[OV.mode] || "";
+}
+
+$("q").oninput = () => { clearTimeout(rows.t); rows.t = setTimeout(rows, 250); };
+$("addToggle").onclick = () => { const a = $("addrow"); a.style.display = a.style.display === "none" ? "grid" : "none"; };
+$("modeSel").onchange = () => api({op: "mode", mode: $("modeSel").value}).then(r => { toast(r.result); COL = null; setTimeout(load, 300); });
+$("demoBtn").onclick = () => api({op: "demo"}).then(r => toast(r.result));
+$("repBtn").onclick = () => api({op: "report", period: prompt("Report for: today, week, month or year?", "today") || "today"}).then(r => toast(r.result));
+$("bizName").onchange = () => api({op: "name", name: $("bizName").value});
+
+function beep() { try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .15; o.start(); o.stop(a.currentTime + .35); } catch (e) {} }
+const es = new EventSource("/events?id=business-" + Math.random().toString(36).slice(2, 8));
+es.onmessage = m => { const e = JSON.parse(m.data);
+  switch (e.type) {
+    case "biz_update": clearTimeout(load.t); load.t = setTimeout(load, 200); break;
+    case "biz_mode": COL = null; location.reload(); break;
+    case "biz_alert": beep(); load(); break;
+    case "biz_alert_ack": load(); break;
+    case "ui_theme": ULTRON_THEME.apply(e.id); break;
+  } };
+addEventListener("DOMContentLoaded", () => ULTRON_THEME.init("business"));
+load();
+</script>
+</body></html>

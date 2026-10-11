@@ -619,7 +619,7 @@ def live_mode(on: bool = True) -> str:
 
 
 def ui_theme(name: str) -> str:
-    """Switch the whole UI to one of the 200 themes by name or category."""
+    """Switch the whole UI to one of the 220 themes by name or category."""
     import json as _j
     import re as _re
     src = (Path(__file__).resolve().parent / "web" / "themes.js").read_text(encoding="utf-8")
@@ -1501,6 +1501,27 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("business_mode", "Switch Ultron into a business mode - it becomes that organisation's assistant with its own records, actions, console and theme: hospital (clinic), supermarket (kirana/store/shop), restaurant (cafe), pharmacy (medical store), school (college/coaching), hotel, office (company), factory (warehouse) - or 'personal' to go back. 'switch to hospital mode', 'make yourself a supermarket assistant', 'normal mode'.",
+        {"name": {"type": "string"}}, ["name"]),
+    _fn("records", "The current business mode's database: add / find / list / update / delete / count records in a collection (e.g. products, patients, doctors, beds, menu, orders, students, marks, rooms, bookings, tasks, machines), or action 'demo' to load sample data. Always use find before quoting a price, stock, patient or room.",
+        {"action": {"type": "string", "enum": ["add", "find", "list", "update", "delete", "count", "demo"]},
+         "collection": {"type": "string"}, "data": {"type": "object", "description": "fields to add / change"},
+         "query": {"type": "string", "description": "words to find the record(s)"}, "id": {"type": "integer"}}, ["action"]),
+    _fn("make_bill", "Create a bill in Supermarket / Restaurant / Pharmacy / Hotel mode: prices + GST from the records, stock goes down, receipt shown. items like [{'name':'bread','qty':2}].",
+        {"items": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "qty": {"type": "number"},
+                                                                         "prescription_seen": {"type": "boolean", "description": "pharmacy: the customer showed a valid prescription"}}}},
+         "customer": {"type": "string"}, "payment": {"type": "string", "enum": ["cash", "UPI", "card"]}, "discount": {"type": "number"}}, ["items"]),
+    _fn("urgent_alert", "URGENT alert to staff / the on-call doctor: flashes on every Ultron screen, spoken aloud, sent to Telegram, escalates every 2 minutes to the next person until acknowledged. 'urgent', 'emergency', 'call the doctor now', 'machine down - alert maintenance'.",
+        {"message": {"type": "string"}, "priority": {"type": "string", "enum": ["critical", "high", "medium"]}, "to": {"type": "string", "description": "a doctor / person; blank = on-call"}}, ["message"]),
+    _fn("prescription", "Hospital/Pharmacy: voice prescriptions. action 'draft' (patient + medicines with dose & days + advice) shows it and you READ IT BACK; 'confirm' ONLY after the doctor clearly says confirm; 'send' to the pharmacy. Never prescribe on your own.",
+        {"action": {"type": "string", "enum": ["draft", "confirm", "send"]}, "patient": {"type": "string"}, "medicines": {"type": "string"},
+         "doctor": {"type": "string"}, "advice": {"type": "string"}, "rx_id": {"type": "integer"}, "pharmacy": {"type": "string"}}, ["action"]),
+    _fn("business_report", "Business report on screen: sales, bills, top items, counts. period today / week / month / year.",
+        {"period": {"type": "string", "enum": ["today", "week", "month", "year"]}}),
+    _fn("business_alerts", "What needs attention in the current business: low stock, expiring medicines, open urgent alerts, rooms to clean, machines down, kitchen orders, homework due."),
+    _fn("import_records", "Import a CSV or Excel file into a business collection ('import my product list from Downloads/products.xlsx').",
+        {"collection": {"type": "string"}, "path": {"type": "string"}}, ["collection", "path"]),
+    _fn("open_business", "Open the business console page (tables, billing, alerts, prescriptions)."),
     _fn("live_mode", "LIVE VOICE: real-time natural conversation - Ultron answers instantly while you talk and can be interrupted mid-sentence. on=true for 'live mode', 'talk to me live', 'let's have a conversation', 'real time mode'; on=false for 'stop live mode'.",
         {"on": {"type": "boolean"}}, ["on"]),
     _fn("lessons", "Ultron's lessons from past mistakes (it learns one whenever the user corrects it). action 'list' ('what have you learned', 'your mistakes'), 'add' ('remember this lesson: ...', 'next time always ...'), 'forget' (remove lessons containing the text).",
@@ -1750,6 +1771,9 @@ import apikeys  # noqa: E402  (which API keys are set / missing)
 import lessons  # noqa: E402  (learning from corrections)
 import diagnostics  # noqa: E402  (self-check + auto-fix)
 import docsearch  # noqa: E402  (search the user's files by meaning)
+import modes  # noqa: E402  (business modes: hospital, supermarket, restaurant, ...)
+modes_tools = {"records", "make_bill", "urgent_alert", "prescription", "business_report", "business_alerts",
+               "import_records", "open_business", "business_mode"}
 import departments  # noqa: E402  (command layer: self-designed departments)
 
 
@@ -1780,6 +1804,9 @@ FUNCS = {
     "list_departments": departments.list_departments, "ask_department": departments.ask_department,
     "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "api_keys": api_keys,
     "live_mode": live_mode, "lessons": lessons.lessons, "diagnostics": diagnostics.diagnostics,
+    "business_mode": modes.business_mode, "records": modes.records, "make_bill": modes.make_bill,
+    "urgent_alert": modes.urgent_alert, "prescription": modes.prescription, "business_report": modes.business_report,
+    "business_alerts": modes.business_alerts, "import_records": modes.import_records, "open_business": modes.open_business,
     "search_my_files": docsearch.search_my_files, "index_my_files": docsearch.index_my_files, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
     "delete_skill": skills.delete_skill, "connect_google_calendar": gworkspace.connect_google_calendar,
     "calendar_agenda": gworkspace.calendar_agenda, "calendar_add": gworkspace.calendar_add,
@@ -1896,6 +1923,10 @@ def describe(name: str, args: dict):
         "live_mode": lambda: "Live voice " + ("on" if a.get("on", True) else "off"), "diagnostics": lambda: "Running diagnostics",
         "search_my_files": lambda: f"Searching your files · {a.get('question', '')[:40]}", "lessons": lambda: "Lessons",
         "index_my_files": lambda: "Reading your files",
+        "business_mode": lambda: f"Mode · {a.get('name', '')}", "records": lambda: f"{a.get('action', '')} {a.get('collection', '')}",
+        "make_bill": lambda: "Making the bill", "urgent_alert": lambda: "🚨 Urgent alert", "prescription": lambda: f"Prescription · {a.get('action', '')}",
+        "business_report": lambda: "Business report", "business_alerts": lambda: "Checking alerts", "import_records": lambda: "Importing",
+        "open_business": lambda: "Opening the business console",
         "architect_departments": lambda: "Architecting departments", "activate_departments": lambda: "Activating departments",
         "list_departments": lambda: "Your departments", "ask_department": lambda: f"{a.get('department', '')} department working",
         "interview": lambda: "Interview" if a.get("action") != "answer" else "Noting your answer",

@@ -1,4 +1,4 @@
-// ULTRON UI themes: 200 looks in 10 categories, shared by every page (command center, Study Mode, Ultron
+// ULTRON UI themes: 220 looks in 11 categories, shared by every page (command center, Study Mode, Ultron
 // Screen, phone remote). A theme sets colours, fonts, background pattern, panel style and corner radius;
 // each page maps those tokens onto its own CSS variables. Pick one in the gallery (ULTRON_THEME.openGallery()).
 (function () {
@@ -64,6 +64,15 @@
             C("Lotus", "#e56b6f", "#ffb4a2"), C("Mehendi", "#6b705c", "#cb997e"), C("Rangoli", "#ef476f", "#06d6a0", "#ffd166"), C("Navratri", "#d00000", "#ffba08", "#3f88c5"),
             C("Onam", "#fca311", "#e5e5e5", "#14213d"), C("Pongal", "#e9c46a", "#f4a261"), C("Durga Puja", "#c1121f", "#fdf0d5"), C("Ganesh", "#ff7b00", "#ffd000"),
             C("Taj Marble", "#e7d8c9", "#9a8c98"), C("Monsoon Kerala", "#2d6a4f", "#74c69d"), C("Jaipur Pink", "#e76f8a", "#ffc2d1"), C("Banaras Ghat", "#f4a259", "#5b8e7d")]},
+    // Business modes: the first 8 belong to Hospital, Supermarket, Restaurant, Pharmacy, School, Hotel, Office, Factory
+    {id: "industry", name: "Industry", icon: "🏢", font: "Inter", display: "Plus Jakarta Sans", radius: 16, pattern: "grid", panel: "flat",
+     list: [C("Hospital Care", "#0ea5a4", "#2563eb", "#e5484d"), C("Supermarket Fresh", "#16a34a", "#f97316", "#facc15"), C("Restaurant Spice", "#f97316", "#dc2626", "#facc15"),
+            C("Pharmacy Green", "#059669", "#0284c7", "#10b981"), C("School Bright", "#2563eb", "#f59e0b", "#ef4444"), C("Hotel Gold", "#d4a74a", "#f5deb3", "#8b5cf6"),
+            C("Office Slate", "#3b82f6", "#64748b", "#22c55e"), C("Factory Amber", "#f59e0b", "#94a3b8", "#ef4444"), C("ICU Night", "#22d3ee", "#a78bfa", "#f43f5e"),
+            C("Mall Neon", "#ec4899", "#8b5cf6", "#22d3ee"), C("Café Latte", "#a16207", "#d6b48a", "#65a30d"), C("Bank Navy", "#1e3a8a", "#0ea5e9", "#facc15"),
+            C("Logistics", "#ea580c", "#0f766e", "#eab308"), C("Clinic Calm", "#0891b2", "#a7f3d0", "#f472b6"), C("Retail Red", "#dc2626", "#fbbf24", "#2563eb"),
+            C("Campus Green", "#15803d", "#a3e635", "#0ea5e9"), C("Resort Teal", "#0d9488", "#fcd34d", "#fb7185"), C("Startup Violet", "#7c3aed", "#06b6d4", "#f59e0b"),
+            C("Warehouse Steel", "#71717a", "#f97316", "#38bdf8"), C("Lab White", "#0f766e", "#6366f1", "#ef4444")]},
   ];
   const hex = h => { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map(c => c + c).join("");
     return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; };
@@ -73,7 +82,8 @@
   CATS.forEach(cat => cat.list.forEach(([name, a1, a2, a3], i) => {
     const light = cat.id === "apple" ? i >= 10 : cat.id === "minimal" ? [1, 2, 3, 7, 10, 19].includes(i) :
                   cat.id === "nature" ? [3, 7, 10, 12, 17].includes(i) : cat.id === "luxury" ? [9, 11, 17].includes(i) :
-                  cat.id === "india" ? [8, 16, 18].includes(i) : cat.id === "glass" ? [1, 12, 19].includes(i) : false;
+                  cat.id === "india" ? [8, 16, 18].includes(i) : cat.id === "glass" ? [1, 12, 19].includes(i) :
+                  cat.id === "industry" ? [0, 1, 3, 4, 6, 10, 13, 15, 19].includes(i) : false;
     const bg = light ? mix("#ffffff", a1, .06) : mix("#05060b", a1, cat.id === "minimal" ? .02 : .1);
     const bg2 = light ? mix("#ffffff", a2, .14) : mix("#05060b", a2, .22);
     THEMES.push({id: `${cat.id}-${i + 1}`, cat: cat.id, catName: cat.name, name, light, a1, a2, a3, bg, bg2,
@@ -112,6 +122,9 @@
     screen: t => ({"--bg": t.bg, "--glass": t.panel, "--stroke": t.line, "--text": t.text, "--sub": t.sub, "--arc": t.a1, "--gold": t.a2, "--armor": t.a3,
                    "--accent-grad": `linear-gradient(135deg,${t.a3},${t.a1} 55%,${t.a2})`, "--font": `"${t.font}","Segoe UI",system-ui,sans-serif`, "--hud": `"${t.display}",sans-serif`}),
     phone: t => ({"--arc": t.a1, "--gold": t.a2, "--red": t.a3, "--sub": t.sub, "--card": t.panel, "--line": t.line}),
+    business: t => ({"--bg": t.light ? t.bg : t.bg, "--ink": t.text, "--sub": t.sub, "--panel": t.panel, "--line": t.line, "--a1": t.a1,
+                     "--a2": t.a2, "--a3": t.a3, "--r": `${t.radius}px`, "--font": `"${t.font}","Segoe UI",system-ui,sans-serif`,
+                     "--display": `"${t.display}","Segoe UI",sans-serif`}),
   };
   let PAGE = "cinema", CURRENT = null;
   function apply(id) {

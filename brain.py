@@ -468,7 +468,9 @@ class Brain:
     LEAN_TOOLS = {"open_app", "close_app", "open_website", "web_search", "youtube_play", "youtube_control", "media_key",
                   "set_volume", "get_weather", "world_time", "set_reminder", "schedule_task", "list_add", "list_show",
                   "type_text", "press_keys", "system_status", "calculate", "web_lookup", "remember_note", "recall",
-                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys", "live_mode", "diagnostics", "search_my_files", "index_my_files", "lessons",
+                  "ultron_power", "take_screenshot", "lock_pc", "show_dashboard", "study_mode", "ui_theme", "api_keys", "live_mode", "diagnostics", "search_my_files", "index_my_files", "lessons", "business_mode", "records",
+                  "connect_telegram",
+                  "make_bill", "urgent_alert", "prescription", "business_report", "business_alerts", "open_business",
                   "focus_mode", "open_screen", "set_theme", "orb_style", "news", "power_off", "sleep_pc"}
     LEAN_PROMPT = ("You are ULTRON, the user's loyal voice assistant on their Windows PC (the user may wake you by saying "
                    "'Jarvis' - your name is still Ultron). Address the user as Sir. Answer in 1-2 short spoken sentences, "
@@ -485,6 +487,8 @@ class Brain:
         if "LESSONS FROM YOUR PAST MISTAKES" in system:
             mem = system.split("LESSONS FROM YOUR PAST MISTAKES", 1)[1].split("\n\n", 1)[0][:700] + "\n" + mem
         sys_lean = self.LEAN_PROMPT + ("\n" + when.group(0)[:260] if when else "") + ("\nMemory:" + mem if mem else "")
+        if "BUSINESS MODE:" in system:
+            sys_lean += "\nBUSINESS MODE:" + system.split("BUSINESS MODE:", 1)[1].split("\n\n", 1)[0][:900]
         rest = [m for m in msgs if m.get("role") != "system"][-6:]
         while rest and rest[0].get("role") != "user":
             rest.pop(0)                                # never start with an orphaned tool result
@@ -599,6 +603,12 @@ class Brain:
         except Exception:
             mem = ""
         try:
+            mp = tools.modes.mode_prompt()
+        except Exception:
+            mp = ""
+        if mp:
+            system += "\n\n" + mp
+        try:
             les = tools.lessons.for_prompt(tools.last_user_text)
         except Exception:
             les = ""
@@ -614,6 +624,10 @@ class Brain:
         messages = [{"role": "system", "content": system}] + self._trimmed()
         import router
         tool_set = router.select(tools.TOOLS, tools.last_user_text, messages)
+        if tools.modes.current() != "personal":           # in a business mode its tools are always at hand
+            have = {t["function"]["name"] for t in tool_set}
+            tool_set = tool_set + [t for t in tools.TOOLS if t["function"]["name"] in tools.modes_tools and
+                                   t["function"]["name"] not in have]
         log.debug("router: %d of %d tools", len(tool_set), len(tools.TOOLS))
         results = queue.Queue()
 

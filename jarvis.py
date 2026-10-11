@@ -99,6 +99,9 @@ QUICK_OPEN = [
     (re.compile(r"\b(open|show|launch|start|bring( up)?|go to)\b.{0,25}\b(command|comment|commend)\s*(cent(er|re)|centre|system)"
                 r"|\b(open|show)\b.{0,15}\b(dashboard|hud|your (interface|screen))\b"
                 r"|కమాం?డ్ సెంటర్|कमांड सेंटर", re.I), "show_dashboard", "Opening the command center, Sir."),
+    (re.compile(r"\b(connect|pair|link|set ?up|start|activate)\b.{0,20}\b(telegram|tele ?gram)\b|"
+                r"\btelegram\b.{0,15}\b(connect|pair|link|set ?up|bot)\b|టెలిగ్రామ్.{0,10}కనెక్ట్|कनेक्ट.{0,10}टेलीग्राम", re.I),
+     "connect_telegram", ""),
     (re.compile(r"\b(open|start|launch|go to)\b.{0,15}\bstudy (mode|room|space)\b|^study mode$", re.I),
      "study_mode", "Opening Study Mode, Sir."),
     (re.compile(r"\b(open|show)\b.{0,15}\b(theme|themes|ui) (gallery|list)|\bshow (me )?(all )?(the )?themes\b", re.I),
@@ -582,6 +585,9 @@ class Assistant(threading.Thread):
                 if quick[0] == "show_themes":
                     tools.show_dashboard()
                     self._pub({"type": "open_themes"})
+                elif not quick[1]:                     # the tool's own result is the answer
+                    res = (tools.FUNCS.get(quick[0]) or getattr(tools, quick[0]))()
+                    quick = (quick[0], re.sub(r"^(OK|FAILED): ", "", res).split(" Tell the user")[0][:260])
                 else:
                     getattr(tools, quick[0])()
             except Exception:
@@ -1452,6 +1458,27 @@ def run_gui(args):
         return assistant.live.stop("asked")
 
     tools.live_hook = live_hook
+
+    # ---- business modes (hospital, supermarket, restaurant, pharmacy, school, hotel, office, factory)
+    def biz_open():
+        exe = tools._chrome_exe()
+        url = f"http://localhost:{server.PORT}/business"
+        if exe:
+            subprocess.Popen([exe, f"--app={url}", "--start-maximized"], creationflags=subprocess.DETACHED_PROCESS)
+        else:
+            import webbrowser
+            webbrowser.open(url)
+
+    def biz_confirmed():
+        said = (tools.last_user_text or "").lower()
+        return bool(re.search(r"\b(confirm|confirmed|yes|send it|correct|approve|ok(ay)? confirm)\b|అవును|हाँ|हां", said))
+
+    tools.modes.hooks.update(
+        publish=hub.publish, say=lambda t: assistant.notify(t),
+        theme=lambda tid: dashboard_action("ui_theme", {"id": tid}),
+        telegram=(lambda t: tools.telegrambot.send(t)) if os.environ.get("TELEGRAM_BOT_TOKEN") else None,
+        state=tools._state, save=tools._save_state, show=tools.show_content, confirmed=biz_confirmed, open=biz_open)
+    hub.business = lambda data: tools.modes.handle(str(data.get("op")), data)
     tools.docsearch.background()
 
     def nightly():
