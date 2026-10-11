@@ -1477,7 +1477,10 @@ def run_gui(args):
         publish=hub.publish, say=lambda t: assistant.notify(t),
         theme=lambda tid: dashboard_action("ui_theme", {"id": tid}),
         telegram=(lambda t: tools.telegrambot.send(t)) if os.environ.get("TELEGRAM_BOT_TOKEN") else None,
-        state=tools._state, save=tools._save_state, show=tools.show_content, confirmed=biz_confirmed, open=biz_open)
+        state=tools._state, save=tools._save_state, show=tools.show_content, confirmed=biz_confirmed, open=biz_open,
+        is_open=hub.business_open)
+    _m = tools.modes.spec()
+    hub.publish({"type": "biz_mode", "mode": tools.modes.current(), "name": _m["name"], "icon": _m["icon"]})
     hub.business = lambda data: tools.modes.handle(str(data.get("op")), data)
     tools.docsearch.background()
 

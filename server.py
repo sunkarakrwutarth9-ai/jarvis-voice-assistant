@@ -34,6 +34,7 @@ class Hub:
     """Fan-out of live events to every open dashboard tab."""
 
     def __init__(self):
+        self._biz = set()                    # open business console windows
         self._subs = []
         self._lock = threading.Lock()
         self._views = {}             # dashboard tab id -> is it visible (not minimised / hidden)?
@@ -71,8 +72,16 @@ class Hub:
         with self._lock:
             return bool(self._screens)
 
+    def business_open(self):
+        with self._lock:
+            return bool(self._biz)
+
     def set_view(self, view_id, visible):
         """Track whether any dashboard is on screen (visible=None removes a closed tab)."""
+        if view_id.startswith("business-"):
+            with self._lock:
+                (self._biz.discard if visible is None else self._biz.add)(view_id)
+            return
         if view_id.startswith("screen-"):
             with self._lock:
                 if visible is None:
@@ -107,6 +116,8 @@ class Hub:
             self.snapshot["appearance"] = event.get("appearance", "light")
         elif kind == "ui_theme":
             self.snapshot["ui_theme"] = event.get("id", "")
+        elif kind == "biz_mode":
+            self.snapshot["biz_mode"] = {k: event.get(k) for k in ("mode", "name", "icon")}
         elif kind == "power_state":
             self.snapshot["ultron_on"] = bool(event.get("on"))
         elif kind == "orb_style":
@@ -305,8 +316,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "keep-alive")
         self.end_headers()
         q = self.hub.subscribe()
-        if view_id and view_id.startswith("screen-"):
-            self.hub.set_view(view_id, True)          # a Jarvis Screen window is connected
+        if view_id and (view_id.startswith("screen-") or view_id.startswith("business-")):
+            self.hub.set_view(view_id, True)          # a Jarvis Screen / business console window is connected
         try:
             self.wfile.write(b"retry: 1500\n\n")
             self.wfile.flush()

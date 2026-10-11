@@ -38,6 +38,10 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
 header{grid-column:1/-1;display:flex;align-items:center;gap:18px}
 .brand{font:600 18px var(--hud);letter-spacing:8px;color:var(--arc);text-shadow:0 0 18px rgba(127,230,255,.5)}
 .brand small{display:block;font:500 9px var(--hud);letter-spacing:5px;color:var(--sub);margin-top:3px}
+.modebadge{display:none;align-items:center;gap:7px;padding:6px 13px;border-radius:99px;border:1px solid var(--stroke);
+  background:var(--glass);color:var(--text);font:600 12px var(--font);cursor:pointer;letter-spacing:1px;white-space:nowrap}
+.modebadge.on{display:inline-flex} .modebadge:hover{border-color:var(--gold)}
+.modebadge i{font-style:normal;font-size:16px}
 .statepill{margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 18px;border-radius:20px;
   background:rgba(9,12,22,.82);border:1px solid var(--stroke);font:600 12px var(--hud);letter-spacing:3px}
 .statepill i{width:8px;height:8px;border-radius:50%;background:var(--arc);box-shadow:0 0 10px var(--arc)}
@@ -314,7 +318,8 @@ body.uoff .offbanner{display:block}
 
 <div class="app" id="app" data-state="idle" data-me="0" data-canvas="0">
   <header>
-    <div class="brand">U.L.T.R.O.N<small>NEURAL COMMAND CORE</small></div>
+    <div class="brand">U.L.T.R.O.N<small id="brandSub">NEURAL COMMAND CORE</small></div>
+    <button class="modebadge" id="modeBadge" title="Open the business console" onclick="window.open('/business','_blank')"><i id="modeIcon"></i><span id="modeName"></span></button>
     <div class="statepill"><i></i><span id="st2">STANDING BY</span><small id="model">Gemini</small></div>
     <div class="hchips"><span class="hchip" id="wx" hidden></span><span class="hchip" id="nextAl" hidden></span><span class="hchip" id="modeChip" hidden></span></div>
     <button class="pwrbtn" id="liveBtn" title="Live voice - talk naturally, interrupt any time" style="border-color:var(--stroke);color:var(--text)" onclick="post('/api/action',{action:'live',on:!LIVE_ON})">🎙</button>
@@ -541,6 +546,7 @@ function onEvent(e) {
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
     case "open_themes": ULTRON_THEME.openGallery(); break;
     case "open_keys": openKeys(); break;
+    case "biz_mode": setMode(e, true); break;
     case "biz_alert": toast("🚨 URGENT → " + e.to + ": " + e.message, 9000); break;
     case "live": LIVE_ON = !!e.on; $("liveBtn").classList.toggle("on", LIVE_ON); $("liveBtn").title = LIVE_ON ? "Live voice ON - click to stop" : "Live voice - talk naturally, interrupt any time"; break;
     case "api_keys": renderKeys(e.keys, e.msg); break;
@@ -604,6 +610,7 @@ fetch("/api/state").then(r => r.json()).then(s => {
   if (s.gestures) setGestures(true);
   if (s.weather) showWeather(s.weather);
   if (s.ultron_on === false) setUltron(false);
+  if (s.biz_mode) setMode(s.biz_mode, false);
   if (s.orb_style) { if (window.ORB.setStyle) window.ORB.setStyle(s.orb_style, true); else window.ORB.pendingStyle = s.orb_style; }
   if (s.focus && s.focus.minutes && (s.focus.start + s.focus.minutes * 60) * 1000 > Date.now()) setFocus(s.focus);
   (s.history || []).forEach(e => { onEvent(e); try { logEvent(e); } catch (_) {} }); setState(s.state, s.title, s.body); });
@@ -828,6 +835,13 @@ function mgLoop() {
 })();
 
 let LIVE_ON = false;
+function setMode(e, announce) {
+  const biz = e && e.mode && e.mode !== "personal";
+  $("modeBadge").classList.toggle("on", !!biz);
+  $("modeIcon").textContent = biz ? e.icon : ""; $("modeName").textContent = biz ? `${e.name.toUpperCase()} MODE` : "";
+  $("brandSub").textContent = biz ? `${e.name.toUpperCase()} COMMAND CORE` : "NEURAL COMMAND CORE";
+  if (announce) toast(biz ? `${e.icon} ${e.name} mode` : "🧠 Personal mode", 2500);
+}
 // =================== API KEYS ===================
 function renderKeys(keys, msg) {
   if (!keys) return;

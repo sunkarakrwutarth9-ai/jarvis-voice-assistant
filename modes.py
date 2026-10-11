@@ -271,15 +271,24 @@ def business_mode(name: str) -> str:
     m = match_mode(name)
     if not m:
         return "FAILED: modes: " + ", ".join(f"{s['icon']} {s['name']}" for s in MODES.values())
+    before = current()
     hooks["save"]("biz_mode", m)
     s = spec(m)
+    if before == "personal" and m != "personal":    # remember the user's own look, to bring it back later
+        hooks["save"]("theme_before_mode", hooks["state"]("ui_theme", "") or "")
+    theme = (hooks["state"]("theme_before_mode", "") or s["theme"]) if m == "personal" else s["theme"]
     try:
-        hooks["theme"](s["theme"])
+        hooks["theme"](theme)
     except Exception:
         log.exception("mode theme failed")
     hooks["publish"]({"type": "biz_mode", "mode": m, "name": s["name"], "icon": s["icon"]})
     if m == "personal":
         return "OK: back to personal mode."
+    try:                                             # the console opens by itself (an open one just switches)
+        if hooks.get("open") and not hooks.get("is_open", lambda: False)():
+            hooks["open"]()
+    except Exception:
+        log.exception("opening the business console failed")
     counts = {c: len(_rows(c, m, 100000)) for c in s["collections"]}
     empty = sum(counts.values()) == 0
     return (f"OK: {s['icon']} {s['name']} mode on - I'm now {s['who']}. Theme changed to match. Records: "
