@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U.L.T.R.O.N. Agents</title>
+<script src="/themes.js"></script>
+<style>
+:root{--bg:#070a14;--ink:#eef2ff;--sub:#8f9bb8;--panel:rgba(18,24,42,.78);--line:rgba(120,160,255,.18);
+  --a1:#22d3ee;--a2:#a78bfa;--a3:#f43f5e;--font:"Inter","Segoe UI",system-ui,sans-serif;--display:"Inter","Segoe UI",sans-serif;--r:18px}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px var(--font);min-height:100vh;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;
+  background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(14px)}
+.logo{font:700 20px var(--display);letter-spacing:1px} .logo small{display:block;font:500 11px var(--font);letter-spacing:4px;color:var(--sub)}
+.sp{flex:1} .btn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;cursor:pointer;text-decoration:none;color:inherit}
+.btn:hover{border-color:var(--a1)} .btn.pri{background:linear-gradient(135deg,var(--a1),var(--a2));border:0;color:#fff;font-weight:700}
+main{max-width:1500px;margin:auto;padding:18px 22px 50px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr);gap:18px}
+@media(max-width:1050px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{font:600 12px var(--font);letter-spacing:3px;text-transform:uppercase;color:var(--sub);margin:0 0 12px}
+#graphCard{position:relative;padding:0;overflow:hidden;min-height:520px}
+#graph{width:100%;height:520px;display:block}
+.node circle.halo{transition:r .4s,opacity .4s} .node text{fill:var(--ink);font:600 12px var(--font);text-anchor:middle;pointer-events:none}
+.node .ic{font-size:26px} .node{cursor:pointer}
+.legend{position:absolute;left:16px;bottom:12px;color:var(--sub);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;grid-column:1/-1}
+.ag{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;position:relative;transition:.3s}
+.ag.working{border-color:var(--a1);box-shadow:0 0 0 1px var(--a1),0 0 28px color-mix(in srgb,var(--a1) 35%,transparent)}
+.ag.done{border-color:#3ddc84}
+.ag .t{display:flex;align-items:center;gap:10px} .ag .t i{font-style:normal;font-size:26px}
+.ag .t b{font:700 15px var(--display)} .ag .t small{display:block;color:var(--sub);font-size:11.5px;letter-spacing:1px;text-transform:uppercase}
+.ag p{margin:0;color:var(--sub);font-size:12.5px;line-height:1.5}
+.ag .fact{font-size:12px;color:var(--a1)}
+.ag .now{font-size:12.5px;min-height:18px;color:var(--ink);opacity:.9}
+.dot{position:absolute;right:14px;top:16px;width:10px;height:10px;border-radius:50%;background:#58607a}
+.working .dot{background:var(--a1);box-shadow:0 0 10px var(--a1);animation:p 1s infinite} .done .dot{background:#3ddc84}
+@keyframes p{50%{opacity:.3}}
+.row{display:flex;gap:6px} .row input{flex:1;min-width:0}
+input,select,textarea{background:color-mix(in srgb,var(--ink) 6%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;outline:0}
+input:focus,select:focus,textarea:focus{border-color:var(--a1)}
+#studio{border:1px solid color-mix(in srgb,var(--a2) 55%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--a2) 14%,var(--panel)),var(--panel))}
+#studio h2{color:var(--a2)} .sform{display:grid;grid-template-columns:1fr 1fr;gap:8px} .sform .full{grid-column:1/-1}
+.steps{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:12.5px}
+.steps div{display:flex;gap:8px;align-items:center;color:var(--sub)} .steps div.on{color:var(--ink)} .steps div.ok{color:#3ddc84}
+.feed{display:flex;flex-direction:column;gap:6px;max-height:330px;overflow:auto;font-size:12.5px}
+.feed div{padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--ink) 4%,transparent)} .feed b{color:var(--a1)}
+.feed small{color:var(--sub)}
+#viewer{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+#viewer.show{display:flex} #viewer .box{width:min(1100px,96vw);height:min(86vh,900px);background:var(--bg);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--line)}
+#viewer .bar{display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid var(--line)} #viewer iframe{flex:1;border:0;width:100%;background:#fff}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:600;opacity:0;transition:.3s;z-index:40;max-width:90vw}
+.toast.show{opacity:1}
+.mini{font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.mini span button{border:0;background:none;color:var(--a3);cursor:pointer}
+</style></head>
+<body>
+<header><div class="logo">🤖 AI AGENTS<small>8 SYSTEMS · ONE ULTRON</small></div><div class="sp"></div>
+  <button class="btn" id="resBtn" style="display:none">📄 Latest result</button>
+  <button class="btn" onclick="ULTRON_THEME.openGallery()">🎨</button><a class="btn" href="/">⌂ Command center</a></header>
+<main>
+  <section class="card" id="graphCard"><svg id="graph" viewBox="0 0 900 520" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="legend">Glowing node = agent working · pulses = work being handed between agents</div></section>
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div class="card" id="studio"><h2>🎬 Ad Studio — all 8 agents together</h2>
+      <div class="sform">
+        <input class="full" id="adP" placeholder="Product / business (e.g. 'Ultron AI assistant for hospitals')">
+        <input id="adA" placeholder="Audience (optional)"><select id="adPl"><option>Instagram Reels</option><option>YouTube Shorts</option><option>YouTube (long)</option><option>Facebook</option><option>TV / radio</option><option>WhatsApp status</option></select>
+        <select id="adS"><option value="15">15 s</option><option value="30" selected>30 s</option><option value="45">45 s</option><option value="60">60 s</option></select>
+        <select id="adL"><option>English</option><option>Telugu</option><option>Hindi</option><option>Telugu + English mix</option><option>Hindi + English mix</option></select>
+        <input class="full" id="adT" placeholder="Tone (optional): funny, emotional, premium, energetic…">
+        <button class="btn pri full" id="adGo">✨ Create ad script</button></div>
+      <div class="steps" id="adSteps"></div></div>
+    <div class="card"><h2>Live activity</h2><div class="feed" id="feed"></div></div>
+  </section>
+  <div class="grid" id="cards"></div>
+</main>
+<div id="viewer"><div class="box"><div class="bar"><b id="vTitle"></b><div class="sp"></div><button class="btn" id="vClose">✕ Close</button></div><iframe id="vFrame"></iframe></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const api = b => fetch("/api/agents", {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify(b)}).then(r => r.json());
+const toast = t => { $("toast").textContent = String(t).replace(/^OK: /, "✓ ").replace(/^FAILED: /, "✕ "); $("toast").classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").classList.remove("show"), 5000); };
+let OV = null, LAST = null;
+const POS = {};
+
+// ---------------- the agent network graph
+function drawGraph() {
+  const svg = $("graph"), cx = 450, cy = 260, R = 195;
+  let h = `<defs><radialGradient id="core"><stop offset="0" stop-color="var(--a1)" stop-opacity=".9"/><stop offset="1" stop-color="var(--a2)" stop-opacity="0"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  OV.agents.forEach((a, i) => { const ang = -Math.PI / 2 + i * 2 * Math.PI / OV.agents.length; POS[a.id] = [cx + R * Math.cos(ang), cy + R * Math.sin(ang)]; });
+  OV.agents.forEach((a, i) => { const b = OV.agents[(i + 1) % OV.agents.length];
+    h += `<line x1="${POS[a.id][0]}" y1="${POS[a.id][1]}" x2="${POS[b.id][0]}" y2="${POS[b.id][1]}" stroke="var(--line)" stroke-dasharray="3 6"/>`; });
+  OV.agents.forEach(a => h += `<line id="e-${a.id}" x1="${cx}" y1="${cy}" x2="${POS[a.id][0]}" y2="${POS[a.id][1]}" stroke="var(--line)" stroke-width="1.5"/>`);
+  h += `<circle cx="${cx}" cy="${cy}" r="92" fill="url(#core)" opacity=".35"><animate attributeName="r" values="82;98;82" dur="4s" repeatCount="indefinite"/></circle>
+    <circle cx="${cx}" cy="${cy}" r="46" fill="var(--panel)" stroke="var(--a1)" stroke-width="2" filter="url(#glow)"/>
+    <text x="${cx}" y="${cy + 6}" fill="var(--ink)" style="font:800 15px var(--display);letter-spacing:3px" text-anchor="middle">ULTRON</text>`;
+  OV.agents.forEach(a => { const [x, y] = POS[a.id];
+    h += `<g class="node" id="n-${a.id}" data-id="${a.id}"><circle class="halo" cx="${x}" cy="${y}" r="40" fill="var(--a1)" opacity="0"/>
+      <circle cx="${x}" cy="${y}" r="34" fill="var(--panel)" stroke="var(--line)" stroke-width="2" id="c-${a.id}"/>
+      <text x="${x}" y="${y + 9}" class="ic">${a.icon}</text><text x="${x}" y="${y + 54}">${esc(a.name)}</text>
+      <text x="${x}" y="${y + 69}" style="fill:var(--sub);font-weight:500;font-size:10.5px">${esc(a.type)}</text></g>`; });
+  h += `<g id="pulses"></g>`;
+  svg.innerHTML = h;
+  svg.querySelectorAll(".node").forEach(n => n.onclick = () => document.querySelector(`.ag[data-id="${n.dataset.id}"] input`)?.focus());
+  OV.agents.forEach(a => mark(a.id, a.status));
+}
+function mark(id, status) {
+  const c = $("c-" + id), halo = document.querySelector(`#n-${id} .halo`), e = $("e-" + id);
+  if (!c) return;
+  c.setAttribute("stroke", status === "working" ? "var(--a1)" : status === "done" ? "#3ddc84" : "var(--line)");
+  halo.setAttribute("opacity", status === "working" ? ".28" : "0");
+  e.setAttribute("stroke", status === "working" ? "var(--a1)" : "var(--line)");
+  if (status === "working") pulse(id);
+  const card = document.querySelector(`.ag[data-id="${id}"]`);
+  if (card) card.className = "ag " + status;
+}
+function pulse(id, reverse) {
+  const [x, y] = POS[id] || [450, 260], g = $("pulses"); if (!g) return;
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("r", "6"); c.setAttribute("fill", "var(--a1)"); c.setAttribute("filter", "url(#glow)");
+  const from = reverse ? [x, y] : [450, 260], to = reverse ? [450, 260] : [x, y];
+  c.innerHTML = `<animate attributeName="cx" from="${from[0]}" to="${to[0]}" dur=".9s" fill="freeze"/><animate attributeName="cy" from="${from[1]}" to="${to[1]}" dur=".9s" fill="freeze"/><animate attributeName="opacity" values="1;1;0" dur=".9s" fill="freeze"/>`;
+  g.appendChild(c); setTimeout(() => c.remove(), 1000);
+}
+
+// ---------------- cards
+function drawCards() {
+  $("cards").innerHTML = OV.agents.map(a => `<div class="ag ${a.status}" data-id="${a.id}"><span class="dot"></span>
+    <div class="t"><i>${a.icon}</i><div><b>${esc(a.name)}</b><small>${esc(a.type)}</small></div></div>
+    <p>${esc(a.how)}</p><div class="fact">${esc(a.fact)}</div><div class="now">${esc(a.text || "")}</div>
+    ${a.op === "world" ? `<button class="btn" data-op="world">Show my world model</button>` :
+      `<div class="row"><input placeholder="${esc(a.try)}"><button class="btn pri" data-op="${a.op}">Run</button></div>`}
+    ${a.id === "reflex" ? `<div class="mini">${OV.rules.map(r => `<span>#${r.id} when ${esc(r.sensor)} ${esc(r.op)} ${esc(r.value)} → ${esc(r.action)} <button data-del="${r.id}">✕</button></span>`).join("")}</div>` : ""}
+    ${a.id === "goal" ? `<div class="mini">${OV.goals.map(g => `<span>🎯 ${esc(g.goal)} — ${g.pct}% <button data-gd="${g.id}" style="color:#3ddc84">✓ step</button></span>`).join("")}</div>` : ""}
+  </div>`).join("");
+  $("cards").querySelectorAll("[data-op]").forEach(b => b.onclick = () => {
+    const inp = b.parentElement.querySelector("input"); const text = inp ? (inp.value.trim() || inp.placeholder) : "";
+    const id = b.closest(".ag").dataset.id; mark(id, "working");
+    api({op: b.dataset.op, text}).then(r => { toast(r.result); if (inp) inp.value = ""; refresh(); });
+  });
+  $("cards").querySelectorAll("[data-del]").forEach(b => b.onclick = () => api({op: "rule_del", id: +b.dataset.del}).then(r => { toast(r.result); refresh(); }));
+  $("cards").querySelectorAll("[data-gd]").forEach(b => b.onclick = () => api({op: "goal_done", id: +b.dataset.gd}).then(r => { toast(r.result); refresh(); }));
+}
+
+function feed() { $("feed").innerHTML = OV.log.slice().reverse().map(l => { const a = OV.agents.find(x => x.id === l.id);
+  return `<div><small>${l.t}</small> <b>${a ? a.icon + " " + a.name : "🎬 Ad Studio"}</b> ${esc(l.text)}</div>`; }).join(""); }
+
+const STEPS = ["Manager: planning", "Researcher: audience insight", "3 copywriters on 3 AI brains", "Critic: review", "Utility: pick the winner", "Polish", "Real photos for the storyboard", "Posting plan", "Ad ready"];
+function studioStep(text) {
+  const map = [/planning the ad/i, /research done|insight/i, /copywriters/i, /critic/i, /weighing|winner/i, /polish/i, /photos/i, /posting/i, /ad ready/i];
+  let k = map.findIndex(rx => rx.test(text)); if (k < 0) return;
+  $("adSteps").innerHTML = STEPS.map((s, i) => `<div class="${i < k ? "ok" : i === k ? "on" : ""}">${i < k ? "✓" : i === k ? "⏳" : "○"} ${s}</div>`).join("");
+  if (/ad ready/i.test(text)) $("adSteps").innerHTML = STEPS.map(s => `<div class="ok">✓ ${s}</div>`).join("");
+}
+
+async function refresh() { OV = await fetch("/api/agents").then(r => r.json()); drawCards(); feed(); OV.agents.forEach(a => mark(a.id, a.status)); }
+
+$("adGo").onclick = () => { if (!$("adP").value.trim()) return toast("✕ What is the ad for?");
+  studioStep("planning the ad");
+  api({op: "ad", text: $("adP").value, audience: $("adA").value, platform: $("adPl").value, seconds: +$("adS").value, language: $("adL").value, tone: $("adT").value}).then(r => toast(r.result)); };
+$("vClose").onclick = () => $("viewer").classList.remove("show");
+$("resBtn").onclick = () => LAST && openResult(LAST);
+function openResult(r) { LAST = r; $("resBtn").style.display = ""; $("vTitle").textContent = r.title; $("vFrame").srcdoc = r.html; $("viewer").classList.add("show"); }
+addEventListener("message", e => { if (e.data && e.data.ultron === "speak_ad") api({op: "speak_ad"}); });
+
+const es = new EventSource("/events?id=agents-" + Math.random().toString(36).slice(2, 8));
+es.onmessage = m => { const e = JSON.parse(m.data);
+  if (e.type === "agent") {
+    if (POS[e.id]) { mark(e.id, e.status); if (e.status === "done") pulse(e.id, true); }
+    if (e.to) pulse("manager");
+    if (e.id === "studio") studioStep(e.text);
+    const card = document.querySelector(`.ag[data-id="${e.id}"] .now`); if (card) card.textContent = e.text;
+    OV.log.push({t: new Date().toTimeString().slice(0, 8), id: e.id, text: e.text}); feed();
+  } else if (e.type === "agent_result") openResult(e);
+  else if (e.type === "ui_theme") ULTRON_THEME.apply(e.id);
+};
+addEventListener("DOMContentLoaded", () => ULTRON_THEME.init("business"));
+(async () => { OV = await fetch("/api/agents").then(r => r.json()); drawGraph(); drawCards(); feed(); })();
+</script>
+</body></html>

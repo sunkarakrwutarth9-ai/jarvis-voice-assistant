@@ -485,7 +485,16 @@ class Assistant(threading.Thread):
         self.speaker.stop()
         self.events.put(("pick", value, self.turn))
 
-    def notify(self, text):
+    def notify(self, text, urgent=False):
+        if not urgent and getattr(self, "hold", False):
+            self._missed.append(text)                     # in a meeting / presentation: keep it for later
+            return
+        if not urgent:
+            try:
+                if __import__("tools").agents.hold_if_away(text):
+                    return                                # away from the PC: told when the user is back
+            except Exception:
+                pass
         self.events.put(("notify", text, None))
         try:
             __import__("tools").telegrambot.push(text)        # away from the PC? it reaches your phone too
@@ -1474,7 +1483,7 @@ def run_gui(args):
         return bool(re.search(r"\b(confirm|confirmed|yes|send it|correct|approve|ok(ay)? confirm)\b|అవును|हाँ|हां", said))
 
     tools.modes.hooks.update(
-        publish=hub.publish, say=lambda t: assistant.notify(t),
+        publish=hub.publish, say=lambda t: assistant.notify(t, urgent=True),
         theme=lambda tid: dashboard_action("ui_theme", {"id": tid}),
         telegram=(lambda t: tools.telegrambot.send(t)) if os.environ.get("TELEGRAM_BOT_TOKEN") else None,
         state=tools._state, save=tools._save_state, show=tools.show_content, confirmed=biz_confirmed, open=biz_open,
@@ -1482,6 +1491,29 @@ def run_gui(args):
     _m = tools.modes.spec()
     hub.publish({"type": "biz_mode", "mode": tools.modes.current(), "name": _m["name"], "icon": _m["icon"]})
     hub.business = lambda data: tools.modes.handle(str(data.get("op")), data)
+
+    # ---- the 8 AI agent systems + Ad Studio (http://localhost:7777/agents)
+    def agents_open():
+        exe = tools._chrome_exe()
+        url = f"http://localhost:{server.PORT}/agents"
+        if exe:
+            subprocess.Popen([exe, f"--app={url}", "--start-maximized"], creationflags=subprocess.DETACHED_PROCESS)
+        else:
+            import webbrowser
+            webbrowser.open(url)
+
+    def set_hold(on):
+        assistant.hold = bool(on)
+        if not on and assistant._missed and not assistant.off:
+            missed, assistant._missed = assistant._missed, []
+            assistant.notify("While you were in the meeting: " + " ".join(missed[-3:]))
+
+    tools.agents.hooks.update(
+        publish=hub.publish, notify=assistant.notify, show=tools.show_content, is_off=lambda: assistant.off,
+        set_hold=set_hold, command=assistant.on_text, open=agents_open,
+        say=lambda t, v=None: assistant.speaker.say(t))
+    hub.agents = lambda data: tools.agents.handle(str(data.get("op")), data)
+    tools.agents.start()
     tools.docsearch.background()
 
     def nightly():

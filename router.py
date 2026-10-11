@@ -8,13 +8,17 @@ appear in what the user said - plus every tool already used in the recent conver
 
 import re
 
-CORE = {"live_mode", "diagnostics", "search_my_files", "business_mode", "open_app", "close_app", "open_website", "web_search", "web_lookup", "youtube_play", "youtube_control",
+CORE = {"live_mode", "diagnostics", "search_my_files", "business_mode", "ad_script", "ai_agents", "open_app", "close_app", "open_website", "web_search", "web_lookup", "youtube_play", "youtube_control",
         "media_key", "set_volume", "current_time", "world_time", "get_weather", "system_status", "create",
         "canvas_control", "save_creation", "revise_creation", "remember", "remember_note", "recall", "set_reminder",
         "schedule_task", "show_dashboard", "type_text", "press_keys", "take_screenshot", "read_screen", "deep_think",
         "calculate", "set_timer", "ultron_power", "open_browser", "find_files", "open_file", "do_task", "look", "watch"}
 
 GROUPS = [
+    (r"\bad\b|ads|advert|promo|reel|script|commercial|campaign|caption|agent|decide|decision|which (one|is better)|"
+     r"should i|plan (my|the) day|schedule my|goal|milestone|council|debate|delegate|team|launch plan|business plan|"
+     r"when .* (then|tell|remind|send)|if .* (then|tell|send)|rule|world model|meeting",
+     {"ad_script", "ai_agents", "reflex_rule", "agent_goal", "decide", "plan_day", "council", "delegate", "world_model"}),
     (r"mode|hospital|clinic|doctor|patient|bed|ward|prescri|pharmac|medic|supermarket|kirana|store|shop|bill|stock|"
      r"price|product|customer|restaurant|menu|order|table|kitchen|school|student|attendance|marks|hotel|room|"
      r"check.?in|check.?out|booking|office|employee|visitor|factory|machine|production|inventory|urgent|emergency|"

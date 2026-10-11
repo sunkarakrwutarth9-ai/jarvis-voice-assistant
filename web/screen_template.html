@@ -83,6 +83,7 @@ function onEvent(e) {
     case "canvas_output": canvasOutput(e); break;
     case "canvas_cmd": canvasCmd(e.action); break;
     case "ui_theme": ULTRON_THEME.apply(e.id); break;
+    case "agent_result": break;
     case "power_state": if (e.full) setTimeout(() => { try { window.close(); } catch (x) {} }, 2500); break;
     case "canvas_error": $("cStatus").textContent = "⚠ " + e.text; break;
     case "canvas_saved": if (creations[e.id]) { creations[e.id].file = e.file; if (e.id === cur) select(e.id); } break;
@@ -95,5 +96,7 @@ es.onopen = () => $("dot").classList.remove("off");
 es.onerror = () => $("dot").classList.add("off");
 es.onmessage = m => onEvent(JSON.parse(m.data));
 </script>
+<script>addEventListener("message", e => { if (e.data && e.data.ultron === "speak_ad")
+  fetch("/api/agents", {method: "POST", headers: {"Content-Type": "application/json", "X-Jarvis": "1"}, body: JSON.stringify({op: "speak_ad"})}); });</script>
 </body>
 </html>

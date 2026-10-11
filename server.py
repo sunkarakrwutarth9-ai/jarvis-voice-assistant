@@ -44,6 +44,7 @@ class Hub:
         self.study = lambda: {}              # set by the app: Study Mode data
         self.keys = lambda: []               # set by the app: which API keys are set (never the keys)
         self.business = lambda data: "FAILED: not ready"   # set by the app: business console actions
+        self.agents = lambda data: "FAILED: not ready"     # set by the app: AI agents page actions
         self.on_visibility = lambda any_visible: None
         self.history = []            # recent conversation events, replayed to new tabs
         self.snapshot = {"state": "idle", "title": "", "body": "", "me": False, "muted": False, "ranking": [],
@@ -207,6 +208,11 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(tutor.deck_cards(unquote(self.path.partition("name=")[2])[:80]), ensure_ascii=False).encode())
         elif self.path == "/screen":
             self._send(200, (HERE / "screen.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/agents":
+            self._send(200, (HERE / "agents.html").read_bytes(), "text/html; charset=utf-8")
+        elif self.path == "/api/agents":
+            import agents
+            self._send(200, json.dumps(agents.overview(), ensure_ascii=False, default=str).encode())
         elif self.path == "/business":
             self._send(200, (HERE / "business.html").read_bytes(), "text/html; charset=utf-8")
         elif self.path == "/api/business":
@@ -290,6 +296,12 @@ class _Handler(BaseHTTPRequestHandler):
                                                                    "canvas_vscode", "canvas_run", "canvas_save", "gestures", "everyday", "open_screen", "power", "ultron_power", "study", "ui_theme", "api_key", "live", "diagnostics"):
             self.on_action(data["action"], data)
             self._send(200, b'{"ok":true}')
+        elif self.path == "/api/agents" and isinstance(data.get("op"), str):
+            try:
+                result = self.hub.agents(data)
+            except Exception as e:
+                result = f"FAILED: {e}"
+            self._send(200, json.dumps({"result": result}, ensure_ascii=False).encode())
         elif self.path == "/api/business" and isinstance(data.get("op"), str):
             try:
                 result = self.hub.business(data)

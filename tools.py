@@ -1501,6 +1501,23 @@ def _fn(name, description, props=None, required=()):
 
 
 TOOLS = [
+    _fn("ad_script", "🎬 Ad Studio: a complete, professional ad / promo / reel script made by Ultron's 8-agent team (research → 3 copywriters on 3 AI brains → critic → utility pick → polish → storyboard with real photos → caption, hashtags, 7-day posting plan, voice-over). 'make an ad for…', 'write a reel script for my shop', 'promo video script'.",
+        {"product": {"type": "string"}, "audience": {"type": "string"}, "platform": {"type": "string", "description": "Instagram Reels, YouTube Shorts, YouTube, Facebook, TV / radio, WhatsApp status"},
+         "seconds": {"type": "integer"}, "language": {"type": "string"}, "tone": {"type": "string"}}, ["product"]),
+    _fn("ai_agents", "Open the AI Agents page: Ultron's 8 agent systems (reflex, world-model, goal, utility, learning, planning, multi-agent council, hierarchical manager) working live. 'show your agents', '8 AI systems'."),
+    _fn("reflex_rule", "Reflex agent: instant 'when <sensor> <condition> then <action>' rules on battery, charging, CPU, RAM, disk, internet, idle minutes, hour or time. action add (rule in plain words), list, delete. 'when battery below 20 tell me to charge', 'if internet goes down send me a telegram'.",
+        {"action": {"type": "string", "enum": ["add", "list", "delete"]}, "rule": {"type": "string"}, "id": {"type": "integer"}}, ["action"]),
+    _fn("agent_goal", "Goal agent: a long-term goal becomes dated milestones it tracks and nudges you about. action add (goal with a deadline), list, done (a milestone finished), delete.",
+        {"action": {"type": "string", "enum": ["add", "list", "done", "delete"]}, "goal": {"type": "string"}, "step": {"type": "integer"}, "id": {"type": "integer"}}, ["action"]),
+    _fn("decide", "Utility agent: decide between options with a weighted scoring matrix (criteria × weights × scores) - 'which laptop should I buy', 'which offer is better', 'what should I do first'.",
+        {"question": {"type": "string"}, "options": {"type": "string"}, "criteria": {"type": "string"}}, ["question"]),
+    _fn("plan_day", "Planning agent: a time-blocked plan for the rest of today from the user's tasks, calendar, reminders and goals.",
+        {"tasks": {"type": "string"}, "until": {"type": "string", "description": "HH:MM, default 22:00"}}),
+    _fn("council", "Multi-agent council: 3 agents on 3 different AI brains (Visionary, Expert, Critic) debate a hard question for 2 rounds and a judge gives the verdict. For big decisions and strategy.",
+        {"question": {"type": "string"}}, ["question"]),
+    _fn("delegate", "Hierarchical manager agent: splits a big job into parts, delegates to specialist workers (researcher with the web, strategist, writer, analyst, designer, engineer) in parallel and merges one deliverable - business plans, launch plans, reports, proposals.",
+        {"task": {"type": "string"}}, ["task"]),
+    _fn("world_model", "World-model agent: what Ultron currently knows about the user's situation (app in front, meeting, away, battery, internet)."),
     _fn("business_mode", "Switch Ultron into a business mode - it becomes that organisation's assistant with its own records, actions, console and theme: hospital (clinic), supermarket (kirana/store/shop), restaurant (cafe), pharmacy (medical store), school (college/coaching), hotel, office (company), factory (warehouse) - or 'personal' to go back. 'switch to hospital mode', 'make yourself a supermarket assistant', 'normal mode'.",
         {"name": {"type": "string"}}, ["name"]),
     _fn("records", "The current business mode's database: add / find / list / update / delete / count records in a collection (e.g. products, patients, doctors, beds, menu, orders, students, marks, rooms, bookings, tasks, machines), or action 'demo' to load sample data. Always use find before quoting a price, stock, patient or room.",
@@ -1772,6 +1789,7 @@ import lessons  # noqa: E402  (learning from corrections)
 import diagnostics  # noqa: E402  (self-check + auto-fix)
 import docsearch  # noqa: E402  (search the user's files by meaning)
 import modes  # noqa: E402  (business modes: hospital, supermarket, restaurant, ...)
+import agents  # noqa: E402  (the 8 AI agent systems + Ad Studio)
 modes_tools = {"records", "make_bill", "urgent_alert", "prescription", "business_report", "business_alerts",
                "import_records", "open_business", "business_mode"}
 import departments  # noqa: E402  (command layer: self-designed departments)
@@ -1805,6 +1823,9 @@ FUNCS = {
     "ultron_power": ultron_power, "study_mode": study_mode, "ui_theme": ui_theme, "api_keys": api_keys,
     "live_mode": live_mode, "lessons": lessons.lessons, "diagnostics": diagnostics.diagnostics,
     "business_mode": modes.business_mode, "records": modes.records, "make_bill": modes.make_bill,
+    "ai_agents": agents.ai_agents, "reflex_rule": agents.reflex_rule, "agent_goal": agents.goal, "decide": agents.decide,
+    "plan_day": agents.plan_day, "council": agents.council, "delegate": agents.delegate, "ad_script": agents.ad_script,
+    "world_model": agents.world_model,
     "urgent_alert": modes.urgent_alert, "prescription": modes.prescription, "business_report": modes.business_report,
     "business_alerts": modes.business_alerts, "import_records": modes.import_records, "open_business": modes.open_business,
     "search_my_files": docsearch.search_my_files, "index_my_files": docsearch.index_my_files, "interview": interview_mod.interview, "save_skill": skills.save_skill, "list_skills": skills.list_skills,
@@ -1924,7 +1945,10 @@ def describe(name: str, args: dict):
         "search_my_files": lambda: f"Searching your files · {a.get('question', '')[:40]}", "lessons": lambda: "Lessons",
         "index_my_files": lambda: "Reading your files",
         "business_mode": lambda: f"Mode · {a.get('name', '')}", "records": lambda: f"{a.get('action', '')} {a.get('collection', '')}",
-        "make_bill": lambda: "Making the bill", "urgent_alert": lambda: "🚨 Urgent alert", "prescription": lambda: f"Prescription · {a.get('action', '')}",
+        "make_bill": lambda: "Making the bill", "ad_script": lambda: f"🎬 Ad Studio · {a.get('product', '')[:30]}",
+        "council": lambda: "👥 Agent council", "delegate": lambda: "🏛 Delegating to the team", "decide": lambda: "⚖️ Weighing options",
+        "plan_day": lambda: "🗓 Planning your day", "agent_goal": lambda: "🎯 Goal agent", "reflex_rule": lambda: "⚡ Reflex rule",
+        "ai_agents": lambda: "🤖 AI agents", "world_model": lambda: "🌍 World model", "urgent_alert": lambda: "🚨 Urgent alert", "prescription": lambda: f"Prescription · {a.get('action', '')}",
         "business_report": lambda: "Business report", "business_alerts": lambda: "Checking alerts", "import_records": lambda: "Importing",
         "open_business": lambda: "Opening the business console",
         "architect_departments": lambda: "Architecting departments", "activate_departments": lambda: "Activating departments",
